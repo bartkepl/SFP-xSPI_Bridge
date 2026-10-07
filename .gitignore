@@ -1,0 +1,63 @@
+
+# KiCad
+*.bak
+*-bak
+*.000
+*.bck
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*.sch-bak
+*.pro.bak
+*.kicad_prl
+*-backups/
+_autosave-*
+\#auto_saved_files#
+fp-info-cache
+*.lck
+~*.lck
+*.tmp
+*.dsn
+*.ses
+*.cache
+kicad-thumbnails/
+
+# Gowin EDA (synthesis / place & route output, per-user settings)
+impl/
+*.gprj.user
+*.log
+*.rpt.txt
+
+# GHDL / ModelSim / simulation output
+*.cf
+work/
+work-obj*.cf
+transcript
+*.wlf
+*.ghw
+*.vcd
+*.fst
+vsim.wlf
+modelsim.ini
+
+# Firmware build output
+build/
+_build/
+Debug/
+Release/
+*.o
+*.d
+*.su
+*.elf
+*.hex
+*.bin
+*.map
+*.list
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/

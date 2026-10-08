@@ -15,4 +15,5 @@ sfp_bridge/src/link/comma_align.vhd
 sfp_bridge/src/link/tx_gearbox.vhd
 sfp_bridge/src/link/tx_phy.vhd
 sfp_bridge/src/link/rx_phy.vhd
+sfp_bridge/src/link/link_ctrl.vhd
 sim/tb/tb_pkg.vhd

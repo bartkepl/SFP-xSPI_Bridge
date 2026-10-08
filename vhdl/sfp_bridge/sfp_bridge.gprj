@@ -20,6 +20,7 @@
         <File path="src/link/tx_gearbox.vhd" type="file.vhdl" enable="1"/>
         <File path="src/link/tx_phy.vhd" type="file.vhdl" enable="1"/>
         <File path="src/link/rx_phy.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/link/link_ctrl.vhd" type="file.vhdl" enable="1"/>
         <File path="src/top/sfp_bridge_top.vhd" type="file.vhdl" enable="1"/>
         <File path="../constraints/sfp_bridge.cst" type="file.cst" enable="1"/>
         <File path="../constraints/sfp_bridge.sdc" type="file.sdc" enable="1"/>

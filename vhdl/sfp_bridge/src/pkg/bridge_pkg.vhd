@@ -8,6 +8,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 package bridge_pkg is
 
@@ -45,5 +46,32 @@ package bridge_pkg is
   constant D16_2 : std_logic_vector(7 downto 0) := x"50";
   constant D21_5 : std_logic_vector(7 downto 0) := x"B5";
   constant D5_6  : std_logic_vector(7 downto 0) := x"C5";
+
+
+  ------------------------------------------------------------------------------
+  -- Link control (ADR 0008)
+  ------------------------------------------------------------------------------
+  -- Link state
+  subtype t_link_state is std_logic_vector(1 downto 0);
+  constant LS_DOWN : t_link_state := "00";
+  constant LS_SYNC : t_link_state := "01";   -- local receiver synchronized, remote not ready
+  constant LS_UP   : t_link_state := "10";
+
+  -- CTRL.LOOPBACK
+  constant LB_NONE : std_logic_vector(1 downto 0) := "00";
+  constant LB_NEAR : std_logic_vector(1 downto 0) := "01";   -- tx_gearbox bits -> cdr_os4x8
+  constant LB_FAR  : std_logic_vector(1 downto 0) := "10";   -- frame echo (top-level)
+
+  -- Event counters, CSR 0x10 + 4 * index (32 bit, wrap-around, CTRL.CNT_CLR)
+  constant N_CNT           : natural := 8;
+  constant CNT_CODE_ERR    : natural := 0;   -- decoder code / disparity errors while in sync
+  constant CNT_CRC_ERR     : natural := 1;
+  constant CNT_LEN_ERR     : natural := 2;
+  constant CNT_FRAMING_ERR : natural := 3;
+  constant CNT_RX_OVF      : natural := 4;
+  constant CNT_FRAMES_TX   : natural := 5;
+  constant CNT_FRAMES_RX   : natural := 6;
+  constant CNT_SYNC_LOSS   : natural := 7;
+  type t_cnt_arr is array (0 to N_CNT - 1) of unsigned(31 downto 0);
 
 end package bridge_pkg;

@@ -39,7 +39,7 @@ vhdl/
 | `comma_align` | `src/link/comma_align.vhd` | `tb_comma_align` | PASS | tak (tor RX 83 MHz) | [Wyrównanie symboli](comma_align.md) |
 | `tx_gearbox`, `tx_phy`, `rx_phy` | `src/link/tx_gearbox.vhd`, `tx_phy.vhd`, `rx_phy.vhd` | `tb_phy_loopback`, `tb_link_loopback` | PASS | tak (z PLL i IDES8/OSER8, 75 MHz) | [Warstwa fizyczna](phy.md) |
 | `clk_rst` | — | — | — | — | planowany (rPLL, CLKDIV) |
-| `link_ctrl` | — | — | — | — | planowany |
+| `link_ctrl` | `src/link/link_ctrl.vhd` | `tb_link_ctrl`, `tb_link_loopback` | PASS | tak (113 MHz) | [Sterowanie łączem](link_ctrl.md) |
 | `uart_rx`, `uart_tx`, `uart_bridge` | — | — | — | — | planowany ([ADR 0006](../adr/0006-tryb-uart-przezroczysty.md)) |
 | `i2c_master`, `sfp_mgmt` | — | — | — | — | planowany |
 | `xspi_slave`, `csr_regs` | — | — | — | — | planowany |

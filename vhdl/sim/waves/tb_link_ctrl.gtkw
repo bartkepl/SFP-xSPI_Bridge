@@ -1,0 +1,45 @@
+[*] GTKWave view for tb_link_ctrl (open with: view.ps1 tb_link_ctrl)
+[timestart] 0
+[size] 1400 700
+[signals_width] 260
+[sst_width] 220
+@200
+-Clock / reset
+@28
+top.tb_link_ctrl.clk
+top.tb_link_ctrl.rst
+@200
+-Configuration
+@28
+top.tb_link_ctrl.cfg_tx_en
+top.tb_link_ctrl.cfg_rx_en
+top.tb_link_ctrl.cfg_los_ignore
+top.tb_link_ctrl.cfg_loopback[1:0]
+top.tb_link_ctrl.cnt_clr
+@200
+-Inputs
+@28
+top.tb_link_ctrl.sfp_los
+top.tb_link_ctrl.sfp_mod_abs
+top.tb_link_ctrl.rx_sync
+top.tb_link_ctrl.remote_ready
+top.tb_link_ctrl.xoff_remote
+top.tb_link_ctrl.ev[6:0]
+top.tb_link_ctrl.dec_valid
+@200
+-Link state and control
+@22
+top.tb_link_ctrl.link_state[1:0]
+@28
+top.tb_link_ctrl.link_up
+top.tb_link_ctrl.link_chg
+top.tb_link_ctrl.rx_ready
+top.tb_link_ctrl.tx_hold
+top.tb_link_ctrl.align_restart
+top.tb_link_ctrl.activity
+@200
+-Near-end loopback
+@22
+top.tb_link_ctrl.phy_samples[7:0]
+top.tb_link_ctrl.tx_bits[1:0]
+top.tb_link_ctrl.cdr_samples[7:0]

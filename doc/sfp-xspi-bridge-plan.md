@@ -555,6 +555,7 @@ vhdl/
                               --   tb_comma_align (poślizg bitu, błędy, fałszywe comma)
                               --   tb_phy_loopback (modele prymitywów Gowin)
                               --   tb_link_loopback (dwa końce, 200 ppm, jitter, ramki w obu kierunkach)
+                              --   tb_link_ctrl
                               --   planowane: tb_uart, tb_i2c_sfp, tb_xspi_slave, tb_top
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
@@ -614,10 +615,11 @@ vhdl/
 - Błąd (kod/dysparytet, długość, nieoczekiwany znak sterujący, CRC, brak miejsca) → odrzucenie ramki (`abort`) i impuls zdarzenia dla liczników.
 - Odbiór stanu strony przeciwnej (gotowość /R/, XON/XOFF); generowanie własnego XOFF z progiem i histerezą (FIFO RX 8 KiB).
 
-**`link_ctrl`**
-- Stany: `DOWN` (LOS lub brak sync) → `SYNC` → `UP`.
-- Liczniki: błędy kodu, dysparytetu, CRC, ramki TX/RX.
-- Tryby pętli zwrotnej dla testów: near-end (TX 8b/10b → RX wewnątrz FPGA) i far-end.
+**`link_ctrl`** — gotowy, [opis](vhdl/link_ctrl.md), [ADR 0008](adr/0008-stan-lacza.md)
+- Stany: `DOWN` (LOS — o ile nie jest ignorowany, brak modułu lub brak synchronizacji) → `SYNC` (własny odbiornik zsynchronizowany, strona przeciwna nadaje /R/) → `UP`. Ramki są rozpoczynane tylko w stanie UP.
+- Sterowanie `tx_framer`: `rx_ready` (gdy 0 — bezczynność /R/) i wstrzymanie nadawania (`tx_hold`).
+- Liczniki 32-bit (zawijanie, `CNT_CLR`): błędy kodu i dysparytetu, CRC, długości, ramkowania, przepełnienia, ramki TX/RX, utraty synchronizacji.
+- Pętle zwrotne: near-end (bity `tx_gearbox` → wejście `cdr_os4x8`, bez SFP) w `link_ctrl`; far-end jako echo ramek (FIFO RX → FIFO TX) na poziomie top.
 
 **`i2c_master` + `sfp_mgmt`**
 - I2C 100 kHz (opcjonalnie 400 kHz), open-drain przez trójstanowe wyjście.
@@ -656,8 +658,8 @@ Zasady:
 |---|---|---|---|
 | 0x00 | ID | R | stała `0x5F5B` |
 | 0x01 | VERSION | R | wersja bitstreamu |
-| 0x02 | CTRL | R/W | TX_EN, RX_EN, LOOPBACK[1:0], SFP_TX_DIS, SOFT_RST |
-| 0x03 | STATUS | R | LINK_UP, SYNC, LOS, TX_FAULT, MOD_ABS, RX_AVAIL, TX_FULL, XOFF_LOCAL, XOFF_REMOTE |
+| 0x02 | CTRL | R/W | TX_EN, RX_EN, LOOPBACK[1:0] (00 normalnie, 01 near-end, 10 echo ramek), SFP_TX_DIS, LOS_IGNORE, CNT_CLR, SOFT_RST |
+| 0x03 | STATUS | R | LINK_UP, SYNC, REMOTE_READY, LOS, TX_FAULT, MOD_ABS, RX_AVAIL, TX_FULL, XOFF_LOCAL, XOFF_REMOTE |
 | 0x04 | IRQ_EN | R/W | maska przerwań |
 | 0x05 | IRQ_STAT | R/W1C | RX_FRAME, TX_EMPTY, LINK_CHG, SFP_CHG, I2C_DONE, ERR |
 | 0x06–0x07 | TX_LEN | R/W | długość ramki do wysłania |
@@ -667,7 +669,7 @@ Zasady:
 | 0x0D | RX_POP | W | zwolnij ramkę |
 | 0x0E | TX_TYPE | R/W | pole TYPE ramki do wysłania (0x00 dane; 0x01 strumień UART; 0x10–0xFF aplikacja) |
 | 0x0F | RX_TYPE | R | pole TYPE ramki na czele RX FIFO |
-| 0x10–0x2F | CNT_* | R | liczniki 32-bit: CODE_ERR, CRC_ERR, LEN_ERR, FRAMING_ERR, RX_OVF, FRAMES_TX, FRAMES_RX |
+| 0x10–0x2F | CNT_* | R | liczniki 32-bit (zawijanie, kasowanie CTRL.CNT_CLR): CODE_ERR, CRC_ERR, LEN_ERR, FRAMING_ERR, RX_OVF, FRAMES_TX, FRAMES_RX, SYNC_LOSS |
 | 0x30 | I2C_DEV | R/W | 0x50 lub 0x51 |
 | 0x31 | I2C_OFFSET | R/W | |
 | 0x32 | I2C_LEN | R/W | |

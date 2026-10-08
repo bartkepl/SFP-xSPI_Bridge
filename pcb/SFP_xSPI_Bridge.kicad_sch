@@ -5,8 +5,28 @@
 	(uuid "ca6491fd-e294-4986-aca7-b24059be2f57")
 	(paper "A4")
 	(lib_symbols)
+	(wire
+		(pts
+			(xy 114.3 40.64) (xy 135.89 40.64)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9be37e83-575e-4e87-8680-1e732c10c7f7")
+	)
+	(wire
+		(pts
+			(xy 114.3 38.1) (xy 135.89 38.1)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b4bef770-e684-4989-a135-6323bc7c867b")
+	)
 	(sheet
-		(at 95.25 59.69)
+		(at 135.89 33.02)
 		(size 19.05 11.43)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -22,7 +42,7 @@
 		)
 		(uuid "7eb2e6d1-c37f-42de-89f7-3b01f01576cd")
 		(property "Sheetname" "EXT_IO"
-			(at 95.25 58.9784 0)
+			(at 135.89 32.3084 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -33,7 +53,7 @@
 			)
 		)
 		(property "Sheetfile" "ext_io.kicad_sch"
-			(at 95.25 71.7046 0)
+			(at 135.89 45.0346 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -41,6 +61,26 @@
 					(size 1.27 1.27)
 				)
 				(justify left top)
+			)
+		)
+		(pin "SFP_SCL" input
+			(at 135.89 40.64 180)
+			(uuid "50f17e86-aa69-4892-952c-33568a5cac7a")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "SFP_SDA" input
+			(at 135.89 38.1 180)
+			(uuid "c9399acc-8448-40ee-85e0-1d137f75bda5")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
 			)
 		)
 		(instances
@@ -52,8 +92,8 @@
 		)
 	)
 	(sheet
-		(at 95.25 31.75)
-		(size 19.05 12.7)
+		(at 95.25 33.02)
+		(size 19.05 11.43)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
@@ -68,7 +108,7 @@
 		)
 		(uuid "99b2d538-1c3c-4904-a097-9a86c52ff40c")
 		(property "Sheetname" "SFP"
-			(at 95.25 31.0384 0)
+			(at 95.25 32.3084 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -89,6 +129,26 @@
 				(justify left top)
 			)
 		)
+		(pin "SFP_SCL" input
+			(at 114.3 40.64 0)
+			(uuid "86046ba7-99b8-4221-8722-efeffce9995e")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(pin "SFP_SDA" input
+			(at 114.3 38.1 0)
+			(uuid "c76cadd3-ff82-4f79-84e4-28bc2f1e6e5f")
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
 		(instances
 			(project "SFP_xSPI_Bridge"
 				(path "/ca6491fd-e294-4986-aca7-b24059be2f57"
@@ -98,53 +158,7 @@
 		)
 	)
 	(sheet
-		(at 137.16 59.69)
-		(size 19.05 11.43)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "de44444a-5407-44f5-b444-2f968bb8d8a6")
-		(property "Sheetname" "MISC"
-			(at 137.16 58.9784 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "misc.kicad_sch"
-			(at 137.16 71.7046 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "SFP_xSPI_Bridge"
-				(path "/ca6491fd-e294-4986-aca7-b24059be2f57"
-					(page "5")
-				)
-			)
-		)
-	)
-	(sheet
-		(at 137.16 31.75)
+		(at 96.52 59.69)
 		(size 19.05 10.16)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -160,7 +174,7 @@
 		)
 		(uuid "e23174ff-62ec-4c6d-a4f2-abf8739cbb81")
 		(property "Sheetname" "PWR"
-			(at 137.16 31.0384 0)
+			(at 96.52 58.9784 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -171,7 +185,7 @@
 			)
 		)
 		(property "Sheetfile" "pwr.kicad_sch"
-			(at 137.16 42.4946 0)
+			(at 96.52 70.4346 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects

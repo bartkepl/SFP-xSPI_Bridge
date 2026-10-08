@@ -4946,6 +4946,16 @@
 		)
 		(uuid "23cb4cac-c19c-4c68-8832-fdd355a1d628")
 	)
+	(label "SFP_RD_P"
+		(at 220.98 46.99 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "33c26f9c-0f62-4e1f-9e94-b25fe15497fc")
+	)
 	(label "SFP_TD_N"
 		(at 104.14 93.98 180)
 		(effects
@@ -4986,16 +4996,6 @@
 		)
 		(uuid "5f9ff8df-5d1c-4e5d-8b33-43b05a225277")
 	)
-	(label "SFP_RD_P"
-		(at 222.25 44.45 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "6b9218a0-c5ee-47a9-8934-4e2a21cb5d3c")
-	)
 	(label "SFP_LOS"
 		(at 201.93 127 0)
 		(effects
@@ -5025,6 +5025,16 @@
 			(justify right bottom)
 		)
 		(uuid "90deba49-0394-4365-8033-2e94c8d0b92a")
+	)
+	(label "SFP_RD_N"
+		(at 220.98 44.45 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "983f5856-a367-4af4-ad03-9208b4a8a8fb")
 	)
 	(label "SFP_TX_FAULT"
 		(at 201.93 129.54 0)
@@ -5095,16 +5105,6 @@
 			(justify left bottom)
 		)
 		(uuid "d0e54329-4366-4611-bdf4-64599e9fd4ec")
-	)
-	(label "SFP_RD_N"
-		(at 222.25 46.99 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "d5d365ce-4e94-443c-95a9-165b2e6f0f16")
 	)
 	(label "SFP_TX_DIS"
 		(at 49.53 93.98 0)

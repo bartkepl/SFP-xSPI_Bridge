@@ -157,52 +157,6 @@
 			)
 		)
 	)
-	(sheet
-		(at 96.52 59.69)
-		(size 19.05 10.16)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "e23174ff-62ec-4c6d-a4f2-abf8739cbb81")
-		(property "Sheetname" "PWR"
-			(at 96.52 58.9784 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "pwr.kicad_sch"
-			(at 96.52 70.4346 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "SFP_xSPI_Bridge"
-				(path "/ca6491fd-e294-4986-aca7-b24059be2f57"
-					(page "3")
-				)
-			)
-		)
-	)
 	(sheet_instances
 		(path "/"
 			(page "1")

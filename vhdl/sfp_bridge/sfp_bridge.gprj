@@ -1,0 +1,13 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="" pn="">gw1n9c-003</Device>
+    <FileList>
+        <File path="src/pkg/bridge_pkg.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/top/sfp_bridge_top.vhd" type="file.vhdl" enable="1"/>
+        <File path="../constraints/sfp_bridge.cst" type="file.cst" enable="1"/>
+        <File path="../constraints/sfp_bridge.sdc" type="file.sdc" enable="1"/>
+    </FileList>
+</Project>

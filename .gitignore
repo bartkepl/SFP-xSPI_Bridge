@@ -22,7 +22,8 @@ fp-info-cache
 kicad-thumbnails/
 
 # Gowin EDA (synthesis / place & route output, per-user settings)
-impl/
+**/impl/*
+!**/impl/*_process_config.json
 *.gprj.user
 *.log
 *.rpt.txt

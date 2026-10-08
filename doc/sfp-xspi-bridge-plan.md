@@ -495,11 +495,11 @@ Składnia atrybutów `DRIVE=3.5` (LVDS25) i `DIFF_RESISTOR=ON` została potwierd
 
 ```
 vhdl/
-  sfp_bridge.gprj
   constraints/
     sfp_bridge.cst
     sfp_bridge.sdc
-  src/
+  sfp_bridge/                 -- projekt Gowin EDA (sfp_bridge.gprj)
+  sfp_bridge/src/
     pkg/
       bridge_pkg.vhd          -- stałe: prędkość linii, rozmiary FIFO, adresy rejestrów, kody K
     top/

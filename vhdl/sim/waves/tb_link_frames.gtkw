@@ -1,0 +1,62 @@
+[*] GTKWave view for tb_link_frames (open with: view.ps1 tb_link_frames)
+[timestart] 0
+[size] 1500 900
+[signals_width] 270
+[sst_width] 220
+@200
+-Character strobe (one character per 10 clock cycles)
+@28
+top.tb_link_frames.clk
+top.tb_link_frames.char_en
+@200
+-Side A transmitter: framer output (character for the encoder)
+@22
+top.tb_link_frames.a_cd[7:0]
+@28
+top.tb_link_frames.a_ck
+top.tb_link_frames.a_busy
+top.tb_link_frames.a_sent
+@22
+top.tb_link_frames.a_code[9:0]
+@200
+-Channel A->B corruption (symbol mask / byte mask)
+@22
+top.tb_link_frames.corrupt_mask[9:0]
+top.tb_link_frames.char_mask[7:0]
+@200
+-Side B receiver: decoded characters
+@28
+top.tb_link_frames.b_dv
+top.tb_link_frames.b_dk
+@22
+top.tb_link_frames.b_dd[7:0]
+@28
+top.tb_link_frames.b_dce
+top.tb_link_frames.b_dde
+@200
+-Side B deframer -> RX FIFO
+@28
+top.tb_link_frames.b_busy
+top.tb_link_frames.b_fw
+top.tb_link_frames.b_fc
+top.tb_link_frames.b_fa
+@24
+top.tb_link_frames.b_rlevel[13:0]
+top.tb_link_frames.b_rfree[13:0]
+@200
+-Events (side B)
+@28
+top.tb_link_frames.ev_ok
+top.tb_link_frames.ev_crc
+top.tb_link_frames.ev_code
+top.tb_link_frames.ev_len
+top.tb_link_frames.ev_frm
+top.tb_link_frames.ev_ovf
+@200
+-Flow control
+@28
+top.tb_link_frames.b_xoff_local
+top.tb_link_frames.a_xoff_remote
+top.tb_link_frames.reader_on
+@24
+top.tb_link_frames.n_rx_frames

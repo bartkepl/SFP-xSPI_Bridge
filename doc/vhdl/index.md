@@ -34,7 +34,7 @@ vhdl/
 | `enc_8b10b` | `src/link/enc_8b10b.vhd` | `tb_8b10b` | PASS | tak | [8b/10b](8b10b.md) |
 | `dec_8b10b` | `src/link/dec_8b10b.vhd` | `tb_8b10b` | PASS | tak | [8b/10b](8b10b.md) |
 | `async_fifo` | `src/fifo/async_fifo.vhd` | `tb_async_fifo` | PASS | tak (101 MHz, 2 BSRAM) | [FIFO](async_fifo.md) |
-| `tx_framer`, `rx_deframer` | — | — | — | — | planowany |
+| `tx_framer`, `rx_deframer` | `src/link/tx_framer.vhd`, `rx_deframer.vhd` | `tb_link_frames` | PASS | tak (70 MHz — zob. uwaga) | [Ramkowanie](framing.md) |
 | `cdr_os4`, `comma_align` | — | — | — | — | planowany |
 | `tx_phy`, `rx_phy`, `clk_rst` | — | — | — | — | planowany (prymitywy Gowin) |
 | `link_ctrl` | — | — | — | — | planowany |
@@ -42,5 +42,7 @@ vhdl/
 | `i2c_master`, `sfp_mgmt` | — | — | — | — | planowany |
 | `xspi_slave`, `csr_regs` | — | — | — | — | planowany |
 | `leds` | — | — | — | — | planowany |
+
+**Uwaga o zegarach:** tor znakowy (framer, koder, dekoder, deframer) osiąga 70 MHz; przy `clk_sys` = 100 MHz wymaga albo restrukturyzacji, albo zmiany architektury zegarów na `clk_sys` = 50 MHz z serializerem IDES8/OSER8 (decyzja w toku).
 
 Próbna synteza modułów z tabeli (wszystkie razem, GW1N-9C, Gowin EDA 1.9.11.03): 174 LUT, 63 rejestry, 1 BSRAM (tablica dekodera 8b/10b), Fmax 125,7 MHz przy docelowym `clk_sys` = 100 MHz.

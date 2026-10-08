@@ -552,7 +552,7 @@ vhdl/
 **`async_fifo`**
 - BSRAM w trybie semi-dual port (zapis port A, odczyt port B, różne zegary), liczniki wskaźników w kodzie Graya, synchronizatory 2-FF.
 - Flagi: pusty, pełny, poziom zapełnienia (do IRQ).
-- Rozmiary minimalne: TX 4 kB (2 bloki), RX 4 kB (2 bloki), bufor I2C 256 B (1 blok). Razem 5 z 26 bloków; zapas pozwala zwiększyć FIFO.
+- Rozmiary: TX 4 KiB (2 bloki), RX 8 KiB (4 bloki — wymagane przez progi XOFF, [ramkowanie](vhdl/framing.md)), bufor I2C 256 B (1 blok), tablica dekodera 8b/10b (1 blok). Razem 8 z 26 bloków.
 - Alternatywnie FIFO IP z Gowin EDA, o ile generuje VHDL. Własna implementacja daje przenośność.
 
 **`tx_framer`**

@@ -12,6 +12,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use ieee.math_real.all;
 
 library std;
 use std.env.all;
@@ -42,6 +43,18 @@ package tb_pkg is
 
   -- boolean -> std_logic
   function to_sl(b : boolean) return std_logic;
+
+  -- Serial line model (simulation of the optical link at bit level).
+  -- The transmitter pushes bits with their nominal start time; the receiver
+  -- samples the line at arbitrary times. Every bit boundary is moved by an
+  -- independent random jitter, uniform in +/- jitter_ui * ui_ns.
+  -- Requires jitter_ui < 0.5 (boundaries keep their order).
+  type t_line is protected
+    procedure configure(jitter_ui, ui_ns : real; seed : positive);
+    procedure push(b : std_logic; t_ns : real);   -- t_ns non-decreasing
+    impure function sample(t_ns : real) return std_logic;
+    impure function pending return natural;       -- bits pushed, not yet passed
+  end protected t_line;
 
 end package tb_pkg;
 
@@ -132,6 +145,62 @@ package body tb_pkg is
     end if;
     finish;
   end procedure;
+
+  type t_line is protected body
+    constant QN : positive := 8192;
+    type t_bitq is array (0 to QN - 1) of std_logic;
+    type t_timq is array (0 to QN - 1) of real;
+    variable q_bit  : t_bitq;
+    variable q_time : t_timq;
+    variable n_wr   : natural := 0;       -- bits pushed
+    variable cur    : integer := -1;      -- index of the bit on the line
+    variable nb     : real := 0.0;        -- jittered start of bit cur + 1
+    variable nb_ok  : boolean := false;
+    variable jit    : real := 0.0;        -- jitter amplitude in ns
+    variable s1, s2 : positive := 1;
+
+    procedure configure(jitter_ui, ui_ns : real; seed : positive) is
+    begin
+      jit   := jitter_ui * ui_ns;
+      s1    := seed;
+      s2    := seed + 7919;
+      n_wr  := 0;
+      cur   := -1;
+      nb_ok := false;
+    end procedure;
+
+    procedure push(b : std_logic; t_ns : real) is
+    begin
+      assert n_wr - cur < QN - 1 report "t_line: queue overflow" severity failure;
+      q_bit(n_wr mod QN)  := b;
+      q_time(n_wr mod QN) := t_ns;
+      n_wr := n_wr + 1;
+    end procedure;
+
+    impure function sample(t_ns : real) return std_logic is
+      variable u : real;
+    begin
+      loop
+        if not nb_ok and cur + 1 < n_wr then
+          uniform(s1, s2, u);
+          nb    := q_time((cur + 1) mod QN) + jit * (2.0 * u - 1.0);
+          nb_ok := true;
+        end if;
+        exit when not nb_ok or t_ns < nb;
+        cur   := cur + 1;
+        nb_ok := false;
+      end loop;
+      if cur < 0 then
+        return '0';
+      end if;
+      return q_bit(cur mod QN);
+    end function;
+
+    impure function pending return natural is
+    begin
+      return n_wr - (cur + 1);
+    end function;
+  end protected body t_line;
 
   procedure clk_gen(signal clk : out std_logic; constant period : time;
                     signal stop : in boolean) is

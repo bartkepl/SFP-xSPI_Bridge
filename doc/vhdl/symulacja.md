@@ -31,6 +31,15 @@ Przy błędzie wypisywane są pierwsze nieudane sprawdzenia (`CHECK FAILED: ...`
 
 Skrypt kompiluje pliki z `sources.txt` (w tej kolejności) oraz wszystkie `tb_*.vhd`. Nowy moduł dopisuje się do `sources.txt` za modułami, od których zależy.
 
+## Wspólne elementy testbenchy (`tb_pkg`)
+
+| Element | Opis |
+|---|---|
+| `check`, `check_equal` | sprawdzenie warunku lub wartości; liczniki sprawdzeń i błędów |
+| `tb_finish(nazwa)` | wiersz podsumowania `TB <nazwa> PASS (...)` lub `FAIL (...)` i koniec symulacji |
+| `clk_gen` | generator zegara |
+| `t_line` | model linii szeregowej: nadajnik dopisuje bity z nominalnym czasem początku (`push`), odbiornik próbkuje linię w dowolnej chwili (`sample`); każda granica bitu jest przesunięta niezależnym jitterem o rozkładzie jednostajnym ±J·UI (`configure`), odchyłkę częstotliwości wyznaczają czasy podane przez nadajnik |
+
 ## Podgląd przebiegów
 
 ```

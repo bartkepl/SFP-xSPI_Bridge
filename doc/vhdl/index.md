@@ -35,7 +35,8 @@ vhdl/
 | `dec_8b10b` | `src/link/dec_8b10b.vhd` | `tb_8b10b` | PASS | tak | [8b/10b](8b10b.md) |
 | `async_fifo` | `src/fifo/async_fifo.vhd` | `tb_async_fifo` | PASS | tak (101 MHz, 2 BSRAM) | [FIFO](async_fifo.md) |
 | `tx_framer`, `rx_deframer` | `src/link/tx_framer.vhd`, `rx_deframer.vhd` | `tb_link_frames` | PASS | tak (70 MHz) | [Ramkowanie](framing.md) |
-| `cdr_os4x8`, `comma_align` | — | — | — | — | planowany |
+| `cdr_os4x8` | `src/link/cdr_os4x8.vhd` | `tb_cdr_os4x8` | PASS | tak (74 MHz) | [Odzysk danych](cdr.md) |
+| `comma_align` | — | — | — | — | planowany |
 | `tx_phy`, `rx_phy`, `clk_rst` | — | — | — | — | planowany (prymitywy Gowin) |
 | `link_ctrl` | — | — | — | — | planowany |
 | `uart_rx`, `uart_tx`, `uart_bridge` | — | — | — | — | planowany ([ADR 0006](../adr/0006-tryb-uart-przezroczysty.md)) |

@@ -550,7 +550,8 @@ vhdl/
   sim/
     tb/                       -- tb_pkg + testbenche tb_<moduł>.vhd
                               --   gotowe: tb_sync, tb_crc32, tb_8b10b, tb_async_fifo, tb_link_frames
-                              --   planowane: tb_cdr_os4x8 (±100 ppm, jitter), tb_link_loopback,
+                              --   tb_cdr_os4x8 (±100…±1000 ppm, jitter do ±0,3 UI)
+                              --   planowane: tb_comma_align, tb_link_loopback,
                               --              tb_uart, tb_i2c_sfp, tb_xspi_slave, tb_top
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
@@ -594,12 +595,11 @@ vhdl/
 
 **`rx_phy`** — `TLVDS_IBUF` → `IDES8` (FCLK = 200 MHz, PCLK = 50 MHz) → 8 próbek na takt `clk_sys`.
 
-**`cdr_os4x8`** (serce odbiornika, wzorowany na XAPP224 / XAPP523)
-- Wejście: 8 próbek na takt (2 bity × 4 próbki). Wykrywanie zboczy między kolejnymi próbkami (także między taktami).
-- Statystyka zboczy w oknie kilkunastu taktów → wybór fazy próbkowania najdalej od zboczy.
-- Śledzenie dryfu: przy zawinięciu fazy wydanie **1 albo 3 bitów** zamiast 2, co kompensuje różnicę ppm.
-- Wyjście: liczba bitów (1–3) + `bits(2:0)` do rejestru przesuwnego.
-- Filtr histerezy, żeby jitter nie przełączał fazy co takt.
+**`cdr_os4x8`** — gotowy, [opis](vhdl/cdr.md)
+- Wejście: 8 próbek na takt (2 bity × 4 próbki). Wykrywanie zboczy między kolejnymi próbkami (także między taktami), liczniki zboczy w czterech klasach fazowych przez okno 32 taktów.
+- Decyzja raz na okno: średnie położenie granic bitów względem chwili próbkowania; krok fazy o 1/4 UI przy odchyleniu > 0,625 okresu próbkowania (strefa martwa z histerezą — jitter nie przełącza fazy); osobna reguła dla granic leżących przy chwili próbkowania.
+- Śledzenie dryfu: przy zawinięciu fazy wydanie **1 albo 3 bitów** zamiast 2, co kompensuje różnicę ppm (zakres ok. 3900 ppm).
+- Wyjście: liczba bitów (1–3) + `bits(2:0)`.
 
 **`comma_align`**
 - Rejestr przesuwny ≥ 20 bitów, wykrywanie wzorca comma (`0011111` / `1100000`) i ustalenie granicy słowa 10-bit.
@@ -691,7 +691,7 @@ Zasady:
 
 Deklaracje komponentów: `library gw1n; use gw1n.components.all;` (biblioteka z Gowin EDA). Użyte prymitywy: `rPLL`, `CLKDIV`, `TLVDS_IBUF`, `TLVDS_OBUF`, `IDES8`, `OSER8`, opcjonalnie `IODELAY` (strojenie fazy RX), `IOBUF` (I2C, xSPI IO). Pamięci (FIFO — SDPB, tablica dekodera — pROM) są wnioskowane z kodu; synteza potwierdza mapowanie na BSRAM.
 
-Weryfikacja: GHDL, samosprawdzające testbenche VHDL-2008, przebiegi w GTKWave ([ADR 0003](adr/0003-weryfikacja-ghdl.md), [symulacja](vhdl/symulacja.md)); moduły z prymitywami Gowin z modelami `prim_sim.vhd`. Testbench `tb_cdr_os4x8` z odchyleniem częstotliwości ±100 ppm i losowym jitterem ±0,2 UI.
+Weryfikacja: GHDL, samosprawdzające testbenche VHDL-2008, przebiegi w GTKWave ([ADR 0003](adr/0003-weryfikacja-ghdl.md), [symulacja](vhdl/symulacja.md)); moduły z prymitywami Gowin z modelami `prim_sim.vhd`. Testbench `tb_cdr_os4x8`: odchyłka częstotliwości do ±1000 ppm, losowy jitter do ±0,3 UI (wymaganie: ±100 ppm, ±0,2 UI).
 
 ### 7.7 Tryb przezroczysty UART
 

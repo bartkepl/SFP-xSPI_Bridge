@@ -1,0 +1,41 @@
+[*] GTKWave view for tb_cdr_os4x8 (open with: view.ps1 tb_cdr_os4x8)
+[timestart] 0
+[size] 1400 700
+[signals_width] 260
+[sst_width] 220
+@200
+-Clock / reset / scenario
+@28
+top.tb_cdr_os4x8.clk
+top.tb_cdr_os4x8.rst
+@24
+top.tb_cdr_os4x8.scen_no
+@200
+-Samples (bit 0 earliest)
+@28
+top.tb_cdr_os4x8.samples[7:0]
+@200
+-Edge statistics (internal)
+@24
+top.tb_cdr_os4x8.dut.wcnt[4:0]
+top.tb_cdr_os4x8.dut.late_q[9:0]
+top.tb_cdr_os4x8.dut.early_q[9:0]
+top.tb_cdr_os4x8.dut.tot_q[9:0]
+@28
+top.tb_cdr_os4x8.dut.near_q
+@200
+-Phase
+@24
+top.tb_cdr_os4x8.phase[1:0]
+@28
+top.tb_cdr_os4x8.shift_up
+top.tb_cdr_os4x8.shift_dn
+top.tb_cdr_os4x8.activity
+@200
+-Recovered bits
+@24
+top.tb_cdr_os4x8.nbits[1:0]
+@28
+top.tb_cdr_os4x8.bits[2:0]
+@24
+top.tb_cdr_os4x8.bit_errs

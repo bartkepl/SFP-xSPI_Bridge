@@ -21,7 +21,11 @@
 --   0x00-01 ID, 0x02 VERSION, 0x04 CTRL, 0x05 STATUS, 0x06 STATUS_FAST,
 --   0x07 IRQ_EN, 0x08 IRQ_STAT (W1C), 0x0A-0B TX_SPACE, 0x0C-0D RX_LEVEL,
 --   0x10-2F counters, 0x50 MODE_CTRL, 0x51-52 UART_DIV, 0x53 UART_STATUS (W1C).
---   I2C / DDM (0x30-0x4F, 0x80-0xFF): stage 8, read as 0.
+--   I2C / DDM 0x30-0x4F: registers of sfp_mgmt (mg_regs, latched with the
+--   rest); the WRITE_REG bytes reach sfp_mgmt through wr_apply (one pulse in
+--   the cycle the CSR writes are applied, wr_addr / wr_data / wr_cnt static).
+--   I2C_BUF 0x80-0xFF: read directly from the sfp_mgmt buffer (buf_rdata at
+--   reg_addr, not latched; static while I2C_STATUS.BUSY = 0).
 --
 -- Resets: rst (rst_sys, includes the soft reset) for all registers except
 -- MODE_CTRL, which uses rst_hard (PLL lock, HOST_RST_N): a soft reset keeps
@@ -56,6 +60,10 @@ entity csr_regs is
     wr_cnt       : in  natural range 0 to WR_MAX;
     wr_txn       : in  std_logic;
     ev_tx_ovf_t  : in  std_logic;                -- toggle from xspi_slave
+    -- sfp_mgmt
+    wr_apply     : out std_logic;                -- WRITE_REG bytes applied now
+    mg_regs      : in  t_mg_regs;                -- 0x30-0x4F
+    buf_rdata    : in  std_logic_vector(7 downto 0);  -- I2C_BUF at reg_addr
     -- status (clk_sys domain, SFP signals synchronized)
     link_state   : in  t_link_state;
     rx_sync      : in  std_logic;
@@ -127,6 +135,7 @@ architecture rtl of csr_regs is
   signal tx_space      : unsigned(15 downto 0);
   signal tx_empty      : std_logic;
   signal sfast         : std_logic_vector(7 downto 0);
+  signal apply         : std_logic;
 
   function to_sl(b : boolean) return std_logic is
   begin
@@ -141,6 +150,9 @@ begin
     port map (clk => clk, d => wr_txn, q => txn_s);
   u_ovf : entity work.sync_bit generic map (STAGES => 2, INIT_VAL => '0')
     port map (clk => clk, d => ev_tx_ovf_t, q => ovf_s);
+
+  -- new WRITE_REG transaction completed (CS rose)
+  apply <= '1' when rst = '0' and cs_d = '0' and cs_s = '1' and txn_s /= txn_done else '0';
 
   tx_space <= to_unsigned(TX_DEPTH, 16) - tx_level;
   tx_empty <= '1' when tx_level = 0 else '0';
@@ -174,6 +186,9 @@ begin
       for b in 0 to 3 loop
         v(16#10# + 4 * i + b) := std_logic_vector(counters(i)(8 * b + 7 downto 8 * b));
       end loop;
+    end loop;
+    for i in 0 to MG_SIZE - 1 loop
+      v(MG_BASE + i) := mg_regs(i);
     end loop;
     v(16#50#) := "00000" & mode;
     v(16#51#) := std_logic_vector(div_q(7 downto 0));
@@ -233,7 +248,7 @@ begin
         w1c   := (others => '0');
         u_w1c := (others => '0');
         new_mode := mode;
-        if cs_d = '0' and cs_s = '1' and txn_s /= txn_done then
+        if apply = '1' then
           txn_done <= txn_s;
           for i in 0 to WR_MAX - 1 loop
             if i < wr_cnt then
@@ -268,13 +283,14 @@ begin
       -- MODE_CTRL: kept over a soft reset
       if rst_hard = '1' then
         mode <= (others => '0');
-      elsif rst = '0' and cs_d = '0' and cs_s = '1' and txn_s /= txn_done then
+      elsif apply = '1' then
         mode <= new_mode;
       end if;
     end if;
   end process;
 
-  reg_rdata   <= snap(to_integer(reg_addr)) when reg_addr < N_SNAP else x"00";
+  reg_rdata   <= snap(to_integer(reg_addr)) when reg_addr < N_SNAP else
+                 buf_rdata when reg_addr >= I2C_BUF_BASE else x"00";
   status_fast <= snap(16#06#);
 
   cfg_tx_en      <= ctrl(0);
@@ -289,5 +305,6 @@ begin
   mode_rtscts    <= mode(2);
   uart_div       <= div_q;
   irq_n          <= not irq_q;
+  wr_apply       <= apply;
 
 end architecture rtl;

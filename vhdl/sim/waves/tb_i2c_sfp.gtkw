@@ -1,0 +1,56 @@
+[*] GTKWave view for tb_i2c_sfp (open with: view.ps1 tb_i2c_sfp)
+[timestart] 0
+[size] 1400 800
+[signals_width] 260
+[sst_width] 220
+@28
+top.tb_i2c_sfp.rst
+@200
+-SFP status
+@28
+top.tb_i2c_sfp.abs_pin
+top.tb_i2c_sfp.sfp_mod_abs
+top.tb_i2c_sfp.los_pin
+top.tb_i2c_sfp.sfp_los
+top.tb_i2c_sfp.tx_dis_pin
+@200
+-Host command
+@28
+top.tb_i2c_sfp.wr_apply
+top.tb_i2c_sfp.dut.busy_q
+top.tb_i2c_sfp.dut.nack_q
+top.tb_i2c_sfp.dut.tmo_q
+top.tb_i2c_sfp.dut.bad_q
+top.tb_i2c_sfp.ev_done
+@24
+top.tb_i2c_sfp.n_done
+@200
+-DDM polling
+@28
+top.tb_i2c_sfp.dut.due
+top.tb_i2c_sfp.dut.owner
+top.tb_i2c_sfp.dut.d_valid
+@24
+top.tb_i2c_sfp.dut.d_seq[7:0]
+@200
+-I2C master
+@28
+top.tb_i2c_sfp.dut.u_i2c.state
+top.tb_i2c_sfp.dut.u_i2c.seq
+@24
+top.tb_i2c_sfp.dut.u_i2c.cnt[6:0]
+@22
+top.tb_i2c_sfp.dut.u_i2c.rx_data[7:0]
+@28
+top.tb_i2c_sfp.dut.u_i2c.rx_valid
+@200
+-Bus
+@28
+top.tb_i2c_sfp.scl_x
+top.tb_i2c_sfp.sda_x
+top.tb_i2c_sfp.scl_sl
+top.tb_i2c_sfp.sda_stuck
+top.tb_i2c_sfp.scl_tb
+@24
+top.tb_i2c_sfp.n_start
+top.tb_i2c_sfp.n_viol

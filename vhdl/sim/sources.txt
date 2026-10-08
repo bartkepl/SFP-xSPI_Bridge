@@ -24,4 +24,6 @@ sfp_bridge/src/uart/uart_bridge.vhd
 sfp_bridge/src/host/xspi_slave.vhd
 sfp_bridge/src/host/csr_regs.vhd
 sfp_bridge/src/host/frame_echo.vhd
+sfp_bridge/src/mgmt/i2c_master.vhd
+sfp_bridge/src/mgmt/sfp_mgmt.vhd
 sim/tb/tb_pkg.vhd

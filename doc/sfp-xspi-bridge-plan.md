@@ -13,7 +13,7 @@ Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia 
 | Strona optyczna | moduł SFP (INF-8074i) bez wewnętrznego CDR: 100BASE-FX / OC-3 lub 1000BASE-X (MM/SM, duplex lub BiDi); SFP+ nieobsługiwane |
 | Zasilanie | jedno **3,3 V** (wersja UV FPGA, moduł SFP) |
 
-> Status dokumentu: plan konstrukcji, aktualizowany wraz z projektem. Schemat rev. A gotowy, PCB w toku, VHDL — etapy 1–7 i 9 z 10 ([stan modułów](vhdl/index.md)). Pozycje oznaczone **[DO WERYFIKACJI]** pozostają do sprawdzenia; decyzje i ich uzasadnienia są w [rejestrze ADR](adr/README.md). Kopie dokumentacji producentów: [`datasheets/`](datasheets/).
+> Status dokumentu: plan konstrukcji, aktualizowany wraz z projektem. Schemat rev. A gotowy, PCB w toku, VHDL — etapy 1–9 z 10 ([stan modułów](vhdl/index.md)). Pozycje oznaczone **[DO WERYFIKACJI]** pozostają do sprawdzenia; decyzje i ich uzasadnienia są w [rejestrze ADR](adr/README.md). Kopie dokumentacji producentów: [`datasheets/`](datasheets/).
 
 ---
 
@@ -546,7 +546,7 @@ vhdl/
       uart_bridge.vhd         -- pakietyzacja ramek TYPE 0x01, RTS/CTS (ADR 0006)
     mgmt/
       i2c_master.vhd
-      sfp_mgmt.vhd            -- mailbox I2C, autopolling DDM, GPIO SFP
+      sfp_mgmt.vhd            -- skrzynka I2C, odczyt DDM, sygnały SFP
       leds.vhd
   sfp_bridge_testled/         -- projekt testowy: miganie LED
   sim/
@@ -559,7 +559,8 @@ vhdl/
                               --   tb_link_ctrl, tb_clk_rst (modele rPLL i CLKDIV), tb_uart, tb_uart_bridge
                               --   tb_xspi_slave, tb_async_fifo_stable
                               --   tb_csr_regs (z xspi_slave), tb_host_clk (DCS, echo ramek)
-                              --   planowane: tb_i2c_sfp, tb_top
+                              --   tb_i2c_sfp (model modułu SFP, kontrola czasów I2C)
+                              --   planowane: tb_top
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
     run_tests.ps1 / .sh       -- uruchamianie testów (GHDL w WSL)
@@ -588,7 +589,7 @@ vhdl/
 - BSRAM w trybie semi-dual port (zapis port A, odczyt port B, różne zegary); wskaźnik odczytu w kodzie Graya, zatwierdzony wskaźnik zapisu przez handshake (zatwierdzenie przesuwa wskaźnik o całą ramkę).
 - Zatwierdzanie i odrzucanie ramki (`commit` / `abort`).
 - Flagi: pusty, pełny (dokładne); poziomy zapełnienia (informacyjne, takt opóźnienia).
-- Rozmiary: TX 4 KiB (2 bloki), RX 8 KiB (4 bloki — wymagane przez progi XOFF, [ramkowanie](vhdl/framing.md)), bufor I2C 256 B (1 blok), tablica dekodera 8b/10b (1 blok). Razem 8 z 26 bloków.
+- Rozmiary: TX 4 KiB (2 bloki), RX 8 KiB (4 bloki — wymagane przez progi XOFF, [ramkowanie](vhdl/framing.md)), tablica dekodera 8b/10b (1 blok). Razem 7 z 26 bloków. Bufor I2C (128 B) jest w pamięci rozproszonej (SSRAM), bo odczyt rejestrów z domeny SCLK wymaga odczytu asynchronicznego.
 
 **`tx_framer`** — gotowy, [opis](vhdl/framing.md)
 - Ramka: `K27.7 (SOF) | TYPE | LEN_H | LEN_L | payload (1..1024 B) | CRC32 (4 B) | K29.7 (EOF)`; FIFO TX zawiera ramki w postaci `TYPE, LEN_H, LEN_L, payload`.
@@ -628,11 +629,11 @@ vhdl/
 - Liczniki 32-bit (zawijanie, `CNT_CLR`): błędy kodu i dysparytetu, CRC, długości, ramkowania, przepełnienia, ramki TX/RX, utraty synchronizacji.
 - Pętle zwrotne: near-end (bity `tx_gearbox` → wejście `cdr_os4x8`, bez SFP) w `link_ctrl`; far-end jako echo ramek (FIFO RX → FIFO TX, `MODE_CTRL.FRAME_ECHO`, moduł `frame_echo`).
 
-**`i2c_master` + `sfp_mgmt`**
-- I2C 100 kHz (opcjonalnie 400 kHz), open-drain przez trójstanowe wyjście.
-- Mailbox: rejestry `I2C_DEV` (0x50/0x51), `I2C_OFFSET`, `I2C_LEN`, `I2C_CMD` (READ/WRITE), `I2C_STATUS` (BUSY/DONE/NACK), bufor 256 B w BSRAM.
-- Autopolling DDM co np. 1 s (bajty 96–105 z A2h: temperatura, Vcc, prąd lasera, Tx power, Rx power) → rejestry cienia.
-- Debounce i rejestry statusu `TX_FAULT`, `LOS`, `MOD_ABS`. Zmiana stanu generuje przerwanie.
+**`i2c_master` + `sfp_mgmt`** — gotowe, [opis](vhdl/sfp_mgmt.md)
+- I2C 100 kHz (INF-8074i), open-drain, wydłużanie SCL przez moduł, limit 25 ms, odblokowanie magistrali (impulsy SCL przy SDA trzymanej przez moduł).
+- Skrzynka poleceń: `I2C_DEV`, `I2C_OFFSET`, `I2C_LEN` (1–128), `I2C_CMD` (READ / WRITE), `I2C_STATUS` (BUSY / NACK / TIMEOUT / BAD_CMD), bufor `I2C_BUF` 128 B w pamięci rozproszonej (odczyt asynchroniczny w domenie SCLK, jak zatrzask CSR).
+- Odczyt DDM co `DDM_PERIOD` × 100 ms (domyślnie 1 s), od 300–400 ms po włożeniu modułu: bajty 96–110 z A2h w jednym poleceniu; kopia temperatury, Vcc, prądu lasera, mocy TX i RX (little-endian) oraz bajtu 110, aktualizowana w całości po udanym odczycie.
+- Filtry `MOD_ABS` (10 ms), `LOS` i `TX_FAULT` (50 µs); zmiana stanu generuje przerwanie `SFP_CHG`. `SFP_TX_DIS` = 1 w czasie resetu.
 
 **`leds`** — LINK (stan `UP`), ACT (rozciągnięty impuls przy ramce TX/RX); diody aktywne stanem niskim.
 
@@ -674,17 +675,20 @@ Adresy bajtowe, wartości wielobajtowe little-endian ([ADR 0009](adr/0009-interf
 | 0x0A–0x0B | TX_SPACE | R | wolne bajty w FIFO TX |
 | 0x0C–0x0D | RX_LEVEL | R | bajty zatwierdzonych ramek w FIFO RX |
 | 0x10–0x2F | CNT_* | R | liczniki 32-bit (zawijanie, kasowanie `CTRL.CNT_CLR`): CODE_ERR, CRC_ERR, LEN_ERR, FRAMING_ERR, RX_OVF, FRAMES_TX, FRAMES_RX, SYNC_LOSS |
-| 0x30 | I2C_DEV | R/W | 0x50 lub 0x51 (etap 8) |
-| 0x31 | I2C_OFFSET | R/W | (etap 8) |
-| 0x32 | I2C_LEN | R/W | (etap 8) |
-| 0x33 | I2C_CMD | W | START_READ / START_WRITE (etap 8) |
-| 0x34 | I2C_STATUS | R | BUSY, DONE, NACK (etap 8) |
-| 0x40–0x4E | DDM_* | R | rejestry cienia DDM (etap 8) |
-| 0x4F | DDM_PERIOD | R/W | okres autopollingu (etap 8) |
+| 0x30 | I2C_DEV | R/W | adres 7-bit urządzenia I2C; po resecie 0x50 (A0h) |
+| 0x31 | I2C_OFFSET | R/W | offset w urządzeniu |
+| 0x32 | I2C_LEN | R/W | liczba bajtów 1–128 |
+| 0x33 | I2C_CMD | W | 0x01 READ, 0x02 WRITE (odczyt 0) |
+| 0x34 | I2C_STATUS | R | b0 `BUSY` (ustawiony już w takcie przyjęcia polecenia), b1 `NACK`, b2 `TIMEOUT`, b3 `BAD_CMD` (`LEN` spoza 1–128, brak modułu, polecenie w czasie `BUSY`; do następnego przyjętego polecenia) |
+| 0x40–0x49 | DDM_TEMP, DDM_VCC, DDM_TXBIAS, DDM_TXPWR, DDM_RXPWR | R | kopia A2h bajtów 96–105, wartości 16-bit little-endian |
+| 0x4A | DDM_FLAGS | R | kopia A2h bajtu 110 |
+| 0x4B | DDM_STAT | R | b0 `VALID` (udany odczyt od włożenia modułu), b1 `NACK`, b2 `TIMEOUT` (ostatni odczyt) |
+| 0x4C | DDM_SEQ | R | licznik udanych odczytów DDM (zawijanie) |
+| 0x4F | DDM_PERIOD | R/W | okres odczytu DDM × 100 ms; 0 = wyłączony; po resecie 10 |
 | 0x50 | MODE_CTRL | R/W | b0 `UART_MODE`, b1 `FRAME_ECHO`, b2 `RTSCTS_EN`; zachowywany przy resecie programowym; zmiana b0 / b1 resetuje mostek |
 | 0x51–0x52 | UART_DIV | R/W | takty `clk_sys` na bit UART (434 = 115 200) |
 | 0x53 | UART_STATUS | R/W1C | b0 `RX_OVF`, b1 `FRAME_ERR` |
-| 0x80–0xFF | I2C_BUF | R/W | okno na bufor I2C (etap 8) |
+| 0x80–0xFF | I2C_BUF | R/W | bufor I2C 128 B: wynik READ, dane do WRITE (od 0x80); czytany bez zatrzasku, stały przy `BUSY` = 0 |
 
 Nieopisane adresy: odczyt 0, zapis ignorowany. `HOST_IRQ_N` = 0, gdy (`IRQ_STAT` ∧ `IRQ_EN`) ≠ 0.
 
@@ -694,10 +698,10 @@ Nieopisane adresy: odczyt 0, zapis ignorowany. `HOST_IRQ_N` = 0, gdy (`IRQ_STAT`
 |---|---|---|---|
 | Tor znakowy: FIFO TX 4 KiB, framer, CRC, 8b/10b, deframer, FIFO RX 8 KiB | 1104 | 7 | próbna synteza |
 | CDR + comma align + PHY + link_ctrl | 300–600 | – | szacunek |
-| xSPI slave + CSR | 400–600 | – | szacunek |
+| xSPI slave + CSR | 1079 | – | próbna synteza |
 | UART + pakietyzacja | ok. 300 | – | szacunek |
-| I2C + mailbox + DDM | 200–400 | 1 | szacunek |
-| **Razem** | **ok. 2,3–3,0k / 8,6k** | **8 / 26** | |
+| I2C + skrzynka + DDM (z zatrzaskiem CSR 0x30–0x4F) | ok. 1000 | – | próbna synteza (32 × SSRAM) |
+| **Razem** | **ok. 3,8–4,1k / 8,6k** | **7 / 26** | |
 
 ### 7.6 Prymitywy Gowin (VHDL)
 

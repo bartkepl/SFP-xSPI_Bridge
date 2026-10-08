@@ -8,8 +8,8 @@ Rejestry mostka w domenie `clk_sys` ([ADR 0009](../adr/0009-interfejs-hosta.md);
 
 | Kierunek | Mechanizm |
 |---|---|
-| odczyt | `CS_N` przechodzi przez synchronizator 2-FF; przy jego opadnięciu cała przestrzeń odczytu (0x00–0x53) jest zatrzaskiwana w `snap`. `xspi_slave` czyta wyłącznie `snap` (`reg_addr` → `reg_rdata`, `status_fast`). Wartości są niezmienne do końca transakcji: 32-bitowe liczniki i wielobajtowe poziomy są spójne, `IRQ_STAT` odczytany i skasowany zapisem W1C nie gubi zdarzeń. Zatrzask jest gotowy ok. 4 takty `clk_sys` (80 ns) po opadnięciu CS. |
-| zapis | `xspi_slave` zbiera bajty `WRITE_REG` (`wr_addr`, `wr_data`, `wr_cnt`) i przełącza `wr_txn`. Po podniesieniu CS (zsynchronizowanym) bajty nowej transakcji są stosowane jednocześnie — np. dwubajtowy `UART_DIV` zmienia się atomowo. Bufor jest stały, gdy CS ma stan wysoki; host utrzymuje CS w stanie wysokim ≥ 100 ns. |
+| odczyt | `CS_N` przechodzi przez synchronizator 2-FF; przy jego opadnięciu cała przestrzeń odczytu 0x00–0x53 (z rejestrami [`sfp_mgmt`](sfp_mgmt.md) 0x30–0x4F) jest zatrzaskiwana w `snap`. Wyjątek: `I2C_BUF` (0x80–0xFF) jest czytany bezpośrednio z bufora `sfp_mgmt` (`buf_rdata` pod `reg_addr`), stałego przy `I2C_STATUS.BUSY` = 0. `xspi_slave` czyta wyłącznie `snap` (`reg_addr` → `reg_rdata`, `status_fast`). Wartości są niezmienne do końca transakcji: 32-bitowe liczniki i wielobajtowe poziomy są spójne, `IRQ_STAT` odczytany i skasowany zapisem W1C nie gubi zdarzeń. Zatrzask jest gotowy ok. 4 takty `clk_sys` (80 ns) po opadnięciu CS. |
+| zapis | `xspi_slave` zbiera bajty `WRITE_REG` (`wr_addr`, `wr_data`, `wr_cnt`) i przełącza `wr_txn`. Po podniesieniu CS (zsynchronizowanym) bajty nowej transakcji są stosowane jednocześnie — np. dwubajtowy `UART_DIV` zmienia się atomowo. W tym samym takcie impuls `wr_apply` przekazuje transakcję do `sfp_mgmt` (rejestry 0x30–0x4F, `I2C_BUF`). Bufor jest stały, gdy CS ma stan wysoki; host utrzymuje CS w stanie wysokim ≥ 100 ns. |
 
 Ścieżki z `snap` do `xspi_slave` i z bufora zapisu do `csr_regs` są statyczne w czasie użycia — w ograniczeniach czasowych są wyłączone grupami zegarów asynchronicznych.
 
@@ -19,6 +19,7 @@ Rejestry mostka w domenie `clk_sys` ([ADR 0009](../adr/0009-interfejs-hosta.md);
 |---|---|
 | zegar, reset | `clk` (`clk_sys`), `rst` (`rst_sys`, z resetem programowym), `rst_hard` (bez resetu programowego — dla `MODE_CTRL`) |
 | xSPI | `cs_n`, `reg_addr`, `reg_rdata`, `status_fast`, `wr_addr`, `wr_data`, `wr_cnt`, `wr_txn`, `ev_tx_ovf_t` |
+| `sfp_mgmt` | `wr_apply` (wyjście), `mg_regs` (0x30–0x4F), `buf_rdata` (`I2C_BUF` pod `reg_addr`) |
 | stan | `link_state`, `rx_sync`, `remote_ready`, `xoff_local`, `xoff_remote`, `sfp_los`, `sfp_tx_fault`, `sfp_mod_abs`, `mode_sel`, `tx_level`, `rx_level`, `counters` |
 | zdarzenia | `ev_rx_frame`, `ev_link_chg`, `ev_i2c_done`, `ev_err`, `ev_uart_ovf`, `ev_uart_ferr` |
 | konfiguracja | `cfg_tx_en`, `cfg_rx_en`, `cfg_lb_near`, `cfg_sfp_tx_dis`, `cfg_los_ignore`, `cnt_clr` (impuls), `soft_rst`, `mode_uart`, `mode_echo`, `mode_rtscts`, `uart_div`, `irq_n` |
@@ -53,9 +54,10 @@ Próbna synteza `csr_regs` + `xspi_slave` (GW1N-9C, `clk_sys` 50 MHz, SCLK 40 MH
 | 7 | `SOFT_RST`: reset mostka, `CTRL` = 0x03, `MODE_CTRL` zachowany |
 | 8 | `RTSCTS_EN` bez resetu; zmiana `UART_MODE` → reset, tryb zachowany; `rst_hard` kasuje `MODE_CTRL` |
 | 9 | `UART_DIV` (2 bajty, little-endian), `UART_STATUS` W1C |
+| 10 | z `sfp_mgmt` (magistrala I2C bez urządzeń): rejestry skrzynki i `DDM_PERIOD` — odczyt zwrotny; `I2C_BUF` 8 B zapis / odczyt; polecenie bez modułu → `BAD_CMD`, `I2C_DONE`; z modułem → `BUSY` w transakcji bezpośrednio po poleceniu, potem `NACK` — zob. [Zarządzanie SFP](sfp_mgmt.md) |
 
 **Test mutacyjny:** wykrywane — brak zatrzasku (odczyt wartości bieżących), stosowanie zapisu przed podniesieniem CS, kasowanie `MODE_CTRL` resetem programowym, W1C ustawiające zamiast kasować, brak resetu przy zmianie trybu.
 
 ## Przebieg
 
-`.\view.ps1 tb_csr_regs` — czas symulacji ok. 26 µs. Każda transakcja: `cs_n` = 0; po ok. 3 taktach `clk_sys` `cs_s` = 0 (zatrzask), po podniesieniu CS i synchronizacji `txn_done` dogania `wr_txn` i rejestry (`ctrl`, `irq_en`, `mode`) przyjmują nowe wartości. W fazie 5 `irq_n` opada po zdarzeniu i wraca po zapisie W1C; w fazach 7–8 impulsy `soft_rst` z krótkim `rst`.
+`.\view.ps1 tb_csr_regs` — czas symulacji ok. 160 µs (faza 10 z poleceniem I2C ok. 130 µs). Każda transakcja: `cs_n` = 0; po ok. 3 taktach `clk_sys` `cs_s` = 0 (zatrzask), po podniesieniu CS i synchronizacji `txn_done` dogania `wr_txn` i rejestry (`ctrl`, `irq_en`, `mode`) przyjmują nowe wartości. W fazie 5 `irq_n` opada po zdarzeniu i wraca po zapisie W1C; w fazach 7–8 impulsy `soft_rst` z krótkim `rst`.

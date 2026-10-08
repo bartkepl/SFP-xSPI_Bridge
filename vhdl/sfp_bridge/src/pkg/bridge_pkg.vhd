@@ -95,4 +95,25 @@ package bridge_pkg is
   constant CNT_SYNC_LOSS   : natural := 7;
   type t_cnt_arr is array (0 to N_CNT - 1) of unsigned(31 downto 0);
 
+  ------------------------------------------------------------------------------
+  -- SFP management (sfp_mgmt): CSR 0x30-0x4F, I2C_BUF 0x80-0xFF
+  ------------------------------------------------------------------------------
+  type t_byte_arr is array (natural range <>) of std_logic_vector(7 downto 0);
+  constant MG_BASE      : natural := 16#30#;
+  constant MG_SIZE      : natural := 32;
+  subtype t_mg_regs is t_byte_arr(0 to MG_SIZE - 1);
+  constant I2C_BUF_BASE : natural := 16#80#;
+  constant I2C_BUF_SIZE : natural := 128;
+
+  constant I2C_CMD_READ  : std_logic_vector(7 downto 0) := x"01";
+  constant I2C_CMD_WRITE : std_logic_vector(7 downto 0) := x"02";
+  constant I2C_DEV_DEFAULT : std_logic_vector(6 downto 0) := "1010000";  -- 0x50 (A0h)
+
+  -- DDM polling (SFF-8472, A2h): bytes 96..110 read in one transaction;
+  -- 96..105 (temperature, Vcc, TX bias, TX power, RX power) and 110 kept
+  constant DDM_DEV            : std_logic_vector(6 downto 0) := "1010001";  -- 0x51 (A2h)
+  constant DDM_OFFSET         : natural := 96;
+  constant DDM_LEN            : natural := 15;
+  constant DDM_PERIOD_DEFAULT : natural := 10;                     -- x 100 ms
+
 end package bridge_pkg;

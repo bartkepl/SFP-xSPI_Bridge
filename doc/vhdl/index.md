@@ -14,6 +14,8 @@ vhdl/
     src/fifo/             async_fifo
     src/link/             tor łącza: crc32, 8b/10b, ramkowanie, CDR, wyrównanie, PHY, link_ctrl
     src/uart/             tryb przezroczysty UART: uart_rx, uart_tx, uart_bridge
+    src/host/             interfejs hosta: xspi_slave, csr_regs, frame_echo
+    src/mgmt/             zarządzanie modułem SFP: i2c_master, sfp_mgmt
     src/top/              sfp_bridge_top
   sfp_bridge_testled/     projekt testowy: miganie LED
   sim/
@@ -44,7 +46,7 @@ vhdl/
 | `link_ctrl` | `src/link/link_ctrl.vhd` | `tb_link_ctrl`, `tb_link_loopback` | PASS | tak (113 MHz) | [Sterowanie łączem](link_ctrl.md) |
 | `uart_rx`, `uart_tx` | `src/uart/uart_rx.vhd`, `uart_tx.vhd` | `tb_uart` | PASS | tak (98 MHz) | [UART](uart.md) |
 | `uart_bridge` | `src/uart/uart_bridge.vhd` | `tb_uart_bridge` | PASS | tak (85 MHz) | [UART](uart.md) |
-| `i2c_master`, `sfp_mgmt` | — | — | — | — | planowany |
+| `i2c_master`, `sfp_mgmt` | `src/mgmt/i2c_master.vhd`, `sfp_mgmt.vhd` | `tb_i2c_sfp`, `tb_csr_regs` | PASS | tak (z xspi_slave i csr_regs: 84 / 43 MHz) | [Zarządzanie SFP](sfp_mgmt.md) |
 | `xspi_slave` | `src/host/xspi_slave.vhd` | `tb_xspi_slave` | PASS | tak (SCLK 40 MHz) | [Interfejs hosta](xspi_slave.md) |
 | `csr_regs` | `src/host/csr_regs.vhd` | `tb_csr_regs` | PASS | tak (z xspi_slave: 82 / 45 MHz) | [Rejestry](csr_regs.md) |
 | `host_clk`, `frame_echo` | `src/clk/host_clk.vhd`, `src/host/frame_echo.vhd` | `tb_host_clk` | PASS | przy integracji (etap 10) | [Zegar hosta, echo](host_clk.md) |

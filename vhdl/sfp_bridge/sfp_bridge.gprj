@@ -29,6 +29,8 @@
         <File path="src/host/xspi_slave.vhd" type="file.vhdl" enable="1"/>
         <File path="src/host/csr_regs.vhd" type="file.vhdl" enable="1"/>
         <File path="src/host/frame_echo.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/mgmt/i2c_master.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/mgmt/sfp_mgmt.vhd" type="file.vhdl" enable="1"/>
         <File path="src/top/sfp_bridge_top.vhd" type="file.vhdl" enable="1"/>
         <File path="../constraints/sfp_bridge.cst" type="file.cst" enable="1"/>
         <File path="../constraints/sfp_bridge.sdc" type="file.sdc" enable="1"/>

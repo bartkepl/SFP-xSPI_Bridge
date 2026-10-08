@@ -20,6 +20,12 @@
 --   8. MODE_CTRL: RTSCTS_EN alone without reset; UART_MODE change -> soft
 --      reset, mode kept; rst_hard clears MODE_CTRL.
 --   9. UART_DIV (2 bytes, little-endian), UART_STATUS W1C.
+--  10. sfp_mgmt registers (no module on the bus: pull-ups only): I2C_DEV /
+--      OFFSET / LEN and DDM_PERIOD read back; I2C_BUF written with WRITE_REG
+--      (8 bytes) and read back with READ_REG; command with the module
+--      absent -> BAD_CMD and IRQ I2C_DONE; module present -> BUSY read in
+--      the transaction that directly follows the command (CS high 120 ns),
+--      then NACK.
 --------------------------------------------------------------------------------
 
 library ieee;
@@ -79,6 +85,15 @@ architecture sim of tb_csr_regs is
   signal p3_go     : boolean := false;      -- change a counter inside the next transaction
   signal n_soft    : natural := 0;
 
+  -- sfp_mgmt
+  signal wr_apply  : std_logic;
+  signal mg_regs   : t_mg_regs;
+  signal buf_rdata : std_logic_vector(7 downto 0);
+  signal mg_abs    : std_logic := '1';
+  signal mg_done   : std_logic;
+  signal scl, sda  : std_logic;
+  signal scl_oe, sda_oe : std_logic;
+
 begin
 
   clk_gen(clk_sys, T_SYS, stop);
@@ -104,16 +119,33 @@ begin
               cs_n => cs_n, reg_addr => reg_addr, reg_rdata => reg_rdata, status_fast => status_fast,
               wr_addr => wr_addr, wr_data => wr_data, wr_cnt => wr_cnt, wr_txn => wr_txn,
               ev_tx_ovf_t => ovf_t,
+              wr_apply => wr_apply, mg_regs => mg_regs, buf_rdata => buf_rdata,
               link_state => link_state, rx_sync => st_bits(0), remote_ready => st_bits(1),
               xoff_local => st_bits(2), xoff_remote => st_bits(3), sfp_los => st_bits(4),
               sfp_tx_fault => st_bits(5), sfp_mod_abs => st_bits(6), mode_sel => mode_sel,
               tx_level => tx_level, rx_level => rx_level, counters => counters,
-              ev_rx_frame => ev(0), ev_link_chg => ev(1), ev_i2c_done => ev(2), ev_err => ev(3),
+              ev_rx_frame => ev(0), ev_link_chg => ev(1), ev_i2c_done => mg_done, ev_err => ev(3),
               ev_uart_ovf => ev(4), ev_uart_ferr => ev(5),
               cfg_tx_en => tx_en, cfg_rx_en => rx_en, cfg_lb_near => lb_near,
               cfg_sfp_tx_dis => sfp_tx_dis, cfg_los_ignore => los_ignore, cnt_clr => cnt_clr,
               soft_rst => soft_rst, mode_uart => m_uart, mode_echo => m_echo, mode_rtscts => m_rtscts,
               uart_div => uart_div, irq_n => irq_n);
+
+  scl <= 'H';
+  sda <= 'H';
+  scl <= '0' when scl_oe = '1' else 'Z';
+  sda <= '0' when sda_oe = '1' else 'Z';
+
+  u_mg : entity work.sfp_mgmt
+    generic map (TIMEOUT_CLKS => 25_000, TICK_CLKS => 1000, INSERT_TICKS => 1000,
+                 DEB_ABS_CLKS => 20, DEB_SIG_CLKS => 5)
+    port map (clk => clk_sys, rst => rst,
+              los_pin => '0', fault_pin => '0', abs_pin => mg_abs, tx_dis_pin => open,
+              scl_i => to_x01(scl), sda_i => to_x01(sda), scl_oe => scl_oe, sda_oe => sda_oe,
+              sfp_los => open, sfp_tx_fault => open, sfp_mod_abs => open, cfg_tx_dis => sfp_tx_dis,
+              wr_apply => wr_apply, wr_addr => wr_addr, wr_data => wr_data, wr_cnt => wr_cnt,
+              regs => mg_regs, buf_raddr => reg_addr(6 downto 0), buf_rdata => buf_rdata,
+              ev_i2c_done => mg_done);
 
   -- clk_rst model: soft_rst asserts rst for 4 cycles; the host side (here
   -- xspi_slave) also sees rst
@@ -326,6 +358,42 @@ begin
     wreg(16#53#, x"02");
     rreg(16#53#, 1);
     check_equal(rd(0), x"00", "9: UART_STATUS cleared");
+
+    ---------------------------------------------------------------- 10
+    wd(0) := x"50"; wd(1) := x"10"; wd(2) := x"04";
+    xfer(OP_WRITE_REG, true, 16#30#, 0, false, 3, wd, rd);
+    rreg(16#30#, 3);
+    check(rd(0) = x"50" and rd(1) = x"10" and rd(2) = x"04", "10: I2C_DEV / OFFSET / LEN read back");
+    for i in 0 to 7 loop
+      wd(i) := std_logic_vector(to_unsigned(16#A0# + 3 * i, 8));
+    end loop;
+    xfer(OP_WRITE_REG, true, 16#80#, 0, false, 8, wd, rd);
+    rreg(16#80#, 8);
+    for i in 0 to 7 loop
+      check_equal(rd(i), wd(i), "10: I2C_BUF byte " & integer'image(i));
+    end loop;
+    wreg(16#4F#, x"05");
+    rreg(16#4F#, 1);
+    check_equal(rd(0), x"05", "10: DDM_PERIOD read back");
+    wreg(16#08#, x"FF");
+    wreg(16#07#, x"10");                      -- IRQ_EN: I2C_DONE
+    wreg(16#33#, x"01");                      -- READ, module absent
+    rreg(16#34#, 1);
+    check_equal(rd(0), x"08", "10: BAD_CMD with the module absent");
+    check_equal(irq_n, '0', "10: IRQ I2C_DONE");
+    wreg(16#08#, x"10");
+    mg_abs <= '0';
+    sys_cycles(50);
+    wreg(16#33#, x"01");                      -- READ, no slave answers
+    rreg(16#34#, 1);
+    check_equal(rd(0), x"01", "10: BUSY in the next transaction");
+    if mg_done /= '1' then
+      wait until mg_done = '1' for 2 ms;
+    end if;
+    sys_cycles(3);
+    rreg(16#34#, 1);
+    check_equal(rd(0), x"02", "10: NACK without a module answer");
+    check_equal(irq_n, '0', "10: IRQ I2C_DONE after the command");
 
     stop <= true;
     tb_finish("tb_csr_regs");

@@ -1,17 +1,19 @@
 # SFP-xSPI Bridge — plan konstrukcji
 
-Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia dwóch mikrokontrolerów (STM32) łączem optycznym punkt–punkt, bez stosu IP. Własny, lekki protokół ramkowy z kodowaniem 8b/10b i programowym odzyskiem zegara (soft-CDR) w małym FPGA Gowin.
+Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia dwóch mikrokontrolerów (STM32) łączem optycznym punkt–punkt, bez stosu IP. Własny, lekki protokół ramkowy z kodowaniem 8b/10b i programowym odzyskiem zegara (soft-CDR) w małym FPGA Gowin. Tryb przezroczysty UART pozwala użyć mostka bez hosta SPI.
 
 | Element | Wybór |
 |---|---|
 | FPGA | Gowin **GW1N-UV9QN48C6/I5** (GW1N-9, wersja C) — wybór uzasadnia [ADR 0001](adr/0001-fpga-gw1n-9.md) |
-| Narzędzia | KiCad (PCB), Gowin EDA (VHDL), biblioteka C dla STM32 |
+| Narzędzia | KiCad 10 (PCB), Gowin EDA (VHDL-2008), GHDL + GTKWave (symulacja, [ADR 0003](adr/0003-weryfikacja-ghdl.md)), biblioteka C dla STM32 |
 | Prędkość linii | **100 Mbaud** (8b/10b → 80 Mbit/s → ok. 9 MB/s danych użytecznych) |
-| Interfejs hosta | SPI (1-1-1), QSPI (1-1-4 / 1-4-4), OCTOSPI (1-1-8 / 1-8-8), SDR |
+| Interfejs hosta | SPI (1-1-1), QSPI (1-1-4 / 1-4-4), OCTOSPI (1-1-8 / 1-8-8), SDR — albo tryb przezroczysty UART ([ADR 0006](adr/0006-tryb-uart-przezroczysty.md)) |
+| Protokół łącza | ramki z CRC-32 bez retransmisji, XON/XOFF w sekwencji bezczynności ([ADR 0005](adr/0005-protokol-lacza.md)) |
+| Zegar logiki | `clk_sys` = 50 MHz, serializery IDES8/OSER8 przy 200 MHz ([ADR 0007](adr/0007-zegar-systemowy-50mhz.md)) |
 | Strona optyczna | moduł SFP (INF-8074i) bez wewnętrznego CDR: 100BASE-FX / OC-3 lub 1000BASE-X (MM/SM, duplex lub BiDi); SFP+ nieobsługiwane |
 | Zasilanie | jedno **3,3 V** (wersja UV FPGA, moduł SFP) |
 
-> Status dokumentu: plan wstępny. Pozycje oznaczone **[DO WERYFIKACJI]** wymagają sprawdzenia w dokumentacji Gowin (UG114, UG289, UG290, UG286) przed rysowaniem schematu. Kopie dokumentacji: [`datasheets/`](datasheets/).
+> Status dokumentu: plan konstrukcji, aktualizowany wraz z projektem. Schemat rev. A gotowy, PCB w toku, VHDL — etapy 1–3 z 10 ([stan modułów](vhdl/index.md)). Pozycje oznaczone **[DO WERYFIKACJI]** pozostają do sprawdzenia; decyzje i ich uzasadnienia są w [rejestrze ADR](adr/README.md). Kopie dokumentacji producentów: [`datasheets/`](datasheets/).
 
 ---
 
@@ -24,6 +26,8 @@ Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia 
              DQS, IRQ, RST                   RD±  <- moduł SFP
                                    I2C master ---> SFP EEPROM/DDM (0x50/0x51)
                                    GPIO ---------> TX_DISABLE, TX_FAULT, LOS, MOD_ABS
+
+  tryb UART (zworka MODE_SEL):  urządzenie UART <== RX/TX (IO0/IO1), opcj. RTS/CTS ==> GW1N-9 <== LVDS ==> ...
 ```
 
 Wewnątrz FPGA:
@@ -35,6 +39,8 @@ Wewnątrz FPGA:
                              │
                              ├─> I2C master + mailbox + autopolling DDM ─> SFP SCL/SDA
                              └─> GPIO SFP, LED, IRQ
+
+ tryb UART: uart_rx ─> pakietyzator (ramki TYPE 0x01) ─> TX FIFO ;  RX FIFO ─> depakietyzator ─> uart_tx
 ```
 
 Domeny zegarowe:
@@ -45,7 +51,7 @@ Domeny zegarowe:
 | `clk_fast` | PLL | 200 MHz | FCLK serializerów IDES8 / OSER8 |
 | `clk_sys` | CLKDIV(/4) z `clk_fast` | 50 MHz | całe łącze: CDR, 8b/10b, framer, CRC, FIFO (strona łącza), I2C, UART, CSR — [ADR 0007](adr/0007-zegar-systemowy-50mhz.md) |
 
-Przejścia między domenami: asynchroniczne FIFO (BSRAM w trybie semi-dual port, liczniki w kodzie Graya) oraz synchronizatory 2-FF dla pojedynczych bitów.
+Przejścia między domenami: asynchroniczne FIFO (BSRAM w trybie semi-dual port; wskaźnik odczytu w kodzie Graya, zatwierdzony wskaźnik zapisu przez handshake — [`async_fifo`](vhdl/async_fifo.md)) oraz synchronizatory 2-FF dla pojedynczych bitów ([`sync_bit`](vhdl/sync.md)). Reset: [ADR 0004](adr/0004-strategia-resetu.md).
 
 ---
 
@@ -425,6 +431,7 @@ Wrażliwość: zmiana odstępu o ±0,05 mm zmienia impedancję różnicową o ok
 | 17 | HOST_IRQ_N | 18 | HOST_RST_N |
 | 19 | GND | 20 | GND |
 
+- W trybie UART ([ADR 0006](adr/0006-tryb-uart-przezroczysty.md)) piny 7–10 pełnią funkcje: 7 `UART_RX` (wejście), 8 `UART_TX` (wyjście), 9 `UART_RTS_N` (wyjście, opcja), 10 `UART_CTS_N` (wejście, opcja); zasilanie i masa bez zmian.
 - Footprint `PinHeader_2x10_P1.27mm_Vertical` nie ma klucza. Odwrócona wtyczka łączy 3V3 hosta z GND (piny 19/20) — zaleca się złącze z obudową i kluczem (box header 1,27 mm) albo wyraźne oznaczenie pinu 1 na nadruku.
 - Rezystory szeregowe na liniach xSPI nie są przewidziane; ewentualne dzwonienie ogranicza się ustawieniem `DRIVE` wyjść FPGA (4/8 mA) i prędkości GPIO po stronie STM32.
 
@@ -469,6 +476,9 @@ Footprint `Tag-Connect_TC2050-IDC-NL_2x05_P1.27mm_Vertical` (J2). Układ zgodny 
 | R13 | 4,7 kΩ, 0603 | — | pull-down TCK |
 | J3 | złącze 2 × 10, 1,27 mm | — | preferowane z kluczem |
 | J2 | Tag-Connect TC2050-IDC-NL | footprint, bez elementu | kabel TC2050 po stronie programatora |
+| JP1, JP2 | zworki lutowane 2- i 3-pozycyjna | — | nRESET → `RECONFIG_N`; AUX → `JTAGSEL_N` / `DONE` (5.6) |
+| JP3 | zworka lutowana 2-pozycyjna | — | `MODE_SEL` (pin 10) ↔ GND: zwarta = tryb UART ([ADR 0006](adr/0006-tryb-uart-przezroczysty.md)) — **do dodania w schemacie** |
+| R16 | 10 kΩ, 0603 | — | pull-up `MODE_SEL` do 3,3 V — **do dodania w schemacie** |
 
 ---
 
@@ -483,7 +493,7 @@ Footprint `Tag-Connect_TC2050-IDC-NL_2x05_P1.27mm_Vertical` (J2). Układ zgodny 
 | Background upgrade | aktualizacja Flash przez JTAG bez przerywania pracy, aktywacja przez `RECONFIG_N` **[DO WERYFIKACJI w UG290 dla GW1N-9C]** |
 | Bitstream | kompresja wł., security bit wg potrzeb |
 | Constraints (.cst) | IO_TYPE: `LVDS25` dla par TD/RD, `LVCMOS33` dla reszty; DRIVE=3.5 dla TD; DIFF_RESISTOR=OFF dla RD (terminacja zewnętrzna); PULL_MODE=UP dla CS_N, RST_N; OPEN_DRAIN=ON dla SCL/SDA |
-| Timing (.sdc) | `create_clock` 25 MHz (`CLK_25M`), 50 MHz (`XSPI_SCLK`); clock groups asynchroniczne między `clk_spi` a `clk_sys`; set_input/output_delay dla xSPI wg timingu STM32 |
+| Timing (.sdc) | `create_clock` 25 MHz (`CLK_25M`), 50 MHz (`XSPI_SCLK`); zegary PLL/CLKDIV generowane (`clk_fast` 200 MHz, `clk_sys` 50 MHz — w pełnym projekcie ograniczenie `clk_sys` z zapasem, np. 60 MHz, bo PnR optymalizuje do zadanej wartości); clock groups asynchroniczne między `clk_spi` a `clk_sys`; set_input/output_delay dla xSPI wg timingu STM32 |
 
 Ograniczenia: [`vhdl/constraints/sfp_bridge.cst`](../vhdl/constraints/sfp_bridge.cst) (piny, standardy I/O) i [`vhdl/constraints/sfp_bridge.sdc`](../vhdl/constraints/sfp_bridge.sdc) (zegary).
 
@@ -495,44 +505,57 @@ Składnia atrybutów `DRIVE=3.5` (LVDS25) i `DIFF_RESISTOR=ON` została potwierd
 
 ### 7.1 Struktura katalogów
 
+Stan modułów (napisane, przetestowane, planowane): [przegląd VHDL](vhdl/index.md).
+
 ```
 vhdl/
   constraints/
-    sfp_bridge.cst
-    sfp_bridge.sdc
-  sfp_bridge/                 -- projekt Gowin EDA (sfp_bridge.gprj)
+    sfp_bridge.cst            -- piny, standardy I/O (wspólne dla projektów)
+    sfp_bridge.sdc            -- zegary
+  sfp_bridge/                 -- projekt docelowy Gowin EDA (sfp_bridge.gprj)
   sfp_bridge/src/
     pkg/
-      bridge_pkg.vhd          -- stałe: prędkość linii, rozmiary FIFO, adresy rejestrów, kody K
+      bridge_pkg.vhd          -- stałe: zegary, kody K, identyfikacja
+      code8b10b_pkg.vhd       -- tablice i funkcja kodu 8b/10b (jedno źródło dla kodera i dekodera)
+    common/
+      sync_bit.vhd            -- synchronizator bitu
+      reset_sync.vhd          -- mostek resetu domeny (ADR 0004)
     top/
       sfp_bridge_top.vhd
     clk/
-      clk_rst.vhd             -- rPLL + CLKDIV + synchronizacja resetów
+      clk_rst.vhd             -- rPLL + CLKDIV + mostki resetu domen
     host/
       xspi_slave.vhd          -- SPI/QSPI/OCTOSPI slave, dekoder komend
       csr_regs.vhd            -- rejestry kontrolne/statusowe, IRQ
     fifo/
-      async_fifo.vhd          -- FIFO na BSRAM semi-dual port, liczniki Graya
+      async_fifo.vhd          -- FIFO na BSRAM semi-dual port, Gray + handshake, commit/abort
     link/
-      tx_framer.vhd           -- SOF/EOF, długość, idle
       crc32.vhd               -- CRC-32 (bajtowo)
-      enc_8b10b.vhd
+      enc_8b10b.vhd, dec_8b10b.vhd
+      tx_framer.vhd           -- ramki, bezczynność /I/ /P/ (XON/XOFF)
+      rx_deframer.vhd         -- kontrola ramek, odrzucanie błędnych, XOFF
       tx_phy.vhd              -- OSER8 (bity powielone 4×) + TLVDS_OBUF
       rx_phy.vhd              -- TLVDS_IBUF + IDES8
       cdr_os4x8.vhd           -- odzysk danych z 4× nadpróbkowania, 8 próbek na takt
       comma_align.vhd         -- wyrównanie do K28.5
-      dec_8b10b.vhd           -- dekoder + błędy kodu/dysparytetu
-      rx_deframer.vhd         -- SOF/EOF, długość, sprawdzenie CRC
-      link_ctrl.vhd           -- stan łącza, LOS, liczniki błędów
+      link_ctrl.vhd           -- stan łącza, LOS, liczniki błędów, pętle zwrotne
+    uart/
+      uart_rx.vhd, uart_tx.vhd
+      uart_bridge.vhd         -- pakietyzacja ramek TYPE 0x01, RTS/CTS (ADR 0006)
     mgmt/
       i2c_master.vhd
       sfp_mgmt.vhd            -- mailbox I2C, autopolling DDM, GPIO SFP
       leds.vhd
+  sfp_bridge_testled/         -- projekt testowy: miganie LED
   sim/
-    tb_enc_dec_8b10b.vhd
-    tb_cdr_os4x8.vhd          -- z modelowanym odchyleniem ±100 ppm i jitterem
-    tb_link_loopback.vhd      -- TX → (model kanału) → RX
-    tb_xspi_slave.vhd         -- model STM32 OCTOSPI w trybach 1-1-1/1-1-4/1-1-8
+    tb/                       -- tb_pkg + testbenche tb_<moduł>.vhd
+                              --   gotowe: tb_sync, tb_crc32, tb_8b10b, tb_async_fifo, tb_link_frames
+                              --   planowane: tb_cdr_os4x8 (±100 ppm, jitter), tb_link_loopback,
+                              --              tb_uart, tb_i2c_sfp, tb_xspi_slave, tb_top
+    waves/                    -- widoki GTKWave (.gtkw)
+    sources.txt               -- kolejność kompilacji
+    run_tests.ps1 / .sh       -- uruchamianie testów (GHDL w WSL)
+    view.ps1                  -- podgląd przebiegu
 ```
 
 ### 7.2 Moduły — co powinny zawierać
@@ -549,21 +572,21 @@ vhdl/
 
 **`csr_regs`** — mapa rejestrów w rozdziale 7.4.
 
-**`async_fifo`**
-- BSRAM w trybie semi-dual port (zapis port A, odczyt port B, różne zegary), liczniki wskaźników w kodzie Graya, synchronizatory 2-FF.
-- Flagi: pusty, pełny, poziom zapełnienia (do IRQ).
+**`async_fifo`** — gotowy, [opis](vhdl/async_fifo.md)
+- BSRAM w trybie semi-dual port (zapis port A, odczyt port B, różne zegary); wskaźnik odczytu w kodzie Graya, zatwierdzony wskaźnik zapisu przez handshake (zatwierdzenie przesuwa wskaźnik o całą ramkę).
+- Zatwierdzanie i odrzucanie ramki (`commit` / `abort`).
+- Flagi: pusty, pełny (dokładne); poziomy zapełnienia (informacyjne, takt opóźnienia).
 - Rozmiary: TX 4 KiB (2 bloki), RX 8 KiB (4 bloki — wymagane przez progi XOFF, [ramkowanie](vhdl/framing.md)), bufor I2C 256 B (1 blok), tablica dekodera 8b/10b (1 blok). Razem 8 z 26 bloków.
-- Alternatywnie FIFO IP z Gowin EDA, o ile generuje VHDL. Własna implementacja daje przenośność.
 
-**`tx_framer`**
-- Ramka: `K27.7 (SOF) | TYPE | LEN_H | LEN_L | payload (1..1024 B) | CRC32 (4 B) | K29.7 (EOF)`.
-- Poza ramką ciągły idle: para `K28.5 + D16.2` (jak /I2/ w 1000BASE-X), utrzymuje dysparytet i synchronizację CDR.
-- Ramkę zaczyna dopiero wtedy, gdy w TX FIFO jest cała ramka (licznik ramek), więc w środku ramki nie ma przerw.
+**`tx_framer`** — gotowy, [opis](vhdl/framing.md)
+- Ramka: `K27.7 (SOF) | TYPE | LEN_H | LEN_L | payload (1..1024 B) | CRC32 (4 B) | K29.7 (EOF)`; FIFO TX zawiera ramki w postaci `TYPE, LEN_H, LEN_L, payload`.
+- Poza ramką ciągła bezczynność: para `K28.5 + D16.2` (/I/, XON) lub `K28.5 + D21.5` (/P/, XOFF).
+- Ramkę zaczyna dopiero wtedy, gdy w TX FIFO jest cała (zatwierdzona) ramka i strona przeciwna nie zgłasza XOFF; ramka rozpoczęta jest wysyłana do końca.
 
-**`crc32`** — CRC-32 IEEE 802.3, przetwarzanie bajtowe, jeden bajt na takt.
+**`crc32`** — gotowy, [opis](vhdl/crc32.md): CRC-32 IEEE 802.3, przetwarzanie bajtowe, jeden bajt na takt.
 
-**`enc_8b10b` / `dec_8b10b`**
-- Standardowa tabela 5b/6b + 3b/4b z bieżącym dysparytetem.
+**`enc_8b10b` / `dec_8b10b`** — gotowe, [opis](vhdl/8b10b.md)
+- Standardowa tabela 5b/6b + 3b/4b z bieżącym dysparytetem; tablica dekodera wyliczana z funkcji kodera (ROM w BSRAM).
 - Dekoder zgłasza flagi `code_err` i `disp_err`.
 
 **`tx_phy`**
@@ -582,9 +605,10 @@ vhdl/
 - Rejestr przesuwny ≥ 20 bitów, wykrywanie wzorca comma (`0011111` / `1100000`) i ustalenie granicy słowa 10-bit.
 - Synchronizacja po N poprawnych K28.5, utrata po M błędach kodu (maszyna stanów jak w 1000BASE-X PCS).
 
-**`rx_deframer`**
+**`rx_deframer`** — gotowy, [opis](vhdl/framing.md)
 - Oczekiwanie na SOF, odczyt typu i długości, zapis do RX FIFO, liczenie CRC.
-- Przy złym CRC: odrzucenie ramki (cofnięcie wskaźnika zapisu FIFO) i inkrementacja licznika.
+- Błąd (kod/dysparytet, długość, nieoczekiwany znak sterujący, CRC, brak miejsca) → odrzucenie ramki (`abort`) i impuls zdarzenia dla liczników.
+- Odbiór stanu XON/XOFF strony przeciwnej; generowanie własnego XOFF z progiem i histerezą (FIFO RX 8 KiB).
 
 **`link_ctrl`**
 - Stany: `DOWN` (LOS lub brak sync) → `SYNC` → `UP`.
@@ -597,17 +621,9 @@ vhdl/
 - Autopolling DDM co np. 1 s (bajty 96–105 z A2h: temperatura, Vcc, prąd lasera, Tx power, Rx power) → rejestry cienia.
 - Debounce i rejestry statusu `TX_FAULT`, `LOS`, `MOD_ABS`. Zmiana stanu generuje przerwanie.
 
-**`leds`** — LINK (stan `UP`), ACT (rozciągnięty impuls przy ramce TX/RX).
+**`leds`** — LINK (stan `UP`), ACT (rozciągnięty impuls przy ramce TX/RX); diody aktywne stanem niskim.
 
-### 7.3a Tryb przezroczysty UART
-
-Decyzja i uzasadnienie: [ADR 0006](adr/0006-tryb-uart-przezroczysty.md).
-
-- Wybór trybu: zworka `MODE_SEL` (pin 10) próbkowana po resecie — otwarta: xSPI, zwarta do masy: UART; w trybie xSPI dodatkowo bit `UART_MODE` w `MODE_CTRL`.
-- Piny J3 w trybie UART: `XSPI_IO0` = `UART_RX` (wejście), `XSPI_IO1` = `UART_TX` (wyjście), opcjonalnie `XSPI_IO2` = `UART_RTS_N` (wyjście), `XSPI_IO3` = `UART_CTS_N` (wejście); pozostałe linie xSPI w stanie wysokiej impedancji, `HOST_IRQ_N` = stan łącza.
-- 8N1, domyślnie 115200 baud; inna prędkość (do ok. 3 Mbaud) przez `UART_DIV` w trybie xSPI.
-- Pakietyzacja: ramka `TYPE = 0x01` po 64 bajtach lub po przerwie > 2 czasy znaku; odbiór: treść ramek `TYPE = 0x01` na `UART_TX`.
-- Moduły: `uart_rx`, `uart_tx`, `uart_bridge`; multipleksowanie pinów w `sfp_bridge_top`.
+**`uart_rx`, `uart_tx`, `uart_bridge`** — tryb przezroczysty, zob. 7.7.
 
 ### 7.3 Zestaw komend xSPI (wzorowany na SPI NOR)
 
@@ -625,8 +641,8 @@ Decyzja i uzasadnienie: [ADR 0006](adr/0006-tryb-uart-przezroczysty.md).
 | `0x8B` | RX_READ_8 | 1-0-8 | 8 cykli | jw., 8 linii |
 
 Zasady:
-- Zapis ramki: `WRITE_REG TX_LEN` → `TX_WRITE_x` (LEN bajtów) → `WRITE_REG TX_COMMIT` (lub automatycznie po LEN bajtach).
-- Odczyt ramki: `READ_REG RX_LEN` (długość następnej ramki) → `RX_READ_x` → `WRITE_REG RX_POP`.
+- Zapis ramki: `WRITE_REG TX_TYPE`, `WRITE_REG TX_LEN` → `TX_WRITE_x` (LEN bajtów) → `WRITE_REG TX_COMMIT` (lub automatycznie po LEN bajtach). Slave wpisuje do FIFO TX nagłówek `TYPE, LEN_H, LEN_L`, potem treść, i zatwierdza ramkę.
+- Odczyt ramki: `READ_REG RX_TYPE`/`RX_LEN` (nagłówek ramki na czele FIFO RX) → `RX_READ_x` → `WRITE_REG RX_POP`.
 - Opkody `0x8x` są własne (nie z JEDEC), a STM32 OCTOSPI w trybie indirect przyjmie dowolny opkod.
 - Dummy cykle dają FPGA czas na pobranie pierwszego bajtu z FIFO przez CDC.
 
@@ -637,7 +653,7 @@ Zasady:
 | 0x00 | ID | R | stała `0x5F5B` |
 | 0x01 | VERSION | R | wersja bitstreamu |
 | 0x02 | CTRL | R/W | TX_EN, RX_EN, LOOPBACK[1:0], SFP_TX_DIS, SOFT_RST |
-| 0x03 | STATUS | R | LINK_UP, SYNC, LOS, TX_FAULT, MOD_ABS, RX_AVAIL, TX_FULL |
+| 0x03 | STATUS | R | LINK_UP, SYNC, LOS, TX_FAULT, MOD_ABS, RX_AVAIL, TX_FULL, XOFF_LOCAL, XOFF_REMOTE |
 | 0x04 | IRQ_EN | R/W | maska przerwań |
 | 0x05 | IRQ_STAT | R/W1C | RX_FRAME, TX_EMPTY, LINK_CHG, SFP_CHG, I2C_DONE, ERR |
 | 0x06–0x07 | TX_LEN | R/W | długość ramki do wysłania |
@@ -645,14 +661,16 @@ Zasady:
 | 0x09–0x0A | TX_SPACE | R | wolne miejsce w TX FIFO |
 | 0x0B–0x0C | RX_LEN | R | długość ramki na czele RX FIFO |
 | 0x0D | RX_POP | W | zwolnij ramkę |
-| 0x10–0x1F | CNT_* | R | liczniki: CODE_ERR, DISP_ERR, CRC_ERR, FRAMES_TX, FRAMES_RX (32-bit) |
-| 0x20 | I2C_DEV | R/W | 0x50 lub 0x51 |
-| 0x21 | I2C_OFFSET | R/W | |
-| 0x22 | I2C_LEN | R/W | |
-| 0x23 | I2C_CMD | W | START_READ / START_WRITE |
-| 0x24 | I2C_STATUS | R | BUSY, DONE, NACK |
-| 0x30–0x3F | DDM_* | R | rejestry cienia DDM |
-| 0x40 | DDM_PERIOD | R/W | okres autopollingu |
+| 0x0E | TX_TYPE | R/W | pole TYPE ramki do wysłania (0x00 dane; 0x01 strumień UART; 0x10–0xFF aplikacja) |
+| 0x0F | RX_TYPE | R | pole TYPE ramki na czele RX FIFO |
+| 0x10–0x2F | CNT_* | R | liczniki 32-bit: CODE_ERR, CRC_ERR, LEN_ERR, FRAMING_ERR, RX_OVF, FRAMES_TX, FRAMES_RX |
+| 0x30 | I2C_DEV | R/W | 0x50 lub 0x51 |
+| 0x31 | I2C_OFFSET | R/W | |
+| 0x32 | I2C_LEN | R/W | |
+| 0x33 | I2C_CMD | W | START_READ / START_WRITE |
+| 0x34 | I2C_STATUS | R | BUSY, DONE, NACK |
+| 0x40–0x4E | DDM_* | R | rejestry cienia DDM |
+| 0x4F | DDM_PERIOD | R/W | okres autopollingu |
 | 0x50 | MODE_CTRL | R/W | UART_MODE (przełączenie na tryb UART), RTSCTS_EN; odczyt: stan zworki MODE_SEL |
 | 0x51–0x52 | UART_DIV | R/W | dzielnik prędkości UART (domyślnie 115200) |
 | 0x53 | UART_STATUS | R/W1C | przepełnienia RX/TX, błędy ramki UART |
@@ -660,21 +678,30 @@ Zasady:
 
 ### 7.5 Szacunek zasobów (GW1N-9)
 
-| Blok | LUT | BSRAM |
-|---|---|---|
-| xSPI slave + CSR | 400–600 | – |
-| 2 × async FIFO | 150–250 | 4 |
-| Framer/deframer + CRC32 | 300–500 | – |
-| 8b/10b enc + dec | 150–200 | – |
-| CDR + comma align + link_ctrl | 300–500 | – |
-| I2C + mailbox + DDM | 200–400 | 1 |
-| **Razem** | **ok. 1,5–2,5k / 8,6k** | **5 / 26** |
+| Blok | LUT | BSRAM | Źródło |
+|---|---|---|---|
+| Tor znakowy: FIFO TX 4 KiB, framer, CRC, 8b/10b, deframer, FIFO RX 8 KiB | 1104 | 7 | próbna synteza |
+| CDR + comma align + PHY + link_ctrl | 300–600 | – | szacunek |
+| xSPI slave + CSR | 400–600 | – | szacunek |
+| UART + pakietyzacja | ok. 300 | – | szacunek |
+| I2C + mailbox + DDM | 200–400 | 1 | szacunek |
+| **Razem** | **ok. 2,3–3,0k / 8,6k** | **8 / 26** | |
 
 ### 7.6 Prymitywy Gowin (VHDL)
 
-Deklaracje komponentów są w bibliotece prymitywów dostarczanej z Gowin EDA. Użyte prymitywy: `rPLL`, `CLKDIV`, `TLVDS_IBUF`, `TLVDS_OBUF`, `IDES8`, `OSER8`, `IODELAY` (strojenie fazy RX), `SDPB` (BSRAM semi-dual port) lub wnioskowanie RAM z kodu, `IOBUF` (I2C, xSPI IO).
+Deklaracje komponentów: `library gw1n; use gw1n.components.all;` (biblioteka z Gowin EDA). Użyte prymitywy: `rPLL`, `CLKDIV`, `TLVDS_IBUF`, `TLVDS_OBUF`, `IDES8`, `OSER8`, opcjonalnie `IODELAY` (strojenie fazy RX), `IOBUF` (I2C, xSPI IO). Pamięci (FIFO — SDPB, tablica dekodera — pROM) są wnioskowane z kodu; synteza potwierdza mapowanie na BSRAM.
 
-Plan weryfikacji: symulacja w GHDL lub ModelSim z modelami prymitywów Gowin. Testbench `tb_cdr_os4x8` z odchyleniem częstotliwości ±100 ppm i losowym jitterem ±0,2 UI.
+Weryfikacja: GHDL, samosprawdzające testbenche VHDL-2008, przebiegi w GTKWave ([ADR 0003](adr/0003-weryfikacja-ghdl.md), [symulacja](vhdl/symulacja.md)); moduły z prymitywami Gowin z modelami `prim_sim.vhd`. Testbench `tb_cdr_os4x8` z odchyleniem częstotliwości ±100 ppm i losowym jitterem ±0,2 UI.
+
+### 7.7 Tryb przezroczysty UART
+
+Decyzja i uzasadnienie: [ADR 0006](adr/0006-tryb-uart-przezroczysty.md).
+
+- Wybór trybu: zworka `MODE_SEL` (pin 10) próbkowana po resecie — otwarta: xSPI, zwarta do masy: UART; w trybie xSPI dodatkowo bit `UART_MODE` w `MODE_CTRL`.
+- Piny J3 w trybie UART: `XSPI_IO0` = `UART_RX` (wejście), `XSPI_IO1` = `UART_TX` (wyjście), opcjonalnie `XSPI_IO2` = `UART_RTS_N` (wyjście), `XSPI_IO3` = `UART_CTS_N` (wejście); pozostałe linie xSPI w stanie wysokiej impedancji, `HOST_IRQ_N` = stan łącza.
+- 8N1, domyślnie 115200 baud; inna prędkość (do ok. 3 Mbaud) przez `UART_DIV` w trybie xSPI.
+- Pakietyzacja: ramka `TYPE = 0x01` po 64 bajtach lub po przerwie > 2 czasy znaku; odbiór: treść ramek `TYPE = 0x01` na `UART_TX`.
+- Moduły: `uart_rx`, `uart_tx`, `uart_bridge`; multipleksowanie pinów w `sfp_bridge_top`.
 
 ---
 
@@ -724,13 +751,15 @@ Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny
 ## 9. Plan uruchomienia (bring-up)
 
 1. Zasilanie, konfiguracja FPGA przez JTAG, odczyt `DONE` (programator przez AUX/JP2 lub pomiar na R6).
-2. `READ_ID` przez SPI (1 linia, 1–5 MHz), potem QSPI i OCTOSPI z rosnącym zegarem.
-3. Odczyt EEPROM SFP przez mailbox I2C (vendor, part number) i DDM.
-4. Near-end loopback w FPGA (bez optyki): ramki TX → RX, liczniki CRC = 0.
-5. **Niska prędkość linii (10–25 Mbaud)** na dwóch modułach połączonych patchcordem: wykres oczkowy na RD±, CDR na 8–10× nadpróbkowaniu w logice.
-6. 100 Mbaud z IDES8, test BER (pseudolosowe ramki, liczniki, ≥ 10¹² bitów).
-7. Test z tłumikiem optycznym i różnymi modułami (MM, SM, BiDi).
-8. Opcjonalnie: 125 Mbaud i wyżej.
+2. Bitstream `sfp_bridge_testled`: naprzemienne miganie LED_LINK / LED_ACT (zegar 25 MHz, konfiguracja, piny MSPI jako GPIO).
+3. **Tryb UART** (zworka `MODE_SEL` zwarta) na dwóch płytkach połączonych patchcordem, po stronie każdej adapter USB-UART i terminal: echo i transfer plików 115200 → 3 Mbaud. Pierwszy test łącza optycznego bez sterownika OCTOSPI.
+4. Near-end loopback w FPGA (bez optyki): ramki TX → RX, liczniki błędów = 0.
+5. `READ_ID` przez SPI (1 linia, 1–5 MHz), potem QSPI i OCTOSPI z rosnącym zegarem.
+6. Odczyt EEPROM SFP przez mailbox I2C (vendor, part number) i DDM.
+7. **Niska prędkość linii (10–25 Mbaud)** — wariant diagnostyczny: wykres oczkowy na RD±.
+8. 100 Mbaud, test BER (pseudolosowe ramki, liczniki, ≥ 10¹² bitów).
+9. Test z tłumikiem optycznym i różnymi modułami (MM, SM, BiDi).
+10. Opcjonalnie: 125 Mbaud i wyżej.
 
 ---
 
@@ -747,7 +776,10 @@ Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny
 - [ ] Footprint klatki SFP zgodny z wybraną klatką (otwory press-fit).
 - [ ] Minimalna amplituda wejścia TD wybranego modułu SFP względem VOD FPGA (INF-8074i: 500 mVppd min).
 - [ ] Czy wybrany moduł SFP nie ma wewnętrznego CDR (moduły z CDR nie zadziałają przy 100 Mbaud).
-- [ ] Generowanie VHDL dla FIFO IP Gowin (jeśli nie — własne `async_fifo`).
+- [x] FIFO: własne `async_fifo` (BSRAM SDPB wnioskowany z kodu), bez IP Gowin.
+- [x] Architektura zegarów: `clk_sys` = 50 MHz, IDES8/OSER8 ([ADR 0007](adr/0007-zegar-systemowy-50mhz.md)).
+- [ ] Zworka `MODE_SEL` (JP3, pin 10 ↔ GND) i pull-up R16 10 kΩ w schemacie i na PCB ([ADR 0006](adr/0006-tryb-uart-przezroczysty.md)).
+- [ ] Ograniczenie `clk_sys` w `.sdc` z zapasem (np. 60 MHz) po integracji top-level.
 - [ ] Timing xSPI przy 50 MHz: setup/hold FPGA vs STM32 OCTOSPI (dummy cycles, opóźnienie próbkowania po stronie MCU).
 
 ## 11. Dokumentacja źródłowa

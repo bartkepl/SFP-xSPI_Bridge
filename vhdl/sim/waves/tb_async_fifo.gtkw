@@ -1,0 +1,52 @@
+[*] GTKWave view for tb_async_fifo (open with: view.ps1 tb_async_fifo)
+[timestart] 0
+[size] 1500 850
+[signals_width] 260
+[sst_width] 220
+@200
+-Test phase (1 fill, 2 random, 3 drain, 4 no-commit stream)
+@24
+top.tb_async_fifo.phase
+top.tb_async_fifo.frame_no
+@200
+-Write side (100 MHz)
+@28
+top.tb_async_fifo.wr_clk
+top.tb_async_fifo.wr_en
+@22
+top.tb_async_fifo.wr_data[7:0]
+@28
+top.tb_async_fifo.wr_commit
+top.tb_async_fifo.wr_abort
+top.tb_async_fifo.full
+top.tb_async_fifo.wr_ovf
+@24
+top.tb_async_fifo.wr_free[4:0]
+@200
+-Pointers (write domain)
+@24
+top.tb_async_fifo.dut.wptr[4:0]
+top.tb_async_fifo.dut.wptr_cmt[4:0]
+top.tb_async_fifo.dut.rptr_w[4:0]
+@200
+-Commit handshake (write -> read)
+@24
+top.tb_async_fifo.dut.pub_ptr[4:0]
+@28
+top.tb_async_fifo.dut.pub_req
+top.tb_async_fifo.dut.pub_ack
+@200
+-Read side (37.3 / 160 MHz / stopped)
+@28
+top.tb_async_fifo.rd_clk
+top.tb_async_fifo.rd_en
+top.tb_async_fifo.empty
+top.tb_async_fifo.rd_valid
+@22
+top.tb_async_fifo.rd_data[7:0]
+@24
+top.tb_async_fifo.rd_level[4:0]
+top.tb_async_fifo.dut.rptr[4:0]
+top.tb_async_fifo.dut.wcmt_r[4:0]
+@28
+top.tb_async_fifo.rd_udf

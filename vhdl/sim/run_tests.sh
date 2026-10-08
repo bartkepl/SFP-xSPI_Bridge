@@ -6,6 +6,7 @@
 # Each testbench prints one line "TB <name> PASS|FAIL (...)" via tb_finish.
 # Waveforms are written to sim/out/<tb>.ghw (open with view.ps1 <tb>).
 # Exit code: 0 when all testbenches pass, 1 otherwise.
+# Each testbench is limited to TB_TIMEOUT seconds (default 300).
 
 set -u
 SIM_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -43,7 +44,9 @@ fi
 pass=0; fail=0; failed=()
 for tb in "${TBS[@]}"; do
   log="$OUT/$tb.log"
-  ghdl --elab-run "${GHDL_FLAGS[@]}" "$tb" --wave="$OUT/$tb.ghw" --assert-level=failure >"$log" 2>&1
+  timeout "${TB_TIMEOUT:-300}" ghdl --elab-run "${GHDL_FLAGS[@]}" "$tb" --wave="$OUT/$tb.ghw" --assert-level=failure >"$log" 2>&1
+  rc=$?
+  [ $rc -eq 124 ] && echo "TB $tb FAIL (timeout ${TB_TIMEOUT:-300} s)" >>"$log"
   line="$(grep -o "TB $tb \(PASS\|FAIL\).*" "$log" | tail -1)"
   if [[ "$line" == *" PASS "* ]]; then
     pass=$((pass + 1)); echo "  PASS  $tb  ${line#*PASS }"

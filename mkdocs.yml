@@ -55,6 +55,7 @@ nav:
           - Synchronizatory (sync_bit, reset_sync): vhdl/sync.md
           - CRC-32 (crc32): vhdl/crc32.md
           - Kod 8b/10b (enc_8b10b, dec_8b10b): vhdl/8b10b.md
+          - FIFO dwuzegarowe (async_fifo): vhdl/async_fifo.md
   - Decyzje (ADR):
       - adr/README.md
       - "0001 FPGA GW1N-9": adr/0001-fpga-gw1n-9.md

@@ -98,7 +98,7 @@ Rozkład na obudowie (numeracja przeciwnie do ruchu wskazówek zegara od lewego 
 
 ```
                    48   47  46  45  44  43  42  41  40  39  38  37
-                  MODE SDA SCL  -   -  RDP RDN ABS LOS FLT DIS VCC
+                  MODE SDA SCL  -   -  RDN RDP ABS LOS FLT DIS VCC
      VCCIO0/3  1                                                    36  VCCX
           VSS  2                                                    35  CLK_25M
     JTAGSEL_N  3                                                    34  TD_P
@@ -123,8 +123,8 @@ Nazwy sieci w schemacie pisane są wielkimi literami, porty VHDL małymi (`SFP_T
 |---|---|---|---|---|---|---|
 | `SFP_TD_P` | out | LVDS25, DRIVE=3.5 | **34** | 1 | IOR11A (MI/D7) | para z wyjściem true LVDS; funkcja MSPI nieużywana w AUTOBOOT |
 | `SFP_TD_N` | out | LVDS25 | **33** | 1 | IOR11B (MO/D6) | |
-| `SFP_RD_P` | in | LVDS25 | **43** | 0 | IOT32A | IDES8; terminacja zewnętrzna (5.2), wewnętrzna jako opcja awaryjna |
-| `SFP_RD_N` | in | LVDS25 | **42** | 0 | IOT32B | |
+| `SFP_RD_P` | in | LVDS25 | **42** | 0 | IOT32B | IDES8; terminacja zewnętrzna (5.2), wewnętrzna jako opcja awaryjna; **polaryzacja odwrócona** (3.2, reguła 9) |
+| `SFP_RD_N` | in | LVDS25 | **43** | 0 | IOT32A | wejście `I` bufora `TLVDS_IBUF` |
 | `CLK_25M` | in | LVCMOS33 | **35** | 1 | IOR5A (RPLL_T_in) | dedykowane wejście prawego PLL |
 | `XSPI_SCLK` | in | LVCMOS33 | **19** | 2 | IOB29A (GCLKT_4) | wejście zegara globalnego, środek magistrali; ≤ 40 MHz ([ADR 0009](adr/0009-interfejs-hosta.md)) |
 | `XSPI_CS_N` | in | LVCMOS33, pull-up | **14** | 2 | IOB8B | |
@@ -176,6 +176,7 @@ Piny konfiguracyjne i zasilania, **nieużywane jako GPIO**:
 6. **Magistrala xSPI w jednym banku** (bank 2, dolna krawędź) z krótkimi i równymi ścieżkami.
 7. **`CLK_25M` na dedykowanym wejściu PLL.** Wejście przez sieć globalną (pin GCLKT) działa, ale dodaje jitter na wejściu PLL.
 8. **Piny MSPI (31–34)** pracują jako GPIO dzięki opcji `-use_mspi_as_gpio 1`; wymaga to trybu AUTOBOOT (pin 48 do masy).
+9. **Polaryzacja par LVDS może być odwrócona na płytce**, jeśli upraszcza to prowadzenie pary (bez skrzyżowania i bez przelotek). Pin A pary (true) jest zawsze wejściem `I` bufora `TLVDS_IBUF` lub wyjściem `O` bufora `TLVDS_OBUF`; port VHDL przypisany do tego pinu w `.cst` (`IO_LOC "<port>" A,B`) nosi nazwę sieci, która jest do niego podłączona. Odwrócenie kompensuje generyk `INVERT` modułu `rx_phy` / `tx_phy`. Stan w rev. A: **RD odwrócona** (`SFP_RD_N` na pinie A 43, `SFP_RD_P` na pinie B 42, `rx_phy` z `INVERT => true`), **TD bez zmian** (`SFP_TD_P` na pinie A 34).
 
 ### 3.3 Alternatywy przydziału
 
@@ -187,7 +188,7 @@ Warianty na wypadek trudności w schemacie lub prowadzeniu ścieżek. Wariant oz
 | | | **30/29** (IOR17) | zajmuje GCLKT_3 | PnR OK |
 | | | **11/10** (IOL15) | lewa krawędź; `HOST_RST_N` → np. 28; zajmuje GCLKT_6 | PnR OK |
 | | | 13–24 (bank 2) | pary TRUE, ale kolidują z magistralą xSPI | nie zalecane |
-| `SFP_RD_P/N` | 43/42 | **45/44** (IOT22, bank 0) | zachowuje opcję terminacji wewnętrznej | PnR OK (z `DIFF_RESISTOR=ON`) |
+| `SFP_RD_N/P` (odwrócona, reguła 9) | 43/42 | **45/44** (IOT22, bank 0) | zachowuje opcję terminacji wewnętrznej | PnR OK (z `DIFF_RESISTOR=ON`) |
 | | | **39/38** (IOT42, bank 1) | najbliżej narożnika SFP; tylko terminacja zewnętrzna; `SFP_TX_DIS`/`SFP_TX_FAULT` → 44/45 | PnR OK |
 | | | **41/40** (IOT37, bank 1) | tylko terminacja zewnętrzna; `SFP_LOS`/`SFP_MOD_ABS` → 44/45 | PnR OK |
 | | | **28/27**, **30/29** (bank 1) | tylko terminacja zewnętrzna | PnR OK |
@@ -238,8 +239,8 @@ Przyporządkowanie pinów złącza (INF-8074i, Table 1; numeracja zgodna z symbo
 | 7 | Rate Select | — | **jeden pin**; opcjonalne wejście modułu z wewnętrznym pull-downem > 30 kΩ (niski lub rozwarty = pasmo zmniejszone, wysoki = pełne); 10 kΩ do masy. W SFP+ ten pin nazywa się RS0 |
 | 8 | LOS | `SFP_LOS` → pin 40 | wyjście OC/OD modułu; pull-up 4,7–10 kΩ |
 | 9, 10, 11, 14 | VeeR | GND | masa odbiornika. W SFP+ pin 9 to wejście RS1 — połączenie z masą jest dla modułu SFP+ stanem niskim, więc pozostaje poprawne |
-| 12 | RD− | → `SFP_RD_N` (pin 42) | połączenie bezpośrednie; terminacja i bias przy FPGA (5.2) |
-| 13 | RD+ | → `SFP_RD_P` (pin 43) | jw. |
+| 12 | RD− | → `SFP_RD_N` (pin 43) | połączenie bezpośrednie; terminacja i bias przy FPGA (5.2) |
+| 13 | RD+ | → `SFP_RD_P` (pin 42) | jw.; polaryzacja odwrócona względem pinów A/B pary (3.2, reguła 9) |
 | 15 | VccR | 3,3 V przez filtr | filtr odbiornika (poniżej) |
 | 16 | VccT | 3,3 V przez filtr | filtr nadajnika (poniżej) |
 | 18 | TD+ | ← `SFP_TD_P` (pin 34) | połączenie bezpośrednie |
@@ -275,11 +276,11 @@ Napięcia pull-upów sygnałów sterujących: 2,0 V … VccT/VccR + 0,3 V; przy 
 Wariant podstawowy: **terminacja zewnętrzna** ([ADR 0002](adr/0002-terminacja-rx-zewnetrzna.md)).
 
 ```
-RD+ (SFP 13) ───┬──────────────── FPGA RD_P (pin 43)
+RD+ (SFP 13) ───┬──────────────── FPGA RD_P (pin 42, IOT32B)
               R9 49,9 Ω 1% 0402
                 ├── Vbias 1,2 V (R11 2,1 kΩ z 3,3 V / R12 1,2 kΩ do masy, C6 100 nF do masy)
               R10 49,9 Ω 1% 0402
-RD− (SFP 12) ───┴──────────────── FPGA RD_N (pin 42)
+RD− (SFP 12) ───┴──────────────── FPGA RD_N (pin 43, IOT32A)
 ```
 
 - R9 i R10 umieszcza się bezpośrednio przy pinach 42/43 (odcinek do odbiornika ≤ 2 mm). C6 w węźle Vbias zwiera do masy zakłócenia wspólne.
@@ -604,7 +605,7 @@ vhdl/
 - `tx_gearbox`: symbol 10-bitowy co 5 taktów `clk_sys` → 2 bity na takt; impuls `char_en` dla `tx_framer` i `enc_8b10b`.
 - `tx_phy`: `OSER8` taktowany `clk_fast` (FCLK) / `clk_sys` (PCLK), każdy bit powielony 4× → `TLVDS_OBUF`.
 - `rx_phy`: `TLVDS_IBUF` → `IDES8` (FCLK = 200 MHz, PCLK = 50 MHz) → 8 próbek na takt `clk_sys`.
-- Generyk `INVERT` — odwrócenie polaryzacji pary.
+- Generyk `INVERT` — odwrócenie polaryzacji pary. W rev. A para RD jest odwrócona na płytce (3.2, reguła 9): `rx_phy` z `INVERT => true`, wejścia bufora `rd_p => sfp_rd_n`, `rd_n => sfp_rd_p`; `tx_phy` z `INVERT => false`.
 
 **`cdr_os4x8`** — gotowy, [opis](vhdl/cdr.md)
 - Wejście: 8 próbek na takt (2 bity × 4 próbki). Wykrywanie zboczy między kolejnymi próbkami (także między taktami), liczniki zboczy w czterech klasach fazowych przez okno 32 taktów.

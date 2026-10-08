@@ -15,9 +15,12 @@ IO_PORT "sfp_td_p"     IO_TYPE=LVDS25 DRIVE=3.5;
 // Internal 100 R (DIFF_RESISTOR=ON) is a fallback with the external resistors
 // not fitted - never both. DIFF_RESISTOR is accepted only in bank 0; remove the
 // attribute entirely when RD is moved to another bank.
+// Polarity swapped on the board: SFP_RD_N on the true pin 43 (IOT32A),
+// SFP_RD_P on 42 (IOT32B). The port on the TLVDS_IBUF input I is sfp_rd_n;
+// the data is inverted back in rx_phy (INVERT => true).
 // Alternatives: 45,44 (bank 0) | 39,38 | 41,40 | 28,27 | 30,29 (external only).
-IO_LOC  "sfp_rd_p"     43,42;
-IO_PORT "sfp_rd_p"     IO_TYPE=LVDS25 DIFF_RESISTOR=OFF;
+IO_LOC  "sfp_rd_n"     43,42;
+IO_PORT "sfp_rd_n"     IO_TYPE=LVDS25 DIFF_RESISTOR=OFF;
 
 // ---- Clocks -----------------------------------------------------------------
 // CLK_25M: dedicated right PLL input (RPLL_T_in). Fallback: 30 (GCLKT_3) or

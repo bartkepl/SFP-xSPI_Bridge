@@ -65,8 +65,11 @@ begin
   u_td_buf : TLVDS_OBUF
     port map (I => '0', O => sfp_td_p, OB => sfp_td_n);
 
+  -- RD pair swapped on the board: SFP_RD_N on the true pin (43, IOT32A),
+  -- SFP_RD_P on the complement pin (42). rd_se carries inverted data; the
+  -- receiver uses rx_phy with INVERT => true.
   u_rd_buf : TLVDS_IBUF
-    port map (I => sfp_rd_p, IB => sfp_rd_n, O => rd_se);
+    port map (I => sfp_rd_n, IB => sfp_rd_p, O => rd_se);
 
   -- SFP I2C released
   sfp_scl <= 'Z';

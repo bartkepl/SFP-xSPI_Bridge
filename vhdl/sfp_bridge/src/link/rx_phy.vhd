@@ -10,7 +10,9 @@
 -- prim_sim.vhd), so samples(i) = Qi. CALIB is not used (word alignment is
 -- done by cdr_os4x8 / comma_align).
 --
--- INVERT swaps the polarity (RD+/RD- swapped on the board).
+-- INVERT swaps the polarity (RD+/RD- swapped on the board). rd_p is the
+-- leg on the true (A) pin of the pair, rd_n on the complement (B) pin. Board
+-- rev. A: SFP_RD_N on pin A -> rd_p => sfp_rd_n, rd_n => sfp_rd_p, INVERT => true.
 --------------------------------------------------------------------------------
 
 library ieee;

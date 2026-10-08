@@ -32,7 +32,17 @@ Licznik fazy ph = 0…4: przy ph = 0 impuls `char_en`; przy ph = 4 zatrzaśnięc
 
 `TLVDS_IBUF` (para RD±, terminacja zewnętrzna — [ADR 0002](../adr/0002-terminacja-rx-zewnetrzna.md)) + `IDES8`. Wyjście `samples(i)` = Qi; `IDES8` oddaje najwcześniejszą próbkę na Q0. Wejście `CALIB` (przesuwanie granicy słowa w deserializerze) nie jest używane — fazę i granicę symbolu wyznaczają [`cdr_os4x8`](cdr.md) i [`comma_align`](comma_align.md).
 
-**Generyk `INVERT`** (`tx_phy`, `rx_phy`, domyślnie `false`): odwrócenie polaryzacji na wypadek zamiany przewodów P/N pary na płytce.
+**Generyk `INVERT`** (`tx_phy`, `rx_phy`, domyślnie `false`): odwrócenie polaryzacji na wypadek zamiany przewodów P/N pary na płytce. Porty `rd_p`/`td_p` modułów oznaczają nóżkę bufora na pinie A pary (true), `rd_n`/`td_n` — na pinie B.
+
+W rev. A płytki para RD jest odwrócona (`SFP_RD_N` na pinie A 43, `SFP_RD_P` na pinie B 42 — plan, 3.2, reguła 9), więc w top-level obowiązuje:
+
+```vhdl
+u_rx_phy : entity work.rx_phy
+  generic map (INVERT => true)
+  port map (..., rd_p => sfp_rd_n, rd_n => sfp_rd_p, ...);
+```
+
+Para TD nie jest odwrócona (`tx_phy` z `INVERT => false`, `td_p => sfp_td_p`).
 
 **Reset:** `RESET` prymitywów jest podłączony do resetu domeny `clk_sys` ([ADR 0004](../adr/0004-strategia-resetu.md)).
 

@@ -1,0 +1,4 @@
+(sym_lib_table
+	(version 7)
+	(lib (name "gowin_fpga") (type "Legacy") (uri "${KIPRJMOD}/local/gowin_fpga.lib") (options "") (descr ""))
+)

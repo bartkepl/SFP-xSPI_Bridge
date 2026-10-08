@@ -4,7 +4,8 @@
 -- Link transmitter, character level (ADR 0005).
 --
 -- Character stream:
---   idle  : K28.5 D16.2 (/I/, XON)   or   K28.5 D21.5 (/P/, XOFF)
+--   idle  : K28.5 D16.2 (/I/, ready, XON), K28.5 D21.5 (/P/, ready, XOFF)
+--           or K28.5 D5.6 (/R/, receiver not ready)          (ADR 0008)
 --   frame : K27.7 TYPE LEN_H LEN_L payload(LEN) CRC0 CRC1 CRC2 CRC3 K29.7
 --           CRC-32 (crc32) over TYPE, LEN_H, LEN_L and payload, CRC0 = bits 7..0
 --
@@ -16,8 +17,9 @@
 --   * A frame starts only after a complete idle pair, when the FIFO is not
 --     empty and the remote side does not request XOFF (xoff_remote = '0').
 --   * A started frame is always sent to the end (no gaps inside a frame).
---   * The second character of each idle pair carries the local XOFF state
---     (xoff_local), so the state is repeated continuously.
+--   * The second character of each idle pair carries the state of the local
+--     receiver, repeated continuously: /R/ while rx_ready = '0', otherwise
+--     /P/ or /I/ according to xoff_local.
 --
 -- Handshake with the encoder:
 --   char_data / char_k always hold the character the encoder takes at the
@@ -59,6 +61,7 @@ entity tx_framer is
     fifo_data   : in  std_logic_vector(7 downto 0);
     fifo_valid  : in  std_logic;
     -- flow control
+    rx_ready    : in  std_logic;   -- our receiver is synchronized and enabled
     xoff_local  : in  std_logic;   -- our receiver asks the remote to pause
     xoff_remote : in  std_logic;   -- remote asks us to pause (from rx_deframer)
     -- status
@@ -73,8 +76,6 @@ architecture rtl of tx_framer is
   -- Kind of the character currently prepared in nxt_data / nxt_k
   type t_state is (S_IDLE_K, S_IDLE_D, S_SOF, S_TYPE, S_LENH, S_LENL,
                    S_PAY, S_CRC0, S_CRC1, S_CRC2, S_CRC3, S_EOF);
-
-  constant D21_5 : std_logic_vector(7 downto 0) := x"B5";
 
   signal state      : t_state := S_IDLE_K;
   signal nxt_data   : std_logic_vector(7 downto 0) := K28_5;
@@ -154,7 +155,13 @@ begin
         if char_en = '1' then
           case state is
             when S_IDLE_K =>
-              nxt_data <= D21_5 when xoff_local = '1' else D16_2;
+              if rx_ready = '0' then
+                nxt_data <= D5_6;
+              elsif xoff_local = '1' then
+                nxt_data <= D21_5;
+              else
+                nxt_data <= D16_2;
+              end if;
               nxt_k    <= '0';
               state    <= S_IDLE_D;
 

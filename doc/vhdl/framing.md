@@ -2,7 +2,7 @@
 
 Pliki: `vhdl/sfp_bridge/src/link/tx_framer.vhd`, `rx_deframer.vhd` · testbench: `vhdl/sim/tb/tb_link_frames.vhd`
 
-Warstwa znaków protokołu łącza zgodnie z [ADR 0005](../adr/0005-protokol-lacza.md): ramki z CRC-32, sekwencje bezczynności niosące stan XON/XOFF, odrzucanie ramek z błędem bez retransmisji.
+Warstwa znaków protokołu łącza zgodnie z [ADR 0005](../adr/0005-protokol-lacza.md) i [ADR 0008](../adr/0008-stan-lacza.md): ramki z CRC-32, sekwencje bezczynności niosące stan odbiornika (gotowość, XON/XOFF), odrzucanie ramek z błędem bez retransmisji.
 
 ## Strumień znaków
 
@@ -10,6 +10,7 @@ Warstwa znaków protokołu łącza zgodnie z [ADR 0005](../adr/0005-protokol-lac
 |---|---|---|
 | bezczynność /I/ (XON) | K28.5 D16.2 | zwykła bezczynność, przywraca RD− |
 | bezczynność /P/ (XOFF) | K28.5 D21.5 | „nie rozpoczynaj nowych ramek” |
+| bezczynność /R/ (odbiornik niegotowy) | K28.5 D5.6 | odbiornik niezsynchronizowany lub wyłączony — „nie rozpoczynaj nowych ramek” |
 | ramka | K27.7 · TYPE · LEN_H · LEN_L · treść · CRC0 · CRC1 · CRC2 · CRC3 · K29.7 | CRC-32 po TYPE, LEN, treści; CRC0 = bity 7…0 |
 
 Format ramki w FIFO (nadawczym i odbiorczym) jest ten sam: `TYPE, LEN_H, LEN_L, treść`. Host zapisuje i odczytuje ramki w tej postaci; bajty CRC i znaki sterujące istnieją tylko na łączu.
@@ -21,6 +22,7 @@ Format ramki w FIFO (nadawczym i odbiorczym) jest ten sam: `TYPE, LEN_H, LEN_L, 
 | `char_en` | koder pobiera znak (`char_data`, `char_k`) — raz na symbol (10 okresów bitu = 5 taktów `clk_sys`) |
 | `char_data`, `char_k` | znak przygotowany dla kodera; po `char_en` przygotowywany jest następny |
 | `fifo_*` | port odczytu FIFO nadawczego (`async_fifo`, opóźnienie 1 takt) |
+| `rx_ready` | własny odbiornik zsynchronizowany i włączony; `'0'`: wysyłaj /R/ |
 | `xoff_local` | stan własnego odbiornika: wysyłaj /P/ zamiast /I/ |
 | `xoff_remote` | strona przeciwna zgłasza XOFF: nie rozpoczynaj ramek |
 | `busy`, `frame_sent`, `len_err` | ramka w toku; impuls po przygotowaniu K29.7; LEN > MAX_LEN w FIFO |
@@ -42,7 +44,8 @@ Format ramki w FIFO (nadawczym i odbiorczym) jest ten sam: `TYPE, LEN_H, LEN_L, 
 | `char_*`, `code_err`, `disp_err` | znaki z dekodera `dec_8b10b` |
 | `fifo_wr`, `fifo_data`, `fifo_commit`, `fifo_abort` | port zapisu FIFO odbiorczego (`async_fifo`, `COMMIT_MODE = true`) |
 | `fifo_free`, `fifo_ovf` | wolne miejsce i przepełnienie FIFO odbiorczego |
-| `xoff_remote` | stan XOFF odebrany od strony przeciwnej (do własnego `tx_framer`) |
+| `xoff_remote` | strona przeciwna zgłasza XOFF lub niegotowość (/P/, /R/, brak synchronizacji) — do własnego `tx_framer` |
+| `remote_ready` | strona przeciwna nadaje /I/ lub /P/ (jej odbiornik zsynchronizowany); `'0'` po /R/ i przy braku własnej synchronizacji — do `link_ctrl` |
 | `xoff_local` | żądanie XOFF wynikające z zapełnienia własnego FIFO (do własnego `tx_framer`) |
 | `ev_*` | impulsy zdarzeń dla liczników i przerwań |
 
@@ -81,12 +84,13 @@ Pełne łącze dwukierunkowe na poziomie znaków (bez serializera i CDR), zegar 
 | 2b | 3 ramki z błędnym bajtem w poprawnym symbolu (treść, CRC0, TYPE): każda odrzucona z `ev_crc_err` |
 | 3 | LEN = 0 i LEN = 1025 od hosta: oba odrzucone z `ev_len_err`; framer zgłasza `len_err` dla 1025 |
 | 4 | utrata synchronizacji znaków w środku ramki: ramka odrzucona, następna dostarczona |
+| 4b | odbiornik strony B niegotowy (B nadaje /R/): strona A widzi `remote_ready` = 0 i XOFF, przez 2000 taktów nie rozpoczyna ramki; po powrocie gotowości ramka dostarczona |
 | 5 | czytelnik zatrzymany, 16 ramek po 1000 B (2× FIFO RX): strona B zgłasza XOFF, strona A wstrzymuje nadawanie na co najmniej 10 000 taktów (200 µs); po wznowieniu wszystkie ramki dostarczone, brak przepełnienia, XOFF zwolniony |
 | 6 | wszystkie oczekiwane ramki odebrane; zdarzenia błędów: 6 + 3 + 2 = 11 |
 
 Odwrócenie jednego bitu symbolu 8b/10b daje prawie zawsze błąd kodu lub dysparytetu, a nie błąd CRC — dlatego faza 2b wprowadza błędny bajt przed koderem, co sprawdza ścieżkę CRC.
 
-**Test mutacyjny:** wykryte — zatwierdzenie ramki mimo złego CRC, brak odrzucenia przy błędzie linii, framer ignorujący XOFF, zamieniona kolejność bajtów CRC, odbiornik nigdy nie zgłaszający XOFF.
+**Test mutacyjny:** wykryte — zatwierdzenie ramki mimo złego CRC, brak odrzucenia przy błędzie linii, framer ignorujący XOFF, zamieniona kolejność bajtów CRC, odbiornik nigdy nie zgłaszający XOFF, framer nienadający /R/, deframer traktujący /R/ jak XON.
 
 ## Synteza i czasy
 

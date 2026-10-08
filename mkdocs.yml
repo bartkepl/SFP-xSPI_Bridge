@@ -69,3 +69,4 @@ nav:
       - "0005 Protokół łącza": adr/0005-protokol-lacza.md
       - "0006 Tryb UART": adr/0006-tryb-uart-przezroczysty.md
       - "0007 Zegar 50 MHz": adr/0007-zegar-systemowy-50mhz.md
+      - "0008 Stan łącza": adr/0008-stan-lacza.md

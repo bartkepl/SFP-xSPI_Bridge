@@ -19,11 +19,14 @@
 --                 (checked when LEN is known) or FIFO overflow
 --   ev_frame_ok   frame committed
 --
--- Idle and flow control:
---   * K28.5 D16.2 (/I/) -> xoff_remote <= '0'
---   * K28.5 D21.5 (/P/) -> xoff_remote <= '1'
+-- Idle and flow control (ADR 0005, ADR 0008):
+--   * K28.5 D16.2 (/I/) -> remote_ready <= '1', xoff_remote <= '0'
+--   * K28.5 D21.5 (/P/) -> remote_ready <= '1', xoff_remote <= '1'
+--   * K28.5 D5.6  (/R/) -> remote_ready <= '0', xoff_remote <= '1'
+--     (the remote receiver is not synchronized: frames would be lost)
 --   * While sync = '0' (no character alignment) any frame in progress is
---     aborted and xoff_remote is held at '1' (remote state unknown).
+--     aborted, remote_ready is '0' and xoff_remote is '1' (remote state
+--     unknown).
 --   * xoff_local (to the local transmitter) is '1' when the RX FIFO free
 --     space falls below XOFF_ON and returns to '0' above XOFF_OFF.
 --
@@ -75,6 +78,7 @@ entity rx_deframer is
     fifo_ovf    : in  std_logic;
     -- flow control
     xoff_remote : out std_logic;
+    remote_ready : out std_logic;                    -- remote receiver synchronized
     xoff_local  : out std_logic;
     -- events (one-cycle pulses)
     ev_frame_ok : out std_logic;
@@ -97,14 +101,13 @@ architecture rtl of rx_deframer is
                    S_EOF,       -- expecting K29.7
                    S_SKIP);     -- discarding the rest of a rejected frame
 
-  constant D21_5 : std_logic_vector(7 downto 0) := x"B5";
-
   signal state     : t_state := S_HUNT;
   signal len_h     : std_logic_vector(7 downto 0) := (others => '0');
   signal pay_left  : unsigned(10 downto 0) := (others => '0');
   signal crc_left  : unsigned(1 downto 0) := (others => '0');
 
   signal xoff_r    : std_logic := '1';
+  signal rrdy_r    : std_logic := '0';
   signal xoff_l    : std_logic := '0';
 
   signal crc_init  : std_logic := '0';
@@ -157,6 +160,7 @@ begin
       if rst = '1' then
         state  <= S_HUNT;
         xoff_r <= '1';
+        rrdy_r <= '0';
         xoff_l <= '0';
       elsif sync = '0' then
         if state /= S_HUNT and state /= S_IDLE2 and state /= S_SKIP then
@@ -164,6 +168,7 @@ begin
         end if;
         state  <= S_HUNT;
         xoff_r <= '1';
+        rrdy_r <= '0';
       else
         -- CRC verdict one cycle after K29.7 (crc_ok then includes CRC3)
         if eof_chk = '1' then
@@ -206,9 +211,15 @@ begin
               when S_IDLE2 =>
                 if char_k = '0' and char_data = D16_2 then
                   xoff_r <= '0';
+                  rrdy_r <= '1';
                   state  <= S_HUNT;
                 elsif char_k = '0' and char_data = D21_5 then
                   xoff_r <= '1';
+                  rrdy_r <= '1';
+                  state  <= S_HUNT;
+                elsif char_k = '0' and char_data = D5_6 then
+                  xoff_r <= '1';
+                  rrdy_r <= '0';
                   state  <= S_HUNT;
                 elsif char_k = '1' and char_data = K28_5 then
                   state <= S_IDLE2;
@@ -307,7 +318,8 @@ begin
   fifo_data   <= data_q;
   fifo_commit <= commit_q;
   fifo_abort  <= abort_q;
-  xoff_remote <= xoff_r;
+  xoff_remote  <= xoff_r;
+  remote_ready <= rrdy_r;
   xoff_local  <= xoff_l;
   busy        <= '0' when state = S_HUNT or state = S_IDLE2 or state = S_SKIP else '1';
 

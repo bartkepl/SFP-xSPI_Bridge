@@ -1,6 +1,6 @@
 # 0005. Protokół łącza: ramka z CRC-32 bez retransmisji, kontrola przepływu XON/XOFF w sekwencji bezczynności
 
-**Stan:** przyjęta · **Data:** 2026-10-08
+**Stan:** przyjęta, uzupełniona przez [ADR 0008](0008-stan-lacza.md) (para bezczynności /R/ — odbiornik niezsynchronizowany) · **Data:** 2026-10-08
 **Dotyczy:** vhdl, firmware, doc
 
 ## Kontekst

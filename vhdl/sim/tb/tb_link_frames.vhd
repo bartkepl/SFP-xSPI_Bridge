@@ -25,6 +25,9 @@
 --      ev_len_err (framer flags len_err for 1025); the next frame delivered.
 --   4. Character sync lost on side B in the middle of a frame: the frame is
 --      dropped, later frames delivered.
+--   4b. Side B receiver not ready (idle /R/, ADR 0008): side A sees
+--      remote_ready = '0' and XOFF and does not start a frame for 2000
+--      cycles; after B becomes ready the frame is delivered.
 --   5. Flow control: reader on side B stopped while 16 frames of 1000 bytes
 --      are sent (twice the RX FIFO size). Side B must send XOFF, side A must
 --      pause for at least 10000 cycles; no overflow (ev_ovf = 0); after the reader resumes all frames
@@ -131,6 +134,9 @@ architecture sim of tb_link_frames is
   signal b_dv, b_dk, b_dce, b_dde : std_logic;
   signal b_dd          : std_logic_vector(7 downto 0);
   signal b_sync        : std_logic := '1';
+  signal b_rx_ready    : std_logic := '1';      -- B receiver enabled (tx_framer rx_ready)
+  signal b_rdy_eff     : std_logic;
+  signal a_remote_ready : std_logic;
   signal b_fw, b_fc, b_fa, b_fovf : std_logic;
   signal b_fwd         : std_logic_vector(7 downto 0);
   signal b_rfree       : unsigned(13 downto 0);
@@ -195,7 +201,7 @@ begin
     generic map (MAX_LEN => MAX_LEN)
     port map (clk => clk, rst => rst, char_en => char_en, char_data => a_cd, char_k => a_ck,
               fifo_empty => a_tf_empty, fifo_rd => a_tf_rd, fifo_data => a_tf_data,
-              fifo_valid => a_tf_valid, xoff_local => a_xoff_local,
+              fifo_valid => a_tf_valid, rx_ready => '1', xoff_local => a_xoff_local,
               xoff_remote => a_xoff_remote, busy => a_busy, frame_sent => a_sent,
               len_err => a_lenerr);
 
@@ -210,11 +216,13 @@ begin
   b_tf_valid <= '0';
   b_tf_data  <= (others => '0');
 
+  b_rdy_eff <= b_rx_ready and b_sync;
+
   b_framer : entity work.tx_framer
     generic map (MAX_LEN => MAX_LEN)
     port map (clk => clk, rst => rst, char_en => char_en, char_data => b_cd, char_k => b_ck,
               fifo_empty => b_tf_empty, fifo_rd => b_tf_rd, fifo_data => b_tf_data,
-              fifo_valid => b_tf_valid, xoff_local => b_xoff_local,
+              fifo_valid => b_tf_valid, rx_ready => b_rdy_eff, xoff_local => b_xoff_local,
               xoff_remote => b_xoff_remote, busy => open, frame_sent => open,
               len_err => open);
 
@@ -238,7 +246,7 @@ begin
               char_data => b_dd, char_k => b_dk, code_err => b_dce, disp_err => b_dde,
               fifo_wr => b_fw, fifo_data => b_fwd, fifo_commit => b_fc, fifo_abort => b_fa,
               fifo_free => b_rfree, fifo_ovf => b_fovf, xoff_remote => b_xoff_remote,
-              xoff_local => b_xoff_local, ev_frame_ok => ev_ok, ev_crc_err => ev_crc,
+              remote_ready => open, xoff_local => b_xoff_local, ev_frame_ok => ev_ok, ev_crc_err => ev_crc,
               ev_code_err => ev_code, ev_len_err => ev_len, ev_framing => ev_frm,
               ev_ovf => ev_ovf, busy => b_busy);
 
@@ -264,7 +272,7 @@ begin
               char_data => a_dd, char_k => a_dk, code_err => a_dce, disp_err => a_dde,
               fifo_wr => open, fifo_data => open, fifo_commit => open, fifo_abort => open,
               fifo_free => a_rfree, fifo_ovf => '0', xoff_remote => a_xoff_remote,
-              xoff_local => a_xoff_local, ev_frame_ok => open, ev_crc_err => open,
+              remote_ready => a_remote_ready, xoff_local => a_xoff_local, ev_frame_ok => open, ev_crc_err => open,
               ev_code_err => open, ev_len_err => open, ev_framing => open,
               ev_ovf => open, busy => open);
 
@@ -479,6 +487,7 @@ begin
     -- let both sides exchange idle pairs (XON) first
     for i in 1 to 100 loop wait until rising_edge(clk); end loop;
     check_equal(a_xoff_remote, '0', "side A sees XON after start-up");
+    check_equal(a_remote_ready, '1', "side A sees the remote receiver ready");
 
     ------------------------------------------------------------ 1
     for f in 1 to 20 loop
@@ -549,6 +558,26 @@ begin
     send_frame(id, 30, 30, true); id := id + 1;
     wait_frames_done(1000);
     check_equal(cnt_ok - ok_before, 1, "phase 4: only the frame after the sync loss delivered");
+
+    ------------------------------------------------------------ 4b
+    ok_before := cnt_ok;
+    b_rx_ready <= '0';
+    for i in 1 to 100 loop wait until rising_edge(clk); end loop;   -- 20 characters
+    check_equal(a_remote_ready, '0', "phase 4b: side A sees /R/ (remote not ready)");
+    check_equal(a_xoff_remote, '1', "phase 4b: side A holds transmission");
+    send_frame(id, 50, 50, true); id := id + 1;
+    for i in 1 to 2000 loop
+      wait until rising_edge(clk);
+      if a_busy = '1' then
+        check(false, "phase 4b: side A started a frame while the remote was not ready");
+        exit;
+      end if;
+    end loop;
+    check(a_tf_empty = '0', "phase 4b: frame kept in the TX FIFO");
+    b_rx_ready <= '1';
+    wait_frames_done(1000);
+    check_equal(a_remote_ready, '1', "phase 4b: remote ready again");
+    check_equal(cnt_ok - ok_before, 1, "phase 4b: frame delivered after the remote became ready");
 
     ------------------------------------------------------------ 5
     ok_before := cnt_ok;

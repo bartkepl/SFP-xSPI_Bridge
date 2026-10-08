@@ -8,7 +8,7 @@ Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia 
 | Narzędzia | KiCad 10 (PCB), Gowin EDA (VHDL-2008), GHDL + GTKWave (symulacja, [ADR 0003](adr/0003-weryfikacja-ghdl.md)), biblioteka C dla STM32 |
 | Prędkość linii | **100 Mbaud** (8b/10b → 80 Mbit/s → ok. 9 MB/s danych użytecznych) |
 | Interfejs hosta | SPI (1-1-1), QSPI (1-1-4 / 1-4-4), OCTOSPI (1-1-8 / 1-8-8), SDR — albo tryb przezroczysty UART ([ADR 0006](adr/0006-tryb-uart-przezroczysty.md)) |
-| Protokół łącza | ramki z CRC-32 bez retransmisji, XON/XOFF w sekwencji bezczynności ([ADR 0005](adr/0005-protokol-lacza.md)) |
+| Protokół łącza | ramki z CRC-32 bez retransmisji, gotowość odbiornika i XON/XOFF w sekwencji bezczynności ([ADR 0005](adr/0005-protokol-lacza.md), [ADR 0008](adr/0008-stan-lacza.md)) |
 | Zegar logiki | `clk_sys` = 50 MHz, serializery IDES8/OSER8 przy 200 MHz ([ADR 0007](adr/0007-zegar-systemowy-50mhz.md)) |
 | Strona optyczna | moduł SFP (INF-8074i) bez wewnętrznego CDR: 100BASE-FX / OC-3 lub 1000BASE-X (MM/SM, duplex lub BiDi); SFP+ nieobsługiwane |
 | Zasilanie | jedno **3,3 V** (wersja UV FPGA, moduł SFP) |
@@ -532,7 +532,7 @@ vhdl/
     link/
       crc32.vhd               -- CRC-32 (bajtowo)
       enc_8b10b.vhd, dec_8b10b.vhd
-      tx_framer.vhd           -- ramki, bezczynność /I/ /P/ (XON/XOFF)
+      tx_framer.vhd           -- ramki, bezczynność /I/ /P/ /R/ (XON/XOFF, odbiornik niegotowy)
       rx_deframer.vhd         -- kontrola ramek, odrzucanie błędnych, XOFF
       tx_gearbox.vhd          -- symbol 10 bitów → 2 bity na takt, char_en co 5 taktów
       tx_phy.vhd              -- OSER8 (bity powielone 4×) + TLVDS_OBUF
@@ -584,8 +584,8 @@ vhdl/
 
 **`tx_framer`** — gotowy, [opis](vhdl/framing.md)
 - Ramka: `K27.7 (SOF) | TYPE | LEN_H | LEN_L | payload (1..1024 B) | CRC32 (4 B) | K29.7 (EOF)`; FIFO TX zawiera ramki w postaci `TYPE, LEN_H, LEN_L, payload`.
-- Poza ramką ciągła bezczynność: para `K28.5 + D16.2` (/I/, XON) lub `K28.5 + D21.5` (/P/, XOFF).
-- Ramkę zaczyna dopiero wtedy, gdy w TX FIFO jest cała (zatwierdzona) ramka i strona przeciwna nie zgłasza XOFF; ramka rozpoczęta jest wysyłana do końca.
+- Poza ramką ciągła bezczynność: para `K28.5 + D16.2` (/I/, XON), `K28.5 + D21.5` (/P/, XOFF) lub `K28.5 + D5.6` (/R/, własny odbiornik niezsynchronizowany — [ADR 0008](adr/0008-stan-lacza.md)).
+- Ramkę zaczyna dopiero wtedy, gdy w TX FIFO jest cała (zatwierdzona) ramka i strona przeciwna nie zgłasza XOFF ani niegotowości; ramka rozpoczęta jest wysyłana do końca.
 
 **`crc32`** — gotowy, [opis](vhdl/crc32.md): CRC-32 IEEE 802.3, przetwarzanie bajtowe, jeden bajt na takt.
 
@@ -612,7 +612,7 @@ vhdl/
 **`rx_deframer`** — gotowy, [opis](vhdl/framing.md)
 - Oczekiwanie na SOF, odczyt typu i długości, zapis do RX FIFO, liczenie CRC.
 - Błąd (kod/dysparytet, długość, nieoczekiwany znak sterujący, CRC, brak miejsca) → odrzucenie ramki (`abort`) i impuls zdarzenia dla liczników.
-- Odbiór stanu XON/XOFF strony przeciwnej; generowanie własnego XOFF z progiem i histerezą (FIFO RX 8 KiB).
+- Odbiór stanu strony przeciwnej (gotowość /R/, XON/XOFF); generowanie własnego XOFF z progiem i histerezą (FIFO RX 8 KiB).
 
 **`link_ctrl`**
 - Stany: `DOWN` (LOS lub brak sync) → `SYNC` → `UP`.

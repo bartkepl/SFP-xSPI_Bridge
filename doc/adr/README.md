@@ -31,3 +31,4 @@ Plik `NNNN-krotki-opis.md`, numeracja od `0001`:
 | [0005](0005-protokol-lacza.md) | Protokół łącza: ramka z CRC-32 bez retransmisji, XON/XOFF w sekwencji bezczynności | przyjęta |
 | [0006](0006-tryb-uart-przezroczysty.md) | Tryb przezroczysty UART obok trybu xSPI (zworka MODE_SEL, 115200, opcjonalne RTS/CTS) | przyjęta |
 | [0007](0007-zegar-systemowy-50mhz.md) | Zegar systemowy 50 MHz z serializerami IDES8/OSER8 | przyjęta |
+| [0008](0008-stan-lacza.md) | Stan łącza: gotowość odbiornika w sekwencji bezczynności (/R/), LOS, liczniki, pętle zwrotne | przyjęta |

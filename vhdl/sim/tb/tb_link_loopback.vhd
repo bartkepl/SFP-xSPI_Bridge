@@ -110,7 +110,7 @@ begin
   u_fr : entity work.tx_framer
     port map (clk => clk_sys, rst => rst, char_en => char_en, char_data => cd, char_k => ck,
               fifo_empty => tf_empty, fifo_rd => tf_rd, fifo_data => tf_data, fifo_valid => tf_valid,
-              xoff_local => xoff_local, xoff_remote => xoff_remote,
+              rx_ready => sync_i, xoff_local => xoff_local, xoff_remote => xoff_remote,
               busy => open, frame_sent => open, len_err => open);
 
   u_enc : entity work.enc_8b10b
@@ -148,7 +148,7 @@ begin
               char_data => dd, char_k => dk, code_err => dce, disp_err => dde,
               fifo_wr => fw, fifo_data => fwd, fifo_commit => fc, fifo_abort => fa,
               fifo_free => rfree, fifo_ovf => fovf,
-              xoff_remote => xoff_remote, xoff_local => xoff_local,
+              xoff_remote => xoff_remote, remote_ready => open, xoff_local => xoff_local,
               ev_frame_ok => ev_ok, ev_crc_err => e_crc, ev_code_err => e_code,
               ev_len_err => e_len, ev_framing => e_fr, ev_ovf => e_ovf, busy => open);
 

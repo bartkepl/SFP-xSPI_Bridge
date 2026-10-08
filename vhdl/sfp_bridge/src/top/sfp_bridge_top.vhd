@@ -44,6 +44,9 @@ entity sfp_bridge_top is
     host_irq_n   : out   std_logic;
     host_rst_n   : in    std_logic;
 
+    -- Mode select (ADR 0006): '1' = xSPI, '0' = transparent UART
+    mode_sel     : in    std_logic;
+
     -- LEDs, active low (3V3 -> 1k -> LED -> pin)
     led_link     : out   std_logic;
     led_act      : out   std_logic

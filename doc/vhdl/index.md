@@ -38,6 +38,7 @@ vhdl/
 | `cdr_os4`, `comma_align` | — | — | — | — | planowany |
 | `tx_phy`, `rx_phy`, `clk_rst` | — | — | — | — | planowany (prymitywy Gowin) |
 | `link_ctrl` | — | — | — | — | planowany |
+| `uart_rx`, `uart_tx`, `uart_bridge` | — | — | — | — | planowany ([ADR 0006](../adr/0006-tryb-uart-przezroczysty.md)) |
 | `i2c_master`, `sfp_mgmt` | — | — | — | — | planowany |
 | `xspi_slave`, `csr_regs` | — | — | — | — | planowany |
 | `leds` | — | — | — | — | planowany |

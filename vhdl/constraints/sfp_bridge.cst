@@ -4,7 +4,7 @@
 //
 // Dedicated pins (not assigned here): 3 JTAGSEL_N, 4 TMS, 5 TCK, 6 TDI, 7 TDO,
 // 8 RECONFIG_N, 9 DONE, 48 MODE2/MODE1 (pull-down -> AUTOBOOT).
-// Spare I/O: 10, 27, 28, 29, 30, 44, 45.
+// Spare I/O: 27, 28, 29, 30, 44, 45.
 
 // ---- SFP high-speed (LVDS 100 Mbaud) ----------------------------------------
 // TD: true LVDS output pair IOR11 (bank 1). Alternatives: 28,27 | 30,29 | 11,10.
@@ -70,6 +70,10 @@ IO_LOC  "sfp_scl"      46;
 IO_PORT "sfp_scl"      IO_TYPE=LVCMOS33 OPEN_DRAIN=ON;
 IO_LOC  "sfp_sda"      47;
 IO_PORT "sfp_sda"      IO_TYPE=LVCMOS33 OPEN_DRAIN=ON;
+
+// ---- Mode select (ADR 0006): open = xSPI, jumper to GND = transparent UART --
+IO_LOC  "mode_sel"     10;
+IO_PORT "mode_sel"     IO_TYPE=LVCMOS33 PULL_MODE=UP;
 
 // ---- LEDs (any free GPIO) -----------------------------------------------------
 // Active low: 3V3 -> 1k -> LED -> pin. Drive 0 to light.

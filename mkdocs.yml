@@ -63,3 +63,4 @@ nav:
       - "0003 Weryfikacja GHDL": adr/0003-weryfikacja-ghdl.md
       - "0004 Strategia resetu": adr/0004-strategia-resetu.md
       - "0005 Protokół łącza": adr/0005-protokol-lacza.md
+      - "0006 Tryb UART": adr/0006-tryb-uart-przezroczysty.md

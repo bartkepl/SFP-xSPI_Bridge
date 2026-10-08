@@ -86,7 +86,7 @@ Ważne ograniczenia z DS100:
 
 Numery pinów pochodzą z UG114 (GW1N-9 Pinout, kolumna QN48). Przydział, wszystkie alternatywy z tabeli 3.3 oraz warianty negatywne zostały sprawdzone przebiegiem syntezy i PnR w Gowin EDA 1.9.11.03 (projekt testowy z rPLL, CLKDIV, IDES4, OSER4 i wszystkimi 26 portami). Plik ograniczeń: [`vhdl/constraints/sfp_bridge.cst`](../vhdl/constraints/sfp_bridge.cst).
 
-Bilans: 41 wyprowadzeń I/O w QN48, z czego 8 to piny konfiguracyjne (3–9, 48), 26 jest przydzielonych, 7 pozostaje w zapasie.
+Bilans: 41 wyprowadzeń I/O w QN48, z czego 8 to piny konfiguracyjne (3–9, 48), 27 jest przydzielonych (w tym `MODE_SEL`, [ADR 0006](adr/0006-tryb-uart-przezroczysty.md)), 6 pozostaje w zapasie.
 
 Rozkład na obudowie (numeracja przeciwnie do ruchu wskazówek zegara od lewego górnego narożnika): lewa krawędź 1–12, dolna 13–24, prawa 25–36, górna 37–48. Wynikający z tego układ płytki: **złącze hosta przy dolnej krawędzi, klatka SFP przy prawym górnym narożniku, JTAG przy lewej krawędzi**.
 
@@ -102,7 +102,7 @@ Rozkład na obudowie (numeracja przeciwnie do ruchu wskazówek zegara od lewego 
           TDO  7                                                    30  -
    RECONFIG_N  8                                                    29  -
          DONE  9                                                    28  -
-            - 10                                                    27  -
+     MODE_SEL 10                                                    27  -
    HOST_RST_N 11                                                    26  VSS
           VCC 12                                                    25  VCCIO1/2
                   IRQ  CS  IO0 IO1 IO2 IO3 SCLK DQS IO4 IO5 IO6 IO7
@@ -139,10 +139,11 @@ Nazwy sieci w schemacie pisane są wielkimi literami, porty VHDL małymi (`SFP_T
 | `SFP_MOD_ABS` | in | LVCMOS33, PULL_MODE=UP | **41** | 1 | IOT37A | MOD_DEF0; jw. |
 | `SFP_SCL` | inout (OD) | LVCMOS33, OPEN_DRAIN | **46** | 3 | IOT12B | MOD_DEF1; pull-up 4,7 kΩ |
 | `SFP_SDA` | inout (OD) | LVCMOS33, OPEN_DRAIN | **47** | 3 | IOT12A | MOD_DEF2; pull-up 4,7 kΩ |
+| `MODE_SEL` | in | LVCMOS33, PULL_MODE=UP | **10** | 3 | IOL15A (GCLKT_6) | wybór trybu ([ADR 0006](adr/0006-tryb-uart-przezroczysty.md)): otwarta zworka = xSPI, zwarta do masy = UART; pull-up 10 kΩ |
 | `LED_LINK` | out | LVCMOS33 | **31** | 1 | IOR12B (MCLK/D4) | aktywny stanem niskim (3V3 → 1 kΩ → LED → pin) |
 | `LED_ACT` | out | LVCMOS33 | **32** | 1 | IOR12A (MCS_N/D5) | aktywny stanem niskim |
 
-Piny zapasowe: **10** (GCLKT_6), **27/28** (IOR24, para z wyjściem true LVDS), **29/30** (IOR17, para z wyjściem true LVDS, GCLKT_3), **44/45** (IOT22, bank 0, para z opcją terminacji wewnętrznej). Zaleca się wyprowadzenie ich na pola testowe lub złącze rozszerzeń.
+Piny zapasowe: **27/28** (IOR24, para z wyjściem true LVDS), **29/30** (IOR17, para z wyjściem true LVDS, GCLKT_3), **44/45** (IOT22, bank 0, para z opcją terminacji wewnętrznej). Zaleca się wyprowadzenie ich na pola testowe lub złącze rozszerzeń.
 
 Piny konfiguracyjne i zasilania, **nieużywane jako GPIO**:
 
@@ -393,7 +394,8 @@ Wrażliwość: zmiana odstępu o ±0,05 mm zmienia impedancję różnicową o ok
 
 - Wylewki GND na L1 i L4 zszywane przelotkami GND co ok. 5 mm, szczególnie wzdłuż par LVDS i krawędzi płytki.
 - Klatka SFP: otwory wg rysunku producenta wybranej klatki (press-fit), sprawdzić zgodność footprintu `Connector_SFP_and_Cage` z konkretnym numerem katalogowym klatki **[DO WERYFIKACJI]**.
-- Pola testowe na pinach zapasowych (10, 27–30, 44, 45) — opcjonalnie.
+- Pola testowe na pinach zapasowych (27–30, 44, 45) — opcjonalnie.
+- Zworka lutowana `MODE_SEL`: pin 10 FPGA ↔ GND, pull-up 10 kΩ do 3,3 V ([ADR 0006](adr/0006-tryb-uart-przezroczysty.md)).
 
 ### 5.4 Zasilanie
 
@@ -598,6 +600,16 @@ vhdl/
 
 **`leds`** — LINK (stan `UP`), ACT (rozciągnięty impuls przy ramce TX/RX).
 
+### 7.3a Tryb przezroczysty UART
+
+Decyzja i uzasadnienie: [ADR 0006](adr/0006-tryb-uart-przezroczysty.md).
+
+- Wybór trybu: zworka `MODE_SEL` (pin 10) próbkowana po resecie — otwarta: xSPI, zwarta do masy: UART; w trybie xSPI dodatkowo bit `UART_MODE` w `MODE_CTRL`.
+- Piny J3 w trybie UART: `XSPI_IO0` = `UART_RX` (wejście), `XSPI_IO1` = `UART_TX` (wyjście), opcjonalnie `XSPI_IO2` = `UART_RTS_N` (wyjście), `XSPI_IO3` = `UART_CTS_N` (wejście); pozostałe linie xSPI w stanie wysokiej impedancji, `HOST_IRQ_N` = stan łącza.
+- 8N1, domyślnie 115200 baud; inna prędkość (do ok. 3 Mbaud) przez `UART_DIV` w trybie xSPI.
+- Pakietyzacja: ramka `TYPE = 0x01` po 64 bajtach lub po przerwie > 2 czasy znaku; odbiór: treść ramek `TYPE = 0x01` na `UART_TX`.
+- Moduły: `uart_rx`, `uart_tx`, `uart_bridge`; multipleksowanie pinów w `sfp_bridge_top`.
+
 ### 7.3 Zestaw komend xSPI (wzorowany na SPI NOR)
 
 | Opkod | Nazwa | Format (instr-adres-dane) | Dummy | Opis |
@@ -642,6 +654,9 @@ Zasady:
 | 0x24 | I2C_STATUS | R | BUSY, DONE, NACK |
 | 0x30–0x3F | DDM_* | R | rejestry cienia DDM |
 | 0x40 | DDM_PERIOD | R/W | okres autopollingu |
+| 0x50 | MODE_CTRL | R/W | UART_MODE (przełączenie na tryb UART), RTSCTS_EN; odczyt: stan zworki MODE_SEL |
+| 0x51–0x52 | UART_DIV | R/W | dzielnik prędkości UART (domyślnie 115200) |
+| 0x53 | UART_STATUS | R/W1C | przepełnienia RX/TX, błędy ramki UART |
 | 0x80–0xFF | I2C_BUF | R/W | okno na bufor I2C (128 B, stronicowane) |
 
 ### 7.5 Szacunek zasobów (GW1N-9)

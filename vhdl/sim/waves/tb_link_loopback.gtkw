@@ -1,0 +1,48 @@
+[*] GTKWave view for tb_link_loopback (open with: view.ps1 tb_link_loopback)
+[timestart] 0
+[size] 1400 700
+[signals_width] 260
+[sst_width] 220
+@200
+-Side A
+@28
+top.tb_link_loopback.clk_a
+top.tb_link_loopback.rst_a
+top.tb_link_loopback.a_wr
+top.tb_link_loopback.a_commit
+top.tb_link_loopback.a_td_p
+top.tb_link_loopback.a_rd_p
+@24
+top.tb_link_loopback.a_phase[1:0]
+top.tb_link_loopback.a_nbits[1:0]
+@28
+top.tb_link_loopback.a_dn
+top.tb_link_loopback.a_sync
+top.tb_link_loopback.a_ok
+top.tb_link_loopback.a_err
+top.tb_link_loopback.a_rvalid
+@22
+top.tb_link_loopback.a_rdata[7:0]
+@24
+top.tb_link_loopback.a_frames
+@200
+-Side B
+@28
+top.tb_link_loopback.clk_b
+top.tb_link_loopback.rst_b
+top.tb_link_loopback.b_wr
+top.tb_link_loopback.b_td_p
+top.tb_link_loopback.b_rd_p
+@24
+top.tb_link_loopback.b_phase[1:0]
+top.tb_link_loopback.b_nbits[1:0]
+@28
+top.tb_link_loopback.b_up
+top.tb_link_loopback.b_sync
+top.tb_link_loopback.b_ok
+top.tb_link_loopback.b_err
+top.tb_link_loopback.b_rvalid
+@22
+top.tb_link_loopback.b_rdata[7:0]
+@24
+top.tb_link_loopback.b_frames

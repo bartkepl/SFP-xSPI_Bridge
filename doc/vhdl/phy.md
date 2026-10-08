@@ -60,6 +60,30 @@ Wynik: faza CDR podąża za opóźnieniem (0,3 ns → 0, 2,9 ns → 1, 5,5 ns �
 
 **Test mutacyjny:** wykrywane — odwrócona kolejność bitów na wejściach `OSER8`, odwrócona kolejność próbek z `IDES8`, zamiana bitów w parze w `tx_gearbox`, zatrzaśnięcie symbolu przed jego zakodowaniem.
 
+## Test pętli łącza `tb_link_loopback`
+
+Pełne łącze między dwoma końcami mostka na poziomie bitów, z modelami prymitywów Gowin i niezależnymi zegarami — test integracyjny etapów 1–4:
+
+host → FIFO TX → `tx_framer` → `enc_8b10b` → `tx_gearbox` → `tx_phy` → linia → `rx_phy` → `cdr_os4x8` → `comma_align` → `dec_8b10b` → `rx_deframer` → FIFO RX → host (w obu kierunkach)
+
+| Parametr | Wartość |
+|---|---|
+| zegary | każdy koniec: własny `clk_fast`, `clk_sys` z modelu `CLKDIV`; strona B szybsza o 200 ppm (`clk_fast` 4,999 ns wobec 5,000 ns) |
+| linia | opóźnienie 5 ns + niezależny jitter ±0,2 UI (±2 ns) każdego zbocza |
+| ruch | po synchronizacji obu odbiorników każdy host zapisuje 32 ramki (typ zależny od numeru, długość 1–400 B, treść zależna od numeru i pozycji) |
+| strona hosta FIFO | `clk_sys` tego samego końca (przejście między domenami weryfikuje [`tb_async_fifo`](async_fifo.md)) |
+
+Sprawdzenia:
+
+1. Oba odbiorniki zsynchronizowane w ciągu 10 µs (wynik: 1,8 µs), bez późniejszej utraty synchronizacji.
+2. Po 32 ramki odebrane na każdym końcu, w kolejności i bez przekłamań.
+3. Brak zdarzeń błędu w obu `rx_deframer` (CRC, kod, długość, ramkowanie, przepełnienie), brak odczytu z pustego FIFO RX.
+4. Śledzenie częstotliwości: po stronie A (strumień szybszy) kroki `shift_dn`, po stronie B kroki `shift_up` — po ponad 10, najwyżej 2 w kierunku przeciwnym (dostrajanie fazy tuż po synchronizacji); takty z 3 / 1 bitem odpowiednio. Wynik: 55 kroków na stronę w ciągu 680 µs — zgodnie z oczekiwanym 200 ppm × 8 próbek × 34 000 taktów ≈ 54.
+
+Strona łącza w testbenchu (`tb_link_side`) składa te same moduły co docelowy top-level. Ramki nadane, zanim odbiornik drugiej strony uzyska synchronizację, zostałyby utracone; w testbenchu hosty czekają na synchronizację obu stron, w układzie docelowym zadanie to przejmuje `link_ctrl` (stan łącza UP).
+
+**Przebieg** (`.\view.ps1 tb_link_loopback`, ok. 0,68 ms): po ok. 2 µs `a_sync` i `b_sync` = 1; następnie serie `a_wr`/`b_wr` (zapis ramek) i impulsy `a_ok`/`b_ok` po każdej ramce, licznik `a_frames`/`b_frames` rośnie do 32; `a_dn` i `b_up` co ok. 625 taktów, przy zawinięciu fazy `a_nbits` = 3 i `b_nbits` = 1; `a_err` i `b_err` stale 0.
+
 ## Przebieg
 
 `.\view.ps1 tb_phy_loopback` — czas symulacji ok. 420 µs; faza `ph_no` = p trwa ok. 105 µs.

@@ -25,6 +25,7 @@ Bufor między domenami zegarowymi na bloku BSRAM, z **zatwierdzaniem i odrzucani
 | `wr_abort` | zapis | odrzuca słowa niezatwierdzone; priorytet nad `wr_en` i `wr_commit` |
 | `full` | zapis | dokładny względem własnych zapisów, ostrożny względem odczytów |
 | `wr_free` | zapis | liczba wolnych słów (informacyjnie, takt opóźnienia) |
+| `wr_cmt_level` | zapis | liczba słów zatwierdzonych i jeszcze nieodczytanych, widziana po stronie zapisu (takt opóźnienia; zawyżona o odczyty jeszcze niezsynchronizowane) — np. „w FIFO odbiorczym jest pełna ramka” w domenie `clk_sys`, gdy strona odczytu pracuje na nieciągłym zegarze hosta |
 | `rd_en` | odczyt | odczyt słowa; przy `empty = '1'` ignorowany i sygnalizowany `rd_udf` |
 | `rd_data`, `rd_valid` | odczyt | dane ważne takt po `rd_en` |
 | `empty` | odczyt | dokładny względem własnych odczytów, ostrożny względem zapisów (tylko słowa zatwierdzone) |
@@ -58,7 +59,7 @@ Model odniesienia: kolejka słów zatwierdzonych (typ chroniony); słowa ramki w
 | 1 | zapełnienie przy zatrzymanym czytelniku: `full` po dokładnie 16 słowach, kolejny zapis ignorowany z `wr_ovf`, odczyt wszystkich słów w kolejności |
 | 2 | 600 losowych ramek 1–10 słów, 25% odrzucanych, zatwierdzenie razem z ostatnim słowem lub osobno; każde zatwierdzone słowo odczytane raz i w kolejności, żadne odrzucone |
 | 3 | proporcje zegarów: zapis 100 MHz / odczyt 37,3 MHz, potem 160 MHz, potem zegar odczytu zatrzymany na 3 µs (model SCLK) |
-| 4 | w każdym takcie: `rd_level` ≤ słowa w modelu + 1; `empty` ⇒ `rd_level` ≤ 1; `full` ⇒ `wr_free` ≤ 1; `wr_free` ≤ 16 |
+| 4 | w każdym takcie: `rd_level` ≤ słowa w modelu + 1; `empty` ⇒ `rd_level` ≤ 1; `full` ⇒ `wr_free` ≤ 1; `wr_free` ≤ 16; `wr_cmt_level` + `wr_free` ≤ 16 (po zapełnieniu `wr_cmt_level` = 16, po opróżnieniu 0) |
 | 5 | odczyt z pustego FIFO: `rd_udf`, brak danych |
 | 6 | po opróżnieniu: `empty`, `rd_level` = 0, `wr_free` = 16, liczba odczytanych = liczba zatwierdzonych |
 | 7 | instancja `COMMIT_MODE = false`: 3000 słów strumieniowo, kolejność zachowana |

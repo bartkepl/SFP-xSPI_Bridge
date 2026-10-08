@@ -94,6 +94,7 @@ architecture sim of tb_async_fifo is
   signal wr_data   : std_logic_vector(7 downto 0) := (others => '0');
   signal full      : std_logic;
   signal wr_free   : unsigned(ADDR_W downto 0);
+  signal wr_cl     : unsigned(ADDR_W downto 0);
   signal wr_ovf    : std_logic;
   signal rd_en     : std_logic := '0';
   signal rd_data   : std_logic_vector(7 downto 0);
@@ -148,7 +149,7 @@ begin
     port map (
       wr_clk => wr_clk, wr_rst => rst, wr_en => wr_en, wr_data => wr_data,
       wr_commit => wr_commit, wr_abort => wr_abort, full => full,
-      wr_free => wr_free, wr_ovf => wr_ovf,
+      wr_free => wr_free, wr_cmt_level => wr_cl, wr_ovf => wr_ovf,
       rd_clk => rd_clk, rd_rst => rst, rd_en => rd_en, rd_data => rd_data,
       rd_valid => rd_valid, empty => empty, rd_level => rd_level, rd_udf => rd_udf);
 
@@ -211,6 +212,7 @@ begin
     wait until rising_edge(wr_clk);          -- wr_free is one cycle behind
     wait for 1 ns;
     check_equal(to_integer(wr_free), 0, "wr_free = 0 one cycle after full");
+    check_equal(to_integer(wr_cl), DEPTH, "wr_cmt_level = DEPTH with all words committed, none read");
     wr_cycle('1', '0', '0', 255);              -- write while full
     wait for 1 ns;
     check_equal(wr_ovf, '1', "wr_ovf on write while full");
@@ -278,6 +280,7 @@ begin
     check_equal(empty, '1', "empty after drain");
     check_equal(to_integer(rd_level), 0, "rd_level = 0 after drain");
     check_equal(to_integer(wr_free), DEPTH, "wr_free = DEPTH after drain");
+    check_equal(to_integer(wr_cl), 0, "wr_cmt_level = 0 after drain");
     check_equal(n_read, n_commit, "words read = words committed");
     reader_on <= false;
 
@@ -393,6 +396,7 @@ begin
           check(to_integer(wr_free) <= 1, "wr_free <= 1 when full");
         end if;
         check(to_integer(wr_free) <= DEPTH, "wr_free <= DEPTH");
+        check(to_integer(wr_cl) + to_integer(wr_free) <= DEPTH, "wr_cmt_level + wr_free <= DEPTH");
       end if;
     end if;
   end process;

@@ -80,6 +80,7 @@ entity async_fifo is
     wr_abort  : in  std_logic;
     full      : out std_logic;
     wr_free   : out unsigned(ADDR_W downto 0);          -- free words
+    wr_cmt_level : out unsigned(ADDR_W downto 0);       -- committed words not yet read
     wr_ovf    : out std_logic;                          -- write while full
 
     -- read side
@@ -133,6 +134,7 @@ architecture rtl of async_fifo is
   signal rfull_m1  : t_ptr := to_unsigned(2 ** ADDR_W - 1, ADDR_W + 1);  -- (rptr_w xor wrap) - 1
   signal full_i    : std_logic := '0';                  -- registered
   signal wr_free_i : t_ptr := to_unsigned(2 ** ADDR_W, ADDR_W + 1);
+  signal wr_cl_i   : t_ptr := (others => '0');
 
   -- read domain
   signal rptr      : t_ptr := (others => '0');
@@ -198,6 +200,7 @@ begin
         ack_sync   <= (others => '0');
         full_i     <= '0';
         wr_free_i  <= to_unsigned(DEPTH, ADDR_W + 1);
+        wr_cl_i    <= (others => '0');
       else
         -- registered Gray-to-binary conversion and precomputed compare value
         rp_bin   := gray2bin(rptr_sync(SYNC_STAGES - 1));
@@ -237,6 +240,9 @@ begin
         v := rptr_w - wptr;
         v(ADDR_W) := not v(ADDR_W);
         wr_free_i <= v;
+        -- committed words not yet read (write-side view, one cycle behind;
+        -- may overstate by the reads not yet synchronized)
+        wr_cl_i <= wptr_cmt - rptr_w;
 
         -- Publish the committed pointer when the previous publication has
         -- been acknowledged (handshake idle) and there is something new
@@ -251,6 +257,7 @@ begin
 
   full    <= full_i;
   wr_free <= wr_free_i;
+  wr_cmt_level <= wr_cl_i;
 
   ------------------------------------------------------------------------------
   -- Read domain

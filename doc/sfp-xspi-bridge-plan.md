@@ -126,7 +126,7 @@ Nazwy sieci w schemacie pisane są wielkimi literami, porty VHDL małymi (`SFP_T
 | `SFP_RD_P` | in | LVDS25 | **43** | 0 | IOT32A | IDES8; terminacja zewnętrzna (5.2), wewnętrzna jako opcja awaryjna |
 | `SFP_RD_N` | in | LVDS25 | **42** | 0 | IOT32B | |
 | `CLK_25M` | in | LVCMOS33 | **35** | 1 | IOR5A (RPLL_T_in) | dedykowane wejście prawego PLL |
-| `XSPI_SCLK` | in | LVCMOS33 | **19** | 2 | IOB29A (GCLKT_4) | wejście zegara globalnego, środek magistrali |
+| `XSPI_SCLK` | in | LVCMOS33 | **19** | 2 | IOB29A (GCLKT_4) | wejście zegara globalnego, środek magistrali; ≤ 40 MHz ([ADR 0009](adr/0009-interfejs-hosta.md)) |
 | `XSPI_CS_N` | in | LVCMOS33, pull-up | **14** | 2 | IOB8B | |
 | `XSPI_IO0` | inout | LVCMOS33 | **15** | 2 | IOB17A | |
 | `XSPI_IO1` | inout | LVCMOS33 | **16** | 2 | IOB17B | |
@@ -556,7 +556,8 @@ vhdl/
                               --   tb_phy_loopback (modele prymitywów Gowin)
                               --   tb_link_loopback (dwa końce, 200 ppm, jitter, ramki w obu kierunkach)
                               --   tb_link_ctrl, tb_clk_rst (modele rPLL i CLKDIV), tb_uart, tb_uart_bridge
-                              --   planowane: tb_i2c_sfp, tb_xspi_slave, tb_top
+                              --   tb_xspi_slave, tb_async_fifo_stable
+                              --   planowane: tb_csr_regs, tb_i2c_sfp, tb_top
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
     run_tests.ps1 / .sh       -- uruchamianie testów (GHDL w WSL)
@@ -569,7 +570,7 @@ vhdl/
 - `rPLL` (25 → 200 MHz), `CLKDIV` (/4 → 50 MHz); parametry PLL wyliczane z `LINE_BAUD` w `bridge_pkg`.
 - Reset globalny trzymany do `LOCK` PLL; `HOST_RST_N` z filtrem zakłóceń 640 ns; `CTRL.SOFT_RST` kończący się samoczynnie. Reset domeny `clk_sys` przez `reset_sync`; żądanie `arst_n` dla mostka resetu domeny `clk_spi` (reset asynchroniczny, zwalnianie synchroniczne).
 
-**`xspi_slave`** (domena `clk_host` = SCLK w trybie xSPI, CS_N jako asynchroniczny reset maszyny stanów; [ADR 0009](adr/0009-interfejs-hosta.md))
+**`xspi_slave`** — gotowy, [opis](vhdl/xspi_slave.md) (domena `clk_host` = SCLK w trybie xSPI, piny zatrzaskiwane na zboczu narastającym, logika na opadającym, CS_N jako asynchroniczny reset maszyny stanów; [ADR 0009](adr/0009-interfejs-hosta.md))
 - Fazy: instrukcja (zawsze 1 linia) → opcjonalny adres → dummy → dane, szerokość fazy danych wynika z opkodu (tabela 7.3).
 - Próbkowanie na zboczu narastającym SCLK, wystawianie na opadającym (tryb 0).
 - Kierunek IO0..7 przełączany po fazie dummy przy odczycie.
@@ -651,7 +652,7 @@ Decyzja i uzasadnienie: [ADR 0009](adr/0009-interfejs-hosta.md). Instrukcja zaws
 
 Zasady:
 - Ramki w formacie surowym FIFO: zapis `TX_WRITE_x` — bajty `TYPE, LEN_H, LEN_L, treść`, slave zatwierdza ramkę z ostatnim bajtem treści (ramka może być podzielona na kilka transakcji); odczyt `RX_READ_x` — bajty `TYPE, LEN_H, LEN_L, treść` kolejnych ramek. Przed zapisem host sprawdza `TX_SPACE` / `TX_READY`, przed odczytem `RX_AVAIL` / `RX_LEVEL`.
-- Rejestry są zatrzaskiwane przy opadnięciu CS (spójny odczyt w obrębie transakcji), zapisy stosowane po podniesieniu CS. Wymagania: SCLK ≤ 50 MHz, CS w stanie wysokim ≥ 100 ns między transakcjami.
+- Rejestry są zatrzaskiwane przy opadnięciu CS (spójny odczyt w obrębie transakcji), zapisy stosowane po podniesieniu CS. Wymagania: SCLK ≤ 40 MHz (przy odczycie zalecane przesunięcie próbkowania `SSHT`), CS w stanie wysokim ≥ 100 ns między transakcjami.
 - Dummy cycles dają FPGA czas na publikację wskaźnika FIFO w domenie SCLK i pobranie pierwszego bajtu.
 - Opkody `0x8x` są własne (nie z JEDEC), a STM32 OCTOSPI w trybie indirect przyjmie dowolny opkod.
 

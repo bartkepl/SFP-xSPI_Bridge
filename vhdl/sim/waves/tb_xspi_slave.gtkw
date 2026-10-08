@@ -1,0 +1,54 @@
+[*] GTKWave view for tb_xspi_slave (open with: view.ps1 tb_xspi_slave)
+[timestart] 0
+[size] 1400 700
+[signals_width] 260
+[sst_width] 220
+@200
+-Bus
+@28
+top.tb_xspi_slave.cs_n
+top.tb_xspi_slave.sclk
+@22
+top.tb_xspi_slave.io_bus[7:0]
+top.tb_xspi_slave.io_oe[7:0]
+@200
+-Slave state
+@28
+top.tb_xspi_slave.dut.st
+top.tb_xspi_slave.dut.kind
+@24
+top.tb_xspi_slave.dut.bcnt
+top.tb_xspi_slave.dut.ucnt
+@22
+top.tb_xspi_slave.dut.io_q[7:0]
+top.tb_xspi_slave.dut.ounit[7:0]
+@200
+-CSR
+@22
+top.tb_xspi_slave.reg_addr[7:0]
+top.tb_xspi_slave.wr_addr[7:0]
+@24
+top.tb_xspi_slave.wr_cnt
+@28
+top.tb_xspi_slave.wr_txn
+@200
+-TX FIFO
+@28
+top.tb_xspi_slave.tx_wr
+@22
+top.tb_xspi_slave.tx_data[7:0]
+@28
+top.tb_xspi_slave.tx_commit
+top.tb_xspi_slave.tx_commit_prev
+top.tb_xspi_slave.tx_abort
+top.tb_xspi_slave.tf_valid
+@24
+top.tb_xspi_slave.n_tx_bytes
+@200
+-RX FIFO
+@28
+top.tb_xspi_slave.rf_wr
+top.tb_xspi_slave.rx_rd
+top.tb_xspi_slave.rx_valid
+@24
+top.tb_xspi_slave.dut.qn

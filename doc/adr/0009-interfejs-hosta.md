@@ -5,7 +5,7 @@
 
 ## Kontekst
 
-Slave xSPI pracuje w domenie zegara hosta (SCLK, ≤ 50 MHz), bo przy tej częstotliwości SCLK nie da się nadpróbkować zegarem `clk_sys` (plan, rozdz. 3). SCLK biegnie wyłącznie w czasie transakcji. Strona hosta FIFO (zapis FIFO TX, odczyt FIFO RX) pracuje na tym samym zegarze, aby przepustowość OCTOSPI (do 50 MB/s) nie wymagała dodatkowego bufora.
+Slave xSPI pracuje w domenie zegara hosta (SCLK), bo przy tej częstotliwości SCLK nie da się nadpróbkować zegarem `clk_sys` (plan, rozdz. 3). SCLK biegnie wyłącznie w czasie transakcji. Strona hosta FIFO (zapis FIFO TX, odczyt FIFO RX) pracuje na tym samym zegarze, aby przepustowość OCTOSPI (do 50 MB/s) nie wymagała dodatkowego bufora.
 
 Szkic mapy rejestrów zakładał rejestry ramek: `TX_TYPE`, `TX_LEN`, `TX_COMMIT`, `RX_TYPE`, `RX_LEN`, `RX_POP`. Wymagają one operacji na FIFO pomiędzy transakcjami, gdy zegar strony hosta stoi (np. `RX_LEN` wymaga wcześniejszego wyjęcia nagłówka z FIFO). Rejestry sterujące i stanu są natomiast potrzebne w domenie `clk_sys` (`link_ctrl`, UART, I2C), a odczyt rejestru przez xSPI ma tylko kilka taktów SCLK na przejście między domenami. Liczniki 32-bitowe wymagają spójnego odczytu wielobajtowego.
 
@@ -15,7 +15,7 @@ Tryb UART ([ADR 0006](0006-tryb-uart-przezroczysty.md)) i echo ramek ([ADR 0008]
 
 **1. Ramki w formacie surowym FIFO.** `TX_WRITE_x` przesyła bajty `TYPE, LEN_H, LEN_L, treść`; slave liczy bajty z nagłówka i zatwierdza ramkę z ostatnim bajtem treści. Ramka może być podzielona na kilka transakcji. `RX_READ_x` zwraca bajty `TYPE, LEN_H, LEN_L, treść` kolejnych ramek. Rejestry `TX_TYPE`, `TX_LEN`, `TX_COMMIT`, `RX_TYPE`, `RX_LEN`, `RX_POP` nie występują; komenda `TX_ABORT` porzuca niedokończoną ramkę.
 
-**2. Komendy** (instrukcja zawsze na 1 linii, adres 8-bit na 1 linii, SDR, tryb 0, najstarszy bit pierwszy; w formacie 1-x-1 dane od hosta na IO0, do hosta na IO1):
+**2. Komendy** (instrukcja zawsze na 1 linii, adres 8-bit na 1 linii, SDR, tryb 0, najstarszy bit pierwszy, SCLK ≤ 40 MHz; w formacie 1-x-1 dane od hosta na IO0, do hosta na IO1):
 
 | Opkod | Nazwa | Format | Dummy | Dane |
 |---|---|---|---|---|
@@ -27,24 +27,28 @@ Tryb UART ([ADR 0006](0006-tryb-uart-przezroczysty.md)) i echo ramek ([ADR 0008]
 | `0x13` / `0x6B` / `0x8B` | RX_READ_1 / _4 / _8 | 1-0-1 / 1-0-4 / 1-0-8 | 8 | bajty ramek z FIFO RX |
 | `0x66` | TX_ABORT | 1-0-0 | — | porzucenie niezatwierdzonej ramki |
 
-Inne opkody są ignorowane do końca transakcji.
+Inne opkody są ignorowane do końca transakcji. `TX_ABORT` oraz zatwierdzenie ramki z LEN = 0 (odrzucanej przez odbiornik) działają na najbliższym zboczu SCLK — w razie potrzeby w następnej transakcji, przed jej pierwszym bajtem danych.
 
-**3. Rejestry w domenie `clk_sys`, zatrzaskiwane przy CS.** Opadnięcie CS (zsynchronizowane do `clk_sys`) zatrzaskuje całą przestrzeń rejestrów do odczytu; slave czyta wyłącznie zatrzaśnięte wartości, niezmienne do końca transakcji (spójny odczyt liczników 32-bit, `IRQ_STAT` odczytany i kasowany bez wyścigu). Bajty `WRITE_REG` są zbierane w transakcji i stosowane atomowo po podniesieniu CS. Wymagania dla hosta: SCLK ≤ 50 MHz, CS w stanie wysokim ≥ 100 ns między transakcjami (STM32 OCTOSPI: `CSHT`), czyli ≥ 5 taktów `clk_sys`. Zatrzaśnięcie jest gotowe ok. 80 ns po opadnięciu CS, przed pierwszym bitem danych każdej komendy (najwcześniej po 8 taktach SCLK = 160 ns).
+**Częstotliwość SCLK ≤ 40 MHz.** Slave zatrzaskuje piny na zboczu narastającym, a logikę wykonuje na opadającym (po ostatnim zboczu narastającym transakcji zawsze następuje opadające). Ścieżki od próbki pinu do logiki mają pół okresu; próbna synteza spełnia wymagania przy 40 MHz z zapasem 1,4 ns, przy 50 MHz brakuje 0,8 ns. Przepustowość 8 × 40 Mb/s = 40 MB/s czterokrotnie przewyższa przepustowość łącza (10 MB/s). Przy odczycie zalecane jest przesunięcie próbkowania po stronie STM32 (`SSHT`).
+
+**3. Rejestry w domenie `clk_sys`, zatrzaskiwane przy CS.** Opadnięcie CS (zsynchronizowane do `clk_sys`) zatrzaskuje całą przestrzeń rejestrów do odczytu; slave czyta wyłącznie zatrzaśnięte wartości, niezmienne do końca transakcji (spójny odczyt liczników 32-bit, `IRQ_STAT` odczytany i kasowany bez wyścigu). Bajty `WRITE_REG` są zbierane w transakcji i stosowane atomowo po podniesieniu CS. Wymagania dla hosta: SCLK ≤ 40 MHz, CS w stanie wysokim ≥ 100 ns między transakcjami (STM32 OCTOSPI: `CSHT`), czyli ≥ 5 taktów `clk_sys`. Zatrzaśnięcie jest gotowe ok. 80 ns po opadnięciu CS, przed pierwszym bitem danych każdej komendy (najwcześniej po 8 taktach SCLK = 200 ns).
 
 **4. Stan FIFO liczony w `clk_sys`.** `RX_AVAIL` i `RX_LEVEL` — z liczby zatwierdzonych, nieodczytanych słów po stronie zapisu FIFO RX (`wr_cmt_level`); `TX_SPACE` — z wolnego miejsca FIFO TX widzianego po stronie odczytu. Flagi strony hosta nie są używane do stanu, bo między transakcjami nie są aktualizowane.
 
-**5. Odczyt z wyprzedzeniem.** `RX_READ_x` pobiera z FIFO bajt następny przed jego wysłaniem; bajt pobrany, a niewysłany do końca transakcji, pozostaje w rejestrze slave'a i jest wysyłany jako pierwszy w kolejnej transakcji `RX_READ_x` — strumień bajtów nie traci danych.
+**5. Przejście wskaźnika FIFO TX bez potwierdzenia.** Strona zapisu FIFO TX pracuje na SCLK, który zatrzymuje się zaraz po zatwierdzeniu ramki — uzgadnianie żądanie/potwierdzenie mogłoby nie zakończyć się przed następną transakcją, gdy dwie ramki są zatwierdzane blisko siebie. FIFO TX publikuje więc zatwierdzony wskaźnik bez potwierdzenia (`async_fifo`, `PUB_STABLE`): synchronizator każdego bitu i przyjęcie wartości po dwóch jednakowych próbkach. Warunek — zatwierdzenia w odstępach ≥ 3 taktów zegara odczytu — jest spełniony, bo najkrótsza ramka (3 bajty) zajmuje ≥ 75 ns przy 40 MHz.
 
-**6. Zegar strony hosta — DCS.** `clk_host` = prymityw `DCS` (wymuszone przełączanie, `SELFORCE`) między `clk_sys` a SCLK:
+**6. Odczyt z wyprzedzeniem.** `RX_READ_x` pobiera z FIFO bajt następny przed jego wysłaniem; bajt pobrany, a niewysłany do końca transakcji, pozostaje w rejestrze slave'a i jest wysyłany jako pierwszy w kolejnej transakcji `RX_READ_x` — strumień bajtów nie traci danych.
+
+**7. Zegar strony hosta — DCS.** `clk_host` = prymityw `DCS` (wymuszone przełączanie, `SELFORCE`) między `clk_sys` a SCLK:
 
 - w resecie mostka i w trybach UART oraz echa ramek — `clk_sys`;
 - w trybie xSPI — SCLK, przełączenie kilka taktów po zwolnieniu resetu, przy CS w stanie wysokim.
 
 Reset strony hosta (synchroniczny) odbywa się zawsze na `clk_sys`, więc nie wymaga taktów SCLK. Maszyna stanów transakcji xSPI jest resetowana asynchronicznie przez CS = 1.
 
-**7. Tryby i reset.** Rejestr `MODE_CTRL` (bity `UART_MODE`, `FRAME_ECHO`, `RTSCTS_EN`) jest zachowywany przy resecie programowym, kasowany przez `HOST_RST_N` i przy włączeniu zasilania. Zmiana bitu `UART_MODE` lub `FRAME_ECHO` wywołuje reset mostka (jak `SOFT_RST`); zawartość FIFO jest tracona. W trybach UART i echa ramek interfejs xSPI jest niedostępny (piny J3 obsługuje UART albo strona hosta FIFO pracuje na `clk_sys`); powrót do trybu xSPI — `HOST_RST_N` lub ponowne włączenie zasilania. Echo ramek przechodzi z pola `CTRL.LOOPBACK` ([ADR 0008](0008-stan-lacza.md)) do `MODE_CTRL.FRAME_ECHO`; w `CTRL` pozostaje bit pętli near-end.
+**8. Tryby i reset.** Rejestr `MODE_CTRL` (bity `UART_MODE`, `FRAME_ECHO`, `RTSCTS_EN`) jest zachowywany przy resecie programowym, kasowany przez `HOST_RST_N` i przy włączeniu zasilania. Zmiana bitu `UART_MODE` lub `FRAME_ECHO` wywołuje reset mostka (jak `SOFT_RST`); zawartość FIFO jest tracona. W trybach UART i echa ramek interfejs xSPI jest niedostępny (piny J3 obsługuje UART albo strona hosta FIFO pracuje na `clk_sys`); powrót do trybu xSPI — `HOST_RST_N` lub ponowne włączenie zasilania. Echo ramek przechodzi z pola `CTRL.LOOPBACK` ([ADR 0008](0008-stan-lacza.md)) do `MODE_CTRL.FRAME_ECHO`; w `CTRL` pozostaje bit pętli near-end.
 
-**8. Mapa rejestrów** (adresy bajtowe, wartości wielobajtowe little-endian):
+**9. Mapa rejestrów** (adresy bajtowe, wartości wielobajtowe little-endian):
 
 | Adres | Nazwa | R/W | Zawartość |
 |---|---|---|---|

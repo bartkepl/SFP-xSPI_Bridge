@@ -35,7 +35,7 @@ vhdl/
 | `crc32` | `src/link/crc32.vhd` | `tb_crc32` | PASS | tak | [CRC-32](crc32.md) |
 | `enc_8b10b` | `src/link/enc_8b10b.vhd` | `tb_8b10b` | PASS | tak | [8b/10b](8b10b.md) |
 | `dec_8b10b` | `src/link/dec_8b10b.vhd` | `tb_8b10b` | PASS | tak | [8b/10b](8b10b.md) |
-| `async_fifo` | `src/fifo/async_fifo.vhd` | `tb_async_fifo` | PASS | tak (101 MHz, 2 BSRAM) | [FIFO](async_fifo.md) |
+| `async_fifo` | `src/fifo/async_fifo.vhd` | `tb_async_fifo`, `tb_async_fifo_stable` | PASS | tak (101 MHz, 2 BSRAM) | [FIFO](async_fifo.md) |
 | `tx_framer`, `rx_deframer` | `src/link/tx_framer.vhd`, `rx_deframer.vhd` | `tb_link_frames` | PASS | tak (70 MHz) | [Ramkowanie](framing.md) |
 | `cdr_os4x8` | `src/link/cdr_os4x8.vhd` | `tb_cdr_os4x8` | PASS | tak (74 MHz) | [Odzysk danych](cdr.md) |
 | `comma_align` | `src/link/comma_align.vhd` | `tb_comma_align` | PASS | tak (tor RX 83 MHz) | [Wyrównanie symboli](comma_align.md) |
@@ -45,7 +45,8 @@ vhdl/
 | `uart_rx`, `uart_tx` | `src/uart/uart_rx.vhd`, `uart_tx.vhd` | `tb_uart` | PASS | tak (98 MHz) | [UART](uart.md) |
 | `uart_bridge` | `src/uart/uart_bridge.vhd` | `tb_uart_bridge` | PASS | tak (85 MHz) | [UART](uart.md) |
 | `i2c_master`, `sfp_mgmt` | — | — | — | — | planowany |
-| `xspi_slave`, `csr_regs` | — | — | — | — | planowany |
+| `xspi_slave` | `src/host/xspi_slave.vhd` | `tb_xspi_slave` | PASS | tak (SCLK 40 MHz) | [Interfejs hosta](xspi_slave.md) |
+| `csr_regs`, `host_clk`, `frame_echo` | — | — | — | — | planowany ([ADR 0009](../adr/0009-interfejs-hosta.md)) |
 | `leds` | — | — | — | — | planowany |
 
 **Zegary** ([ADR 0007](../adr/0007-zegar-systemowy-50mhz.md)): `clk_sys` = 50 MHz (PCLK serializerów IDES8/OSER8), `clk_fast` = 200 MHz tylko w blokach I/O. Kryterium dla modułów domeny `clk_sys`: Fmax ≥ 50 MHz z zapasem (cel ≥ 60 MHz). Symbol 8b/10b = 5 taktów `clk_sys`.

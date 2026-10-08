@@ -3,5 +3,6 @@
 // tool from rPLL/CLKDIV.
 
 create_clock -name clk_25m -period 40.000 [get_ports {clk_25m}]
-create_clock -name clk_spi -period 20.000 [get_ports {xspi_sclk}]
+// SCLK <= 40 MHz (ADR 0009)
+create_clock -name clk_spi -period 25.000 [get_ports {xspi_sclk}]
 set_clock_groups -asynchronous -group [get_clocks {clk_spi}] -group [get_clocks {clk_25m}]

@@ -11,6 +11,8 @@
 --     (in the same cycle as the last wr_en, or later). With COMMIT_MODE =
 --     false every word is visible immediately and wr_commit/wr_abort are
 --     ignored.
+--   * wr_commit_prev = '1' commits only the words written before this cycle
+--     (a word written in the same cycle stays uncommitted).
 --   * wr_abort = '1' discards all words written since the last commit (the
 --     write pointer returns to the committed pointer). wr_abort has priority
 --     over wr_en and wr_commit in the same cycle.
@@ -34,6 +36,15 @@
 --     after it. The write clock must therefore run for about
 --     2 * SYNC_STAGES + 2 cycles after a commit that follows another commit
 --     closely (always true for frame writes, which take many cycles).
+--   * WR_FALLING / RD_FALLING select the falling clock edge for a side (host
+--     side of the xSPI slave, whose logic runs on the falling edge of SCLK).
+--   * PUB_STABLE = true (for a write clock that stops right after a commit,
+--     e.g. host SCLK): no handshake. The committed pointer, updated in the
+--     commit cycle, passes through SYNC_STAGES flip-flops per bit; the read
+--     side takes a value only when two consecutive synchronized samples are
+--     equal. Requirement: consecutive commits at least 3 read clock periods
+--     apart (then at most one transition falls between two samples, and two
+--     equal samples are a clean old or new value; the pointer only grows).
 --
 -- Status flags full and empty are registered and computed from the pointers
 -- after the current clock edge: exact with respect to the own side's
@@ -68,6 +79,9 @@ entity async_fifo is
     DATA_W      : positive := 8;
     ADDR_W      : positive := 12;     -- depth = 2**ADDR_W words
     COMMIT_MODE : boolean  := true;
+    PUB_STABLE  : boolean  := false;   -- committed pointer without handshake (see above)
+    WR_FALLING  : boolean  := false;   -- write side clocked on the falling edge of wr_clk
+    RD_FALLING  : boolean  := false;   -- read side clocked on the falling edge of rd_clk
     SYNC_STAGES : positive := 2
   );
   port (
@@ -77,6 +91,7 @@ entity async_fifo is
     wr_en     : in  std_logic;
     wr_data   : in  std_logic_vector(DATA_W - 1 downto 0);
     wr_commit : in  std_logic;
+    wr_commit_prev : in std_logic := '0';               -- commit the words written before this cycle
     wr_abort  : in  std_logic;
     full      : out std_logic;
     wr_free   : out unsigned(ADDR_W downto 0);          -- free words
@@ -128,6 +143,7 @@ architecture rtl of async_fifo is
   signal pub_ptr_m1 : t_ptr := (others => '1');         -- pub_ptr - 1
   signal pub_req   : std_logic := '0';                  -- publication toggle
   type t_sync is array (0 to SYNC_STAGES - 1) of std_logic_vector(ADDR_W downto 0);
+  type t_psync is array (0 to SYNC_STAGES - 1) of unsigned(ADDR_W downto 0);
   signal rptr_sync : t_sync := (others => (others => '0'));
   signal ack_sync  : std_logic_vector(SYNC_STAGES - 1 downto 0) := (others => '0');
   signal rptr_w    : t_ptr := (others => '0');          -- read pointer, write domain (registered)
@@ -143,6 +159,9 @@ architecture rtl of async_fifo is
   signal pub_ack   : std_logic := '0';
   signal wcmt_r    : t_ptr := (others => '0');          -- committed write ptr, read domain
   signal wcmt_r_m1 : t_ptr := (others => '1');          -- wcmt_r - 1
+  signal st_sync   : t_psync := (others => (others => '0'));  -- PUB_STABLE: pointer synchronizer
+  signal st_last   : t_ptr := (others => '0');          -- previous synchronized sample
+  signal st_last_m1 : t_ptr := (others => '1');
   signal empty_i   : std_logic := '1';                  -- registered
   signal rd_level_i : t_ptr := (others => '0');
   signal rd_q      : std_logic_vector(DATA_W - 1 downto 0);
@@ -152,6 +171,7 @@ architecture rtl of async_fifo is
   attribute syn_preserve of rptr_sync : signal is true;
   attribute syn_preserve of ack_sync  : signal is true;
   attribute syn_preserve of req_sync  : signal is true;
+  attribute syn_preserve of st_sync   : signal is true;
 
 begin
 
@@ -163,7 +183,7 @@ begin
 
   process (wr_clk)
   begin
-    if rising_edge(wr_clk) then
+    if (not WR_FALLING and rising_edge(wr_clk)) or (WR_FALLING and falling_edge(wr_clk)) then
       if wr_en = '1' and full_i = '0' then
         mem(to_integer(wptr(ADDR_W - 1 downto 0))) <= wr_data;
       end if;
@@ -183,8 +203,9 @@ begin
     variable r_wrap : t_ptr;
     variable acc    : boolean;      -- write accepted this cycle
     variable v      : t_ptr;
+    variable cmt_n  : t_ptr;        -- committed pointer after this edge
   begin
-    if rising_edge(wr_clk) then
+    if (not WR_FALLING and rising_edge(wr_clk)) or (WR_FALLING and falling_edge(wr_clk)) then
       rptr_sync <= rptr_gray & rptr_sync(0 to SYNC_STAGES - 2);
       ack_sync  <= ack_sync(SYNC_STAGES - 2 downto 0) & pub_ack;
       wr_ovf    <= '0';
@@ -216,6 +237,7 @@ begin
           wr_ovf <= '1';
         end if;
 
+        cmt_n := wptr_cmt;
         if COMMIT_MODE and wr_abort = '1' then
           wptr   <= wptr_cmt;
           full_i <= '1' when wptr_cmt = r_wrap else '0';
@@ -228,12 +250,15 @@ begin
           end if;
           if (not COMMIT_MODE) or wr_commit = '1' then
             if acc then
-              wptr_cmt <= wptr + 1;
+              cmt_n := wptr + 1;
             else
-              wptr_cmt <= wptr;
+              cmt_n := wptr;
             end if;
+          elsif wr_commit_prev = '1' then
+            cmt_n := wptr;                  -- excludes a word written in this cycle
           end if;
         end if;
+        wptr_cmt <= cmt_n;
 
         -- Free space from the current registers (one cycle behind):
         -- DEPTH - (w - r) = (r - w) with the wrap bit inverted, one subtractor
@@ -246,7 +271,9 @@ begin
 
         -- Publish the committed pointer when the previous publication has
         -- been acknowledged (handshake idle) and there is something new
-        if pub_req = ack_sync(SYNC_STAGES - 1) and pub_ptr /= wptr_cmt then
+        if PUB_STABLE then
+          pub_ptr <= cmt_n;                 -- published in the commit cycle
+        elsif pub_req = ack_sync(SYNC_STAGES - 1) and pub_ptr /= wptr_cmt then
           pub_ptr    <= wptr_cmt;
           pub_ptr_m1 <= wptr_cmt - 1;
           pub_req    <= not pub_req;
@@ -266,7 +293,7 @@ begin
   -- Block RAM read port: registered output, no reset
   process (rd_clk)
   begin
-    if rising_edge(rd_clk) then
+    if (not RD_FALLING and rising_edge(rd_clk)) or (RD_FALLING and falling_edge(rd_clk)) then
       if rd_en = '1' and empty_i = '0' then
         rd_q <= mem(to_integer(rptr(ADDR_W - 1 downto 0)));
       end if;
@@ -280,9 +307,13 @@ begin
     variable pub : boolean;         -- publication accepted this cycle
     variable acc : boolean;         -- read accepted this cycle
     variable e_pub_acc, e_pub, e_acc, e_none : boolean;
+    variable cand, cand_m1 : t_ptr;  -- value taken by a publication
   begin
-    if rising_edge(rd_clk) then
+    if (not RD_FALLING and rising_edge(rd_clk)) or (RD_FALLING and falling_edge(rd_clk)) then
       req_sync   <= req_sync(SYNC_STAGES - 2 downto 0) & pub_req;
+      st_sync    <= pub_ptr & st_sync(0 to SYNC_STAGES - 2);
+      st_last    <= st_sync(SYNC_STAGES - 1);
+      st_last_m1 <= st_sync(SYNC_STAGES - 1) - 1;
       rd_valid_q <= '0';
       rd_udf     <= '0';
       if rd_rst = '1' then
@@ -292,15 +323,29 @@ begin
         pub_ack    <= '0';
         wcmt_r     <= (others => '0');
         wcmt_r_m1  <= (others => '1');
+        st_sync    <= (others => (others => '0'));
+        st_last    <= (others => '0');
+        st_last_m1 <= (others => '1');
         empty_i    <= '1';
         rd_level_i <= (others => '0');
       else
-        -- New publication: pub_ptr has been stable since pub_req toggled
-        pub := req_sync(SYNC_STAGES - 1) /= pub_ack;
+        if PUB_STABLE then
+          -- two equal consecutive synchronized samples, new value
+          pub     := st_sync(SYNC_STAGES - 1) = st_last and st_last /= wcmt_r;
+          cand    := st_last;
+          cand_m1 := st_last_m1;
+        else
+          -- New publication: pub_ptr has been stable since pub_req toggled
+          pub     := req_sync(SYNC_STAGES - 1) /= pub_ack;
+          cand    := pub_ptr;
+          cand_m1 := pub_ptr_m1;
+        end if;
         if pub then
-          wcmt_r    <= pub_ptr;
-          wcmt_r_m1 <= pub_ptr_m1;
-          pub_ack   <= req_sync(SYNC_STAGES - 1);
+          wcmt_r    <= cand;
+          wcmt_r_m1 <= cand_m1;
+          if not PUB_STABLE then
+            pub_ack <= req_sync(SYNC_STAGES - 1);
+          end if;
         end if;
 
         acc := rd_en = '1' and empty_i = '0';
@@ -314,8 +359,8 @@ begin
         end if;
 
         -- four comparisons in parallel, then a 1-bit selection
-        e_pub_acc := rptr = pub_ptr_m1;
-        e_pub     := rptr = pub_ptr;
+        e_pub_acc := rptr = cand_m1;
+        e_pub     := rptr = cand;
         e_acc     := rptr = wcmt_r_m1;
         e_none    := rptr = wcmt_r;
         if pub and acc then

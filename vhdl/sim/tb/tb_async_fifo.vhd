@@ -39,6 +39,10 @@ library work;
 use work.tb_pkg.all;
 
 entity tb_async_fifo is
+  generic (
+    -- true: DUT with PUB_STABLE (commits kept >= 3 read clock periods apart)
+    STABLE : boolean := false
+  );
 end entity tb_async_fifo;
 
 architecture sim of tb_async_fifo is
@@ -145,7 +149,7 @@ begin
   end process;
 
   dut : entity work.async_fifo
-    generic map (DATA_W => 8, ADDR_W => ADDR_W, COMMIT_MODE => true)
+    generic map (DATA_W => 8, ADDR_W => ADDR_W, COMMIT_MODE => true, PUB_STABLE => STABLE)
     port map (
       wr_clk => wr_clk, wr_rst => rst, wr_en => wr_en, wr_data => wr_data,
       wr_commit => wr_commit, wr_abort => wr_abort, full => full,
@@ -187,6 +191,9 @@ begin
 
     procedure wr_cycle(en, cm, ab : std_logic; d : natural) is
     begin
+      if STABLE and cm = '1' then
+        wait for 120 ns;                  -- PUB_STABLE: commits >= 3 read clock periods apart
+      end if;
       wr_en <= en; wr_commit <= cm; wr_abort <= ab;
       wr_data <= std_logic_vector(to_unsigned(d mod 256, 8));
       wait until rising_edge(wr_clk);
@@ -306,7 +313,11 @@ begin
     check_equal(model2.size, 0, "no-commit FIFO drained");
 
     stop <= true;
-    tb_finish("tb_async_fifo");
+    if STABLE then
+      tb_finish("tb_async_fifo_stable");
+    else
+      tb_finish("tb_async_fifo");
+    end if;
     wait;
   end process;
 

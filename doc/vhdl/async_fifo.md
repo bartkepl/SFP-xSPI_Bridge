@@ -16,12 +16,15 @@ Bufor między domenami zegarowymi na bloku BSRAM, z **zatwierdzaniem i odrzucani
 | `DATA_W` | 8 | szerokość słowa |
 | `ADDR_W` | 12 | głębokość = 2^ADDR_W słów (4096) |
 | `COMMIT_MODE` | `true` | `false`: każde słowo widoczne od razu, `wr_commit`/`wr_abort` ignorowane |
+| `PUB_STABLE` | `false` | `true`: zatwierdzony wskaźnik przechodzi do strony odczytu bez uzgadniania (dla zegara zapisu zatrzymującego się zaraz po zatwierdzeniu, SCLK) |
+| `WR_FALLING`, `RD_FALLING` | `false` | strona zapisu / odczytu taktowana zboczem opadającym (strona hosta `xspi_slave`) |
 | `SYNC_STAGES` | 2 | liczba przerzutników synchronizatorów |
 
 | Port | Domena | Opis |
 |---|---|---|
 | `wr_en`, `wr_data` | zapis | zapis słowa; przy `full = '1'` ignorowany i sygnalizowany `wr_ovf` |
 | `wr_commit` | zapis | udostępnia czytelnikowi słowa zapisane od ostatniego zatwierdzenia (łącznie ze słowem z tego samego taktu) |
+| `wr_commit_prev` | zapis | zatwierdza słowa zapisane przed bieżącym taktem (słowo zapisywane w tym samym takcie pozostaje niezatwierdzone) |
 | `wr_abort` | zapis | odrzuca słowa niezatwierdzone; priorytet nad `wr_en` i `wr_commit` |
 | `full` | zapis | dokładny względem własnych zapisów, ostrożny względem odczytów |
 | `wr_free` | zapis | liczba wolnych słów (informacyjnie, takt opóźnienia) |
@@ -39,6 +42,8 @@ Bufor między domenami zegarowymi na bloku BSRAM, z **zatwierdzaniem i odrzucani
 |---|---|---|
 | wskaźnik odczytu → strona zapisu | kod Graya przez `SYNC_STAGES` przerzutników | wskaźnik zmienia się o 1 na odczyt — w kodzie Graya zmienia się jeden bit, więc próbka jest zawsze starą albo nową wartością; bezpieczne także przy zatrzymanym zegarze odczytu |
 | zatwierdzony wskaźnik zapisu → strona odczytu | handshake żądanie/potwierdzenie | zatwierdzenie przesuwa wskaźnik o całą ramkę naraz — kod Graya zmieniłby wiele bitów; wartość binarna `pub_ptr` jest trzymana bez zmian, a przełączany bit `pub_req` przechodzi przez synchronizator; strona odczytu pobiera wtedy `pub_ptr` i odsyła `pub_ack` |
+
+**Wariant `PUB_STABLE`** ([ADR 0009](../adr/0009-interfejs-hosta.md)): strona zapisu wystawia zatwierdzony wskaźnik w takcie zatwierdzenia; po stronie odczytu każdy bit przechodzi przez `SYNC_STAGES` przerzutników, a wartość jest przyjmowana, gdy dwie kolejne próbki są równe. Warunek: kolejne zatwierdzenia w odstępach ≥ 3 okresów zegara odczytu — wtedy między dwiema próbkami wypada najwyżej jedna zmiana, a dwie równe próbki są czystą wartością starą albo nową (wskaźnik tylko rośnie). Wariant nie wymaga taktów zegara zapisu po zatwierdzeniu. Testbench `tb_async_fifo_stable` uruchamia `tb_async_fifo` z `PUB_STABLE` = `true` (zatwierdzenia co ≥ 120 ns).
 
 **Zegar xSPI nie jest ciągły** (SCLK hosta biegnie tylko w czasie transakcji). Wymaganie handshake: kolejne zatwierdzenie w odstępie krótszym niż ok. `2·SYNC_STAGES + 2` taktów zegara zapisu od poprzedniego jest publikowane dopiero po powrocie potwierdzenia, co wymaga dalszych taktów zegara zapisu. Zapis ramki przez xSPI zawsze trwa znacznie dłużej, więc warunek jest spełniony.
 

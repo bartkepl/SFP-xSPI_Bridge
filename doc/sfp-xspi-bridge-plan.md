@@ -4,14 +4,14 @@ Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia 
 
 | Element | Wybór |
 |---|---|
-| FPGA | Gowin **GW1N-UV4QN48C6/I5** (alternatywnie GW1N-UV9QN48 — ta sama obudowa, więcej logiki) |
+| FPGA | Gowin **GW1N-UV9QN48C6/I5** (GW1N-9, wersja C) — wybór uzasadnia [ADR 0001](adr/0001-fpga-gw1n-9.md) |
 | Narzędzia | KiCad (PCB), Gowin EDA (VHDL), biblioteka C dla STM32 |
 | Prędkość linii | **100 Mbaud** (8b/10b → 80 Mbit/s → ok. 9 MB/s danych użytecznych) |
 | Interfejs hosta | SPI (1-1-1), QSPI (1-1-4 / 1-4-4), OCTOSPI (1-1-8 / 1-8-8), SDR |
 | Strona optyczna | Dowolny moduł SFP 1.25G (MM/SM, duplex lub BiDi) |
 | Zasilanie | jedno **3,3 V** (wersja UV FPGA, moduł SFP) |
 
-> Status dokumentu: plan wstępny. Pozycje oznaczone **[DO WERYFIKACJI]** trzeba sprawdzić w dokumentacji Gowin (UG105 / UG114 pinout xlsx, UG289, UG290, UG286) przed rysowaniem schematu.
+> Status dokumentu: plan wstępny. Pozycje oznaczone **[DO WERYFIKACJI]** wymagają sprawdzenia w dokumentacji Gowin (UG114, UG289, UG290, UG286) przed rysowaniem schematu. Kopie dokumentacji: [`datasheets/`](datasheets/).
 
 ---
 
@@ -19,7 +19,7 @@ Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia 
 
 ```
             OCTOSPI/QSPI/SPI                       LVDS 100 Mbaud
-  STM32  <=====================>  GW1N-4/9  <=====================>  SFP  ~~~ światłowód ~~~  SFP <=> GW1N <=> STM32
+  STM32  <=====================>  GW1N-9    <=====================>  SFP  ~~~ światłowód ~~~  SFP <=> GW1N <=> STM32
   (master)   CLK, CS, IO0..7,      (FPGA)     TD±  -> moduł SFP
              DQS, IRQ, RST                   RD±  <- moduł SFP
                                    I2C master ---> SFP EEPROM/DDM (0x50/0x51)
@@ -49,7 +49,9 @@ Przejścia między domenami: asynchroniczne FIFO (BSRAM w trybie semi-dual port,
 
 ---
 
-## 2. Kluczowe parametry układu (z DS100, wersja 3.2.8E)
+## 2. Kluczowe parametry układu (z DS100, wersja 3.3.3E)
+
+Kolumna GW1N-4 pozostaje dla porównania; układem docelowym jest GW1N-9 ([ADR 0001](adr/0001-fpga-gw1n-9.md)).
 
 | Parametr | GW1N-4 | GW1N-9 | Uwagi |
 |---|---|---|---|
@@ -69,12 +71,14 @@ Przejścia między domenami: asynchroniczne FIFO (BSRAM w trybie semi-dual port,
 
 Ważne ograniczenia z DS100:
 
-- **GW1N-4:** piny `IOL10x` i `IOR10x` **nie mają IO logic** (brak IDES/OSER/IREG). Nie przydzielać do nich toru RX ani TX.
-- **GW1N-9:** dual-port BSRAM tylko w wersji C. FIFO budujemy na **semi-dual port** (zapis port A, odczyt port B, osobne zegary), co działa w każdej wersji.
-- **GW1N-9:** ograniczenia VCCIO dla Bank0/1/3. Przy wszystkich bankach na 3,3 V nie mają znaczenia.
+- **GW1N-9 wersja C** (GW1N-UV9QN48C6/I5): BSRAM obsługuje tryb dual-port, lecz nie obsługuje szerokości danych 1 i 2 bit. FIFO pozostaje w trybie **semi-dual port** (zapis port A, odczyt port B, osobne zegary).
+- **GW1N-9 wersja C:** ograniczenia VCCIO dla Bank0/1/3 nie obowiązują. Wszystkie banki pracują przy 3,3 V.
+- Ograniczenie GW1N-4 (piny `IOL10x`/`IOR10x` bez IO logic) nie dotyczy GW1N-9 (UG289, rozdz. 4).
 - **UV:** jeżeli w obudowie VCC i VCCX dzielą pin, VCC musi wynosić 2,5–3,3 V. Przy jednym 3,3 V spełnione.
-- **True LVDS input** wymaga terminacji 100 Ω. Wewnętrzna programowalna terminacja 100 Ω jest dostępna tylko w wybranych bankach **[DO WERYFIKACJI w UG289]**. Na PCB przewidzieć footprint zewnętrznego 100 Ω.
+- **True LVDS input** wymaga terminacji 100 Ω. W GW1N-9 wewnętrzna programowalna terminacja 100 Ω jest dostępna **wyłącznie w banku 0** (UG289, rozdz. 3.3.2; atrybut `.cst`: `DIFF_RESISTOR=ON`). Na PCB przewidziany jest także footprint terminacji zewnętrznej.
+- Wejście różnicowe (`TLVDS_IBUF`) obsługują wszystkie banki. Wyjście true LVDS (`TLVDS_OBUF`) wyłącznie pary oznaczone w UG114 jako *TRUE*. Prąd wyjścia LVDS25 w GW1N-9: 1,25 / 2 / 2,5 / 3,5 mA (DS100, tab. 2-1).
 - Podczas konfiguracji wszystkie GPIO są w stanie wysokiej impedancji ze słabym pull-upem. Uwzględnić w sterowaniu `TX_DISABLE` (pull-up = laser wyłączony, to dobrze).
+- **QN48, tryb konfiguracji:** MODE0 jest wewnętrznie zwarty do masy, MODE1 i MODE2 są połączone na pinie 48. Pin 48 w stanie niskim daje `000` = AUTOBOOT, w stanie wysokim `110` = DUAL BOOT (UG290, tab. 5-1). Ze względu na wewnętrzny pull-up pin 48 wymaga **zewnętrznego rezystora do masy**.
 
 ---
 
@@ -82,7 +86,7 @@ Ważne ograniczenia z DS100:
 
 QN48 ma 40 I/O użytkownika. Projekt wymaga 26 I/O (z DQS i diodami LED), więc zostaje 14 zapasu.
 
-**Fizyczne numery pinów:** do uzupełnienia z `UG105 GW1N-4 Pinout.xlsx` (lub `UG114 GW1N-9 Pinout.xlsx`), zakładka QN48. Poniżej reguły wyboru dla każdego sygnału.
+**Fizyczne numery pinów:** z UG114 (GW1N-9 Pinout), kolumna QN48. Poniżej reguły wyboru dla każdego sygnału.
 
 ### 3.1 Tabela sygnałów
 
@@ -116,13 +120,13 @@ Piny dedykowane, **nieużywane jako GPIO**:
 | `JTAGSEL_N` | wybór JTAG | pull-up; nie zaznaczać „Use JTAG as regular IO” |
 | `RECONFIG_N` | rekonfiguracja | pull-up 10 kΩ + opcjonalny przycisk / GPIO MCU (open-drain) |
 | `READY`, `DONE` | status konfiguracji | pull-up 4,7–10 kΩ; LED na DONE |
-| `MODE[x]` | tryb konfiguracji | jeśli wyprowadzone w QN48 — ustawić na AUTOBOOT **[DO WERYFIKACJI w UG290 / UG105]** |
+| `MODE` (pin 48 = MODE2 + MODE1; MODE0 wewnętrznie do masy) | tryb konfiguracji | rezystor do masy (np. 1 kΩ) → `000` = AUTOBOOT; stan wysoki dałby DUAL BOOT |
 
 ### 3.2 Reguły przydziału (do sprawdzenia w pinoucie)
 
 1. **Wszystkie banki VCCIO = 3,3 V.** LVDS25 (TLVDS) działa przy VCCIO 2,5/3,3 V, więc jedno napięcie wystarczy.
-2. Para TD i para RD w **bankach, które obsługują true LVDS** (kolumna „LVDS” = True w pinoucie). W GW1N-4 QN48 jest tylko 9 takich par, więc pary LVDS wybieramy najpierw, resztę sygnałów potem.
-3. RD w banku obsługiwanym przez HCLK, który może taktować IDES4. Zegar `clk_fast` z PLL przez HCLK/CLKDIV do banku RX **[DO WERYFIKACJI w UG286: dystrybucja HCLK GW1N-4]**.
+2. Para TD na parze z wyjściem true LVDS (kolumna „LVDS” = TRUE w UG114). Para RD w banku 0 (wewnętrzna terminacja 100 Ω). Pary LVDS wybiera się najpierw, resztę sygnałów potem.
+3. RD w banku obsługiwanym przez HCLK, który może taktować IDES4. W GW1N-9C HCLKMUX przenosi HCLK między bankami (UG286, rozdz. 2.2).
 4. `XSPI_SCLK` musi być pinem GCLK. Przy 25–50 MHz SCLK nie da się go nadpróbkować zegarem 100 MHz.
 5. Magistrala xSPI w jednym banku, po jednej stronie układu, z krótkimi i równymi ścieżkami.
 6. `CLK_25M` na dedykowanym wejściu PLL. Inaczej PLL dostaje zegar przez sieć globalną z dodatkowym jitterem.
@@ -133,15 +137,15 @@ Piny dedykowane, **nieużywane jako GPIO**:
 
 ```
 CLK_25M (25 MHz, ±25 ppm, CMOS 3,3 V)
-   └─> rPLL: IDIV=1, FBDIV=8, ODIV=4  → VCO = 800 MHz, CLKOUT = 200 MHz  (clk_fast)
+   └─> rPLL: IDIV=1, FBDIV=8, ODIV=4  → VCO = 800 MHz, CLKOUT = 200 MHz  (clk_fast, HCLK)
           └─> CLKDIV (DIV_MODE="2")   → 100 MHz                           (clk_sys)
 ```
 
 - 200 MHz FCLK × DDR daje **400 Msps**, czyli dokładnie **4× nadpróbkowanie przy 100 Mbaud**. IDES4 oddaje 4 próbki co takt `clk_sys` (100 MHz).
-- VCO 800 MHz mieści się w zakresie 400–1000 MHz (GW1N-4 C6/I5).
+- VCO 800 MHz mieści się w zakresie 400–1200 MHz (GW1N-9 C6/I5).
 - `CLKDIV` zamiast drugiego wyjścia PLL, żeby `clk_sys` był fazowo powiązany z FCLK gearboxa (wymagane przez IDES/OSER).
 - Oba końce łącza pracują na niezależnych generatorach. Różnicę ppm absorbuje sam CDR z nadpróbkowaniem (wydaje 0, 1 lub 2 bity na takt), więc **bufor elastyczny nie jest potrzebny**.
-- Docelowo wyższe prędkości: 125 Mbaud → `clk_fast` = 250 MHz, `clk_sys` = 125 MHz (VCO 1000 MHz, granica dla GW1N-4; GW1N-9 ma zapas do 1200 MHz). Prędkość linii parametryzowana stałymi w pakiecie VHDL.
+- Docelowo wyższe prędkości: 125 Mbaud → `clk_fast` = 250 MHz, `clk_sys` = 125 MHz (VCO 1000 MHz, w zakresie GW1N-9 do 1200 MHz). Prędkość linii parametryzowana stałymi w pakiecie VHDL.
 
 ---
 
@@ -163,7 +167,7 @@ CLK_25M (25 MHz, ±25 ppm, CMOS 3,3 V)
 
 **Poziomy sygnałów:**
 
-- TX: GW1N daje VOD 250–450 mV, czyli **500–900 mVppd**. Wejście SFP 1G (MSA) wymaga zwykle 500–2400 mVppd. Margines przy dolnej granicy jest minimalny, więc ustawić **drive 3,5 mA** w constraints i sprawdzić w datasheecie wybranego modułu **[DO WERYFIKACJI]**.
+- TX: GW1N-9 daje VOD 250–450 mV, czyli **500–900 mVppd**. Wejście SFP 1G (MSA) wymaga zwykle 500–2400 mVppd. Margines przy dolnej granicy jest minimalny, więc ustawić **drive 3,5 mA** w constraints i sprawdzić w datasheecie wybranego modułu **[DO WERYFIKACJI]**.
 - RX: wyjście SFP to zwykle 370–2000 mVppd (CML, sprzężone AC). VTHD FPGA ±100 mV daje duży zapas. Bias około 1,2 V mieści się w VCM 0,05–2,1 V.
 
 ### 5.2 Bias toru RX (wariant z zewnętrzną terminacją)
@@ -194,7 +198,7 @@ Przy wewnętrznej terminacji FPGA: AC + rezystory biasu ok. 10 kΩ z każdej lin
 | Odbiornik | Prąd (szac.) |
 |---|---|
 | Moduł SFP 1.25G | do ok. 300 mA |
-| GW1N-UV4 (VCC=VCCX=VCCIO=3,3 V) | ok. 50–100 mA |
+| GW1N-UV9 (VCC=VCCX=VCCIO=3,3 V) | ok. 50–100 mA |
 | Generator, LED, reszta | ok. 20 mA |
 | **Razem** | **ok. 0,5 A → projektować na 0,6–0,8 A** |
 
@@ -221,7 +225,7 @@ Osobne złącze JTAG (1 × 6: 3V3, GND, TCK, TMS, TDI, TDO) dla programatora FT2
 
 | Pozycja | Uwagi |
 |---|---|
-| GW1N-UV4QN48C6/I5 | Mouser 192-GW1N-UV4QN48C6I5 |
+| GW1N-UV9QN48C6/I5 | Mouser (jedyne źródło, stan 2026-10-08: ok. 90 szt.) |
 | Klatka SFP + złącze 20-pin | press-fit lub SMT |
 | Generator 25 MHz, ±25 ppm, CMOS 3,3 V | |
 | Dławiki 1 µH × 2 (filtr SFF-8431) | ≥ 0,5 A |
@@ -237,13 +241,13 @@ Osobne złącze JTAG (1 × 6: 3V3, GND, TCK, TMS, TDI, TDO) dla programatora FT2
 
 | Ustawienie | Wartość |
 |---|---|
-| Urządzenie | GW1N-UV4QN48C6/I5 (Device: GW1N-4, wersja D/B wg oznaczenia — **[DO WERYFIKACJI]** w Gowin EDA) |
+| Urządzenie | GW1N-UV9QN48C6/I5 (Device: GW1N-9C, `set_device GW1N-UV9QN48C6/I5 -device_version C`) |
 | Język | VHDL-2008 (synteza GowinSynthesis); prymitywy Gowin z biblioteki dostarczanej z Gowin EDA |
 | Tryb konfiguracji | **AUTOBOOT** z wewnętrznego Flash; programowanie przez JTAG (Gowin Programmer lub openFPGALoader) |
-| Dual-purpose pins | JTAG: **nie** jako GPIO; SSPI/MSPI/READY/DONE/RECONFIG_N: zgodnie z potrzebą, domyślnie dedykowane |
-| Background upgrade | dostępny w GW1N-4 poza wersją A — aktualizacja Flash przez JTAG bez przerywania pracy, aktywacja przez `RECONFIG_N` |
+| Dual-purpose pins | JTAG, JTAGSEL_N, RECONFIG_N, DONE, MODE: dedykowane; MSPI jako GPIO (`-use_mspi_as_gpio 1`) |
+| Background upgrade | aktualizacja Flash przez JTAG bez przerywania pracy, aktywacja przez `RECONFIG_N` **[DO WERYFIKACJI w UG290 dla GW1N-9C]** |
 | Bitstream | kompresja wł., security bit wg potrzeb |
-| Constraints (.cst) | IO_TYPE: `LVDS25` dla par TD/RD, `LVCMOS33` dla reszty; DRIVE=3.5 dla TLVDS; PULL_MODE=UP dla CS_N, RST_N; OPEN_DRAIN=ON dla SCL/SDA |
+| Constraints (.cst) | IO_TYPE: `LVDS25` dla par TD/RD, `LVCMOS33` dla reszty; DRIVE=3.5 dla TD; DIFF_RESISTOR=ON dla RD; PULL_MODE=UP dla CS_N, RST_N; OPEN_DRAIN=ON dla SCL/SDA |
 | Timing (.sdc) | `create_clock` 25 MHz (`CLK_25M`), 50 MHz (`XSPI_SCLK`); clock groups asynchroniczne między `clk_spi` a `clk_sys`; set_input/output_delay dla xSPI wg timingu STM32 |
 
 Przykładowe constraints (do uzupełnienia numerami pinów):
@@ -251,7 +255,7 @@ Przykładowe constraints (do uzupełnienia numerami pinów):
 ```text
 // sfp_bridge.cst
 IO_LOC  "SFP_TD_P"   <pin>;  IO_PORT "SFP_TD_P"  IO_TYPE=LVDS25 DRIVE=3.5;
-IO_LOC  "SFP_RD_P"   <pin>;  IO_PORT "SFP_RD_P"  IO_TYPE=LVDS25;   // + DIFFRESISTOR=100 jeśli bank wspiera
+IO_LOC  "SFP_RD_P"   <pin>;  IO_PORT "SFP_RD_P"  IO_TYPE=LVDS25 DIFF_RESISTOR=ON;
 IO_LOC  "CLK_25M"    <pin>;  IO_PORT "CLK_25M"   IO_TYPE=LVCMOS33;
 IO_LOC  "XSPI_SCLK"  <pin>;  IO_PORT "XSPI_SCLK" IO_TYPE=LVCMOS33;
 IO_LOC  "XSPI_CS_N"  <pin>;  IO_PORT "XSPI_CS_N" IO_TYPE=LVCMOS33 PULL_MODE=UP;
@@ -266,7 +270,7 @@ create_clock -name clk_spi  -period 20.000 [get_ports {XSPI_SCLK}]
 set_clock_groups -asynchronous -group [get_clocks {clk_spi}] -group [get_clocks {clk_25m}]
 ```
 
-Dokładną składnię atrybutów (`DIFFRESISTOR`, `DRIVE`) potwierdzić w SUG935 (Gowin Design Physical Constraints).
+Składnia atrybutów `DRIVE=3.5` (LVDS25) i `DIFF_RESISTOR=ON` została potwierdzona przebiegiem syntezy i PnR w Gowin EDA 1.9.11.03.
 
 ---
 
@@ -331,7 +335,7 @@ vhdl/
 **`async_fifo`**
 - BSRAM w trybie semi-dual port (zapis port A, odczyt port B, różne zegary), liczniki wskaźników w kodzie Graya, synchronizatory 2-FF.
 - Flagi: pusty, pełny, poziom zapełnienia (do IRQ).
-- Rozmiary dla GW1N-4: TX 4 kB (2 bloki), RX 4 kB (2 bloki), bufor I2C 256 B (1 blok). Razem 5 z 10 bloków.
+- Rozmiary minimalne: TX 4 kB (2 bloki), RX 4 kB (2 bloki), bufor I2C 256 B (1 blok). Razem 5 z 26 bloków; zapas pozwala zwiększyć FIFO.
 - Alternatywnie FIFO IP z Gowin EDA, o ile generuje VHDL. Własna implementacja daje przenośność.
 
 **`tx_framer`**
@@ -425,7 +429,7 @@ Zasady:
 | 0x40 | DDM_PERIOD | R/W | okres autopollingu |
 | 0x80–0xFF | I2C_BUF | R/W | okno na bufor I2C (128 B, stronicowane) |
 
-### 7.5 Szacunek zasobów (GW1N-4)
+### 7.5 Szacunek zasobów (GW1N-9)
 
 | Blok | LUT | BSRAM |
 |---|---|---|
@@ -435,7 +439,7 @@ Zasady:
 | 8b/10b enc + dec | 150–200 | – |
 | CDR + comma align + link_ctrl | 300–500 | – |
 | I2C + mailbox + DDM | 200–400 | 1 |
-| **Razem** | **ok. 1,5–2,5k / 4,6k** | **5 / 10** |
+| **Razem** | **ok. 1,5–2,5k / 8,6k** | **5 / 26** |
 
 ### 7.6 Prymitywy Gowin (VHDL)
 
@@ -503,11 +507,11 @@ Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny
 
 ## 10. Otwarte punkty / do weryfikacji
 
-- [ ] Numery pinów QN48: pary true LVDS z obsługą wyjścia, piny GCLKT / PLL_CLKIN, piny `IOx10` bez IO logic (UG105 dla GW1N-4, UG114 dla GW1N-9).
-- [ ] Które banki mają programowalną terminację 100 Ω (UG289).
-- [ ] Dystrybucja HCLK do banku RX i ograniczenia IDES4/CLKDIV (UG286, UG289).
-- [ ] Tryby konfiguracji dostępne w QN48 dla GW1N-4/9 i stan pinów MODE (UG290, UG103).
-- [ ] Czy w QN48 piny VCC i VCCX są wspólne (UG105) — wpływa na odsprzęganie.
+- [ ] Numery pinów QN48 (UG114): przydział do zatwierdzenia i wpisania do tabeli 3.1.
+- [x] Programowalna terminacja 100 Ω: w GW1N-9 wyłącznie bank 0 (UG289, rozdz. 3.3.2).
+- [x] HCLK: w GW1N-9C HCLKMUX przenosi HCLK między bankami; PnR testowy umieścił `clk_fast` w `BANK0_BANK1_HCLK0` i `BANK2_BANK3_HCLK0` (UG286, rozdz. 2.2).
+- [x] Tryb konfiguracji w QN48: pin 48 = MODE2 + MODE1, MODE0 wewnętrznie do masy; pin 48 ściągnięty do masy daje AUTOBOOT (UG114, UG290 tab. 5-1).
+- [x] Zasilanie QN48 (UG114): VCC — piny 12 i 37, VCCX — pin 36, VCCIO0/VCCIO3 — pin 1, VCCIO1/VCCIO2 — pin 25, VSS — piny 2 i 26 oraz EPAD.
 - [ ] Minimalna amplituda wejścia TD wybranego modułu SFP względem VOD FPGA (500 mVppd min).
 - [ ] Czy wybrany moduł SFP nie ma wewnętrznego CDR (moduły z CDR nie zadziałają przy 100 Mbaud).
 - [ ] Generowanie VHDL dla FIFO IP Gowin (jeśli nie — własne `async_fifo`).
@@ -519,11 +523,11 @@ Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny
 |---|---|
 | DS100 — GW1N series Data Sheet | zasoby, tabela obudów, LVDS DC, gearbox, PLL |
 | UG103 — GW1N Package & Pinout | obudowy, opis pinów |
-| UG105 — GW1N-4 Pinout (xlsx) | przypisanie pinów QN48 |
-| UG114 — GW1N-9 Pinout (xlsx) | przypisanie pinów QN48 |
+| UG114 — GW1N-9 Pinout | przypisanie pinów QN48, pary true LVDS |
 | UG286 — Gowin Clock User Guide | rPLL, CLKDIV, HCLK |
 | UG289 — Gowin Programmable IO User Guide | TLVDS, IDES/OSER, terminacja |
 | UG290 — Programming & Configuration | tryby konfiguracji, piny dedykowane |
+| UG284 — GW1N/GW1NR Schematic Manual | zasilanie, odsprzęganie, piny konfiguracyjne |
 | UG285 — BSRAM & SSRAM User Guide | SDPB, FIFO |
 | SUG935 — Physical Constraints | składnia .cst |
 | SFF-8431 / SFP MSA (INF-8074) | elektryka i zasilanie SFP |

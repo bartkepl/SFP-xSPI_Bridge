@@ -24,4 +24,4 @@ Plik `NNNN-krotki-opis.md`, numeracja od `0001`:
 
 | Nr | Decyzja | Stan |
 |---|---|---|
-| — | — | — |
+| [0001](0001-fpga-gw1n-9.md) | FPGA: GW1N-UV9QN48C6/I5 zamiast GW1N-UV4QN48C6/I5 | przyjęta |

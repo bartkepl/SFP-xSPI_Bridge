@@ -3,7 +3,7 @@
 Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP** do łączenia dwóch mikrokontrolerów (STM32) łączem światłowodowym punkt–punkt, bez stosu IP. Transmisja odbywa się własnym, lekkim protokołem ramkowym z kodowaniem 8b/10b i programowym odzyskiem zegara (soft-CDR) w małym FPGA Gowin.
 
 ```
-STM32 <== xSPI ==> GW1N-4/9 <== LVDS ==> SFP ~~~ światłowód ~~~ SFP <==> GW1N-4/9 <==> STM32
+STM32 <== xSPI ==> GW1N-9 <== LVDS ==> SFP ~~~ światłowód ~~~ SFP <==> GW1N-9 <==> STM32
 ```
 
 Projekt open-hardware / open-source, tworzony hobbystycznie.
@@ -12,7 +12,7 @@ Projekt open-hardware / open-source, tworzony hobbystycznie.
 
 | Element | Wybór |
 |---|---|
-| FPGA | Gowin GW1N-UV4QN48C6/I5 (alternatywnie GW1N-UV9QN48 — ta sama obudowa) |
+| FPGA | Gowin GW1N-UV9QN48C6/I5 (GW1N-9, wersja C), QN48 — zob. [ADR 0001](doc/adr/0001-fpga-gw1n-9.md) |
 | Prędkość linii | 100 Mbaud (8b/10b → 80 Mbit/s, ok. 9 MB/s danych użytecznych) |
 | Interfejs hosta | SPI (1-1-1), QSPI (1-1-4 / 1-4-4), OCTOSPI (1-1-8 / 1-8-8), SDR, do 50 MHz |
 | Strona optyczna | dowolny moduł SFP 1.25G bez wewnętrznego CDR (MM/SM, duplex lub BiDi) |

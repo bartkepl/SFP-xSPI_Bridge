@@ -73,3 +73,4 @@ nav:
       - "0006 Tryb UART": adr/0006-tryb-uart-przezroczysty.md
       - "0007 Zegar 50 MHz": adr/0007-zegar-systemowy-50mhz.md
       - "0008 Stan łącza": adr/0008-stan-lacza.md
+      - "0009 Interfejs hosta": adr/0009-interfejs-hosta.md

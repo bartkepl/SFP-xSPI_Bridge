@@ -569,13 +569,17 @@ vhdl/
 - `rPLL` (25 → 200 MHz), `CLKDIV` (/4 → 50 MHz); parametry PLL wyliczane z `LINE_BAUD` w `bridge_pkg`.
 - Reset globalny trzymany do `LOCK` PLL; `HOST_RST_N` z filtrem zakłóceń 640 ns; `CTRL.SOFT_RST` kończący się samoczynnie. Reset domeny `clk_sys` przez `reset_sync`; żądanie `arst_n` dla mostka resetu domeny `clk_spi` (reset asynchroniczny, zwalnianie synchroniczne).
 
-**`xspi_slave`** (domena `clk_spi`, CS_N jako asynchroniczny reset maszyny stanów)
+**`xspi_slave`** (domena `clk_host` = SCLK w trybie xSPI, CS_N jako asynchroniczny reset maszyny stanów; [ADR 0009](adr/0009-interfejs-hosta.md))
 - Fazy: instrukcja (zawsze 1 linia) → opcjonalny adres → dummy → dane, szerokość fazy danych wynika z opkodu (tabela 7.3).
 - Próbkowanie na zboczu narastającym SCLK, wystawianie na opadającym (tryb 0).
 - Kierunek IO0..7 przełączany po fazie dummy przy odczycie.
 - Interfejs do FIFO: zapis bajtów do TX FIFO / odczyt z RX FIFO bez udziału `clk_sys`. Rejestry CSR przez prosty handshake CDC.
 
-**`csr_regs`** — mapa rejestrów w rozdziale 7.4.
+**`csr_regs`** (domena `clk_sys`) — mapa rejestrów w rozdziale 7.4; zatrzask przestrzeni odczytu przy opadnięciu CS, zapis po podniesieniu CS, przerwania, `MODE_CTRL` zachowywany przy resecie programowym.
+
+**`host_clk`** — prymityw `DCS`: zegar strony hosta FIFO = `clk_sys` w resecie oraz w trybach UART i echa ramek, SCLK w trybie xSPI; reset strony hosta zawsze na `clk_sys`.
+
+**`frame_echo`** — echo ramek (`MODE_CTRL.FRAME_ECHO`): kopiowanie ramek z FIFO RX do FIFO TX po stronie hosta.
 
 **`async_fifo`** — gotowy, [opis](vhdl/async_fifo.md)
 - BSRAM w trybie semi-dual port (zapis port A, odczyt port B, różne zegary); wskaźnik odczytu w kodzie Graya, zatwierdzony wskaźnik zapisu przez handshake (zatwierdzenie przesuwa wskaźnik o całą ramkę).
@@ -619,7 +623,7 @@ vhdl/
 - Stany: `DOWN` (LOS — o ile nie jest ignorowany, brak modułu lub brak synchronizacji) → `SYNC` (własny odbiornik zsynchronizowany, strona przeciwna nadaje /R/) → `UP`. Ramki są rozpoczynane tylko w stanie UP.
 - Sterowanie `tx_framer`: `rx_ready` (gdy 0 — bezczynność /R/) i wstrzymanie nadawania (`tx_hold`).
 - Liczniki 32-bit (zawijanie, `CNT_CLR`): błędy kodu i dysparytetu, CRC, długości, ramkowania, przepełnienia, ramki TX/RX, utraty synchronizacji.
-- Pętle zwrotne: near-end (bity `tx_gearbox` → wejście `cdr_os4x8`, bez SFP) w `link_ctrl`; far-end jako echo ramek (FIFO RX → FIFO TX) na poziomie top.
+- Pętle zwrotne: near-end (bity `tx_gearbox` → wejście `cdr_os4x8`, bez SFP) w `link_ctrl`; far-end jako echo ramek (FIFO RX → FIFO TX, `MODE_CTRL.FRAME_ECHO`, moduł `frame_echo`).
 
 **`i2c_master` + `sfp_mgmt`**
 - I2C 100 kHz (opcjonalnie 400 kHz), open-drain przez trójstanowe wyjście.
@@ -633,54 +637,53 @@ vhdl/
 
 ### 7.3 Zestaw komend xSPI (wzorowany na SPI NOR)
 
-| Opkod | Nazwa | Format (instr-adres-dane) | Dummy | Opis |
+Decyzja i uzasadnienie: [ADR 0009](adr/0009-interfejs-hosta.md). Instrukcja zawsze na 1 linii, adres 8-bit na 1 linii, SDR, tryb 0, najstarszy bit pierwszy; w formacie 1-x-1 dane od hosta na IO0, do hosta na IO1.
+
+| Opkod | Nazwa | Format | Dummy | Dane |
 |---|---|---|---|---|
-| `0x9F` | READ_ID | 1-0-1 | 0 | ID modułu (4 B) |
-| `0x05` | READ_STATUS | 1-0-1 | 0 | szybki status (1 B): LINK, RX_AVAIL, TX_SPACE, IRQ |
-| `0x0B` | READ_REG | 1-1-1 | 8 cykli | odczyt rejestru CSR (adres 8-bit, auto-inkrementacja) |
-| `0x02` | WRITE_REG | 1-1-1 | 0 | zapis rejestru CSR |
-| `0x12` | TX_WRITE_1 | 1-0-1 | 0 | zapis payloadu ramki do TX FIFO |
-| `0x32` | TX_WRITE_4 | 1-0-4 | 0 | jw., 4 linie |
-| `0x82` | TX_WRITE_8 | 1-0-8 | 0 | jw., 8 linii |
-| `0x13` | RX_READ_1 | 1-0-1 | 8 cykli | odczyt z RX FIFO |
-| `0x6B` | RX_READ_4 | 1-0-4 | 8 cykli | jw., 4 linie |
-| `0x8B` | RX_READ_8 | 1-0-8 | 8 cykli | jw., 8 linii |
+| `0x9F` | READ_ID | 1-0-1 | 0 | 4 B: `0x5B`, `0x5F` (ID), wersja, `0x00` |
+| `0x05` | READ_STATUS | 1-0-1 | 0 | rejestr `STATUS_FAST` (powtarzany) |
+| `0x0B` | READ_REG | 1-1-1 | 8 | rejestry od adresu, auto-inkrementacja |
+| `0x02` | WRITE_REG | 1-1-1 | 0 | do 8 bajtów od adresu, auto-inkrementacja |
+| `0x12` / `0x32` / `0x82` | TX_WRITE_1 / _4 / _8 | 1-0-1 / 1-0-4 / 1-0-8 | 0 | bajty ramki do FIFO TX |
+| `0x13` / `0x6B` / `0x8B` | RX_READ_1 / _4 / _8 | 1-0-1 / 1-0-4 / 1-0-8 | 8 | bajty ramek z FIFO RX |
+| `0x66` | TX_ABORT | 1-0-0 | — | porzucenie niezatwierdzonej ramki |
 
 Zasady:
-- Zapis ramki: `WRITE_REG TX_TYPE`, `WRITE_REG TX_LEN` → `TX_WRITE_x` (LEN bajtów) → `WRITE_REG TX_COMMIT` (lub automatycznie po LEN bajtach). Slave wpisuje do FIFO TX nagłówek `TYPE, LEN_H, LEN_L`, potem treść, i zatwierdza ramkę.
-- Odczyt ramki: `READ_REG RX_TYPE`/`RX_LEN` (nagłówek ramki na czele FIFO RX) → `RX_READ_x` → `WRITE_REG RX_POP`.
+- Ramki w formacie surowym FIFO: zapis `TX_WRITE_x` — bajty `TYPE, LEN_H, LEN_L, treść`, slave zatwierdza ramkę z ostatnim bajtem treści (ramka może być podzielona na kilka transakcji); odczyt `RX_READ_x` — bajty `TYPE, LEN_H, LEN_L, treść` kolejnych ramek. Przed zapisem host sprawdza `TX_SPACE` / `TX_READY`, przed odczytem `RX_AVAIL` / `RX_LEVEL`.
+- Rejestry są zatrzaskiwane przy opadnięciu CS (spójny odczyt w obrębie transakcji), zapisy stosowane po podniesieniu CS. Wymagania: SCLK ≤ 50 MHz, CS w stanie wysokim ≥ 100 ns między transakcjami.
+- Dummy cycles dają FPGA czas na publikację wskaźnika FIFO w domenie SCLK i pobranie pierwszego bajtu.
 - Opkody `0x8x` są własne (nie z JEDEC), a STM32 OCTOSPI w trybie indirect przyjmie dowolny opkod.
-- Dummy cykle dają FPGA czas na pobranie pierwszego bajtu z FIFO przez CDC.
 
-### 7.4 Mapa rejestrów CSR (szkic)
+### 7.4 Mapa rejestrów CSR
 
-| Adres | Nazwa | R/W | Opis |
+Adresy bajtowe, wartości wielobajtowe little-endian ([ADR 0009](adr/0009-interfejs-hosta.md)).
+
+| Adres | Nazwa | R/W | Zawartość |
 |---|---|---|---|
-| 0x00 | ID | R | stała `0x5F5B` |
-| 0x01 | VERSION | R | wersja bitstreamu |
-| 0x02 | CTRL | R/W | TX_EN, RX_EN, LOOPBACK[1:0] (00 normalnie, 01 near-end, 10 echo ramek), SFP_TX_DIS, LOS_IGNORE, CNT_CLR, SOFT_RST |
-| 0x03 | STATUS | R | LINK_UP, SYNC, REMOTE_READY, LOS, TX_FAULT, MOD_ABS, RX_AVAIL, TX_FULL, XOFF_LOCAL, XOFF_REMOTE |
-| 0x04 | IRQ_EN | R/W | maska przerwań |
-| 0x05 | IRQ_STAT | R/W1C | RX_FRAME, TX_EMPTY, LINK_CHG, SFP_CHG, I2C_DONE, ERR |
-| 0x06–0x07 | TX_LEN | R/W | długość ramki do wysłania |
-| 0x08 | TX_COMMIT | W | wyślij ramkę |
-| 0x09–0x0A | TX_SPACE | R | wolne miejsce w TX FIFO |
-| 0x0B–0x0C | RX_LEN | R | długość ramki na czele RX FIFO |
-| 0x0D | RX_POP | W | zwolnij ramkę |
-| 0x0E | TX_TYPE | R/W | pole TYPE ramki do wysłania (0x00 dane; 0x01 strumień UART; 0x10–0xFF aplikacja) |
-| 0x0F | RX_TYPE | R | pole TYPE ramki na czele RX FIFO |
-| 0x10–0x2F | CNT_* | R | liczniki 32-bit (zawijanie, kasowanie CTRL.CNT_CLR): CODE_ERR, CRC_ERR, LEN_ERR, FRAMING_ERR, RX_OVF, FRAMES_TX, FRAMES_RX, SYNC_LOSS |
-| 0x30 | I2C_DEV | R/W | 0x50 lub 0x51 |
-| 0x31 | I2C_OFFSET | R/W | |
-| 0x32 | I2C_LEN | R/W | |
-| 0x33 | I2C_CMD | W | START_READ / START_WRITE |
-| 0x34 | I2C_STATUS | R | BUSY, DONE, NACK |
-| 0x40–0x4E | DDM_* | R | rejestry cienia DDM |
-| 0x4F | DDM_PERIOD | R/W | okres autopollingu |
-| 0x50 | MODE_CTRL | R/W | UART_MODE (przełączenie na tryb UART), RTSCTS_EN; odczyt: stan zworki MODE_SEL |
-| 0x51–0x52 | UART_DIV | R/W | dzielnik prędkości UART (domyślnie 115200) |
-| 0x53 | UART_STATUS | R/W1C | przepełnienia RX/TX, błędy ramki UART |
-| 0x80–0xFF | I2C_BUF | R/W | okno na bufor I2C (128 B, stronicowane) |
+| 0x00–0x01 | ID | R | `0x5F5B` |
+| 0x02 | VERSION | R | wersja bitstreamu |
+| 0x04 | CTRL | R/W | b0 `TX_EN`, b1 `RX_EN`, b2 `LB_NEAR` (pętla near-end), b3 `SFP_TX_DIS`, b4 `LOS_IGNORE`, b6 `CNT_CLR` (zapis 1: kasowanie liczników), b7 `SOFT_RST` (zapis 1: reset mostka); po resecie `0x03` |
+| 0x05 | STATUS | R | b0 `LINK_UP`, b1 `SYNC`, b2 `REMOTE_READY`, b3 `XOFF_LOCAL`, b4 `XOFF_REMOTE`, b5 `LOS`, b6 `TX_FAULT`, b7 `MOD_ABS` |
+| 0x06 | STATUS_FAST | R | b0 `LINK_UP`, b1 `RX_AVAIL`, b2 `TX_READY`, b3 `TX_EMPTY`, b4 `IRQ`, b5 `MODE_SEL` (stan zworki) |
+| 0x07 | IRQ_EN | R/W | maska przerwań |
+| 0x08 | IRQ_STAT | R/W1C | b0 `RX_FRAME`, b1 `TX_EMPTY`, b2 `LINK_CHG`, b3 `SFP_CHG`, b4 `I2C_DONE`, b5 `ERR` |
+| 0x0A–0x0B | TX_SPACE | R | wolne bajty w FIFO TX |
+| 0x0C–0x0D | RX_LEVEL | R | bajty zatwierdzonych ramek w FIFO RX |
+| 0x10–0x2F | CNT_* | R | liczniki 32-bit (zawijanie, kasowanie `CTRL.CNT_CLR`): CODE_ERR, CRC_ERR, LEN_ERR, FRAMING_ERR, RX_OVF, FRAMES_TX, FRAMES_RX, SYNC_LOSS |
+| 0x30 | I2C_DEV | R/W | 0x50 lub 0x51 (etap 8) |
+| 0x31 | I2C_OFFSET | R/W | (etap 8) |
+| 0x32 | I2C_LEN | R/W | (etap 8) |
+| 0x33 | I2C_CMD | W | START_READ / START_WRITE (etap 8) |
+| 0x34 | I2C_STATUS | R | BUSY, DONE, NACK (etap 8) |
+| 0x40–0x4E | DDM_* | R | rejestry cienia DDM (etap 8) |
+| 0x4F | DDM_PERIOD | R/W | okres autopollingu (etap 8) |
+| 0x50 | MODE_CTRL | R/W | b0 `UART_MODE`, b1 `FRAME_ECHO`, b2 `RTSCTS_EN`; zachowywany przy resecie programowym; zmiana b0 / b1 resetuje mostek |
+| 0x51–0x52 | UART_DIV | R/W | takty `clk_sys` na bit UART (434 = 115 200) |
+| 0x53 | UART_STATUS | R/W1C | b0 `RX_OVF`, b1 `FRAME_ERR` |
+| 0x80–0xFF | I2C_BUF | R/W | okno na bufor I2C (etap 8) |
+
+Nieopisane adresy: odczyt 0, zapis ignorowany. `HOST_IRQ_N` = 0, gdy (`IRQ_STAT` ∧ `IRQ_EN`) ≠ 0.
 
 ### 7.5 Szacunek zasobów (GW1N-9)
 

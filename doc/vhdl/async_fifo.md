@@ -6,7 +6,7 @@ Bufor między domenami zegarowymi na bloku BSRAM, z **zatwierdzaniem i odrzucani
 
 | Instancja | Zapis | Odczyt | Rola mechanizmu commit |
 |---|---|---|---|
-| FIFO nadawcze | `clk_spi` (host przez xSPI) | `clk_sys` (framer) | framer widzi tylko pełne ramki (TX_COMMIT) |
+| FIFO nadawcze | `clk_spi` (host przez xSPI) | `clk_sys` (framer) | framer widzi tylko pełne ramki (zatwierdzane przez `xspi_slave` po ostatnim bajcie ramki) |
 | FIFO odbiorcze | `clk_sys` (deframer) | `clk_spi` (host) | ramka z błędem jest odrzucana w całości (abort) |
 
 ## Interfejs

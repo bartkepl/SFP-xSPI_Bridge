@@ -15,7 +15,7 @@ Stan łącza, obsługa LOS modułu SFP, bramkowanie nadawania ramek, liczniki zd
 | `clk`, `rst` | in | `clk_sys`, reset synchroniczny |
 | `cfg_tx_en`, `cfg_rx_en` | in | bity `TX_EN`, `RX_EN` rejestru `CTRL` |
 | `cfg_los_ignore` | in | bit `LOS_IGNORE`: LOS nie wymusza stanu DOWN |
-| `cfg_loopback[1:0]` | in | pole `LOOPBACK` (`LB_NONE`, `LB_NEAR`, `LB_FAR`) |
+| `cfg_loopback[1:0]` | in | tryb pętli (`LB_NONE`, `LB_NEAR` z bitu `CTRL.LB_NEAR`; `LB_FAR` — echo ramek, `MODE_CTRL.FRAME_ECHO`, [ADR 0009](../adr/0009-interfejs-hosta.md)) |
 | `cnt_clr` | in | bit `CNT_CLR`: kasowanie liczników (dopóki `'1'`) |
 | `sfp_los`, `sfp_mod_abs` | in | sygnały modułu SFP, zsynchronizowane do `clk_sys` |
 | `rx_sync` | in | synchronizacja znakowa (`comma_align`) |

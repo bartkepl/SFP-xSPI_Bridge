@@ -1,6 +1,6 @@
 # 0008. Stan łącza: gotowość odbiornika w sekwencji bezczynności, LOS, liczniki, pętle zwrotne
 
-**Stan:** przyjęta · **Data:** 2026-10-08
+**Stan:** przyjęta, uzupełniona przez [ADR 0009](0009-interfejs-hosta.md) (echo ramek w `MODE_CTRL.FRAME_ECHO`, w `CTRL` bit `LB_NEAR`) · **Data:** 2026-10-08
 **Dotyczy:** vhdl, doc, firmware (uzupełnia [ADR 0005](0005-protokol-lacza.md))
 
 ## Kontekst

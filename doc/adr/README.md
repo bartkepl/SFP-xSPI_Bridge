@@ -32,3 +32,4 @@ Plik `NNNN-krotki-opis.md`, numeracja od `0001`:
 | [0006](0006-tryb-uart-przezroczysty.md) | Tryb przezroczysty UART obok trybu xSPI (zworka MODE_SEL, 115200, opcjonalne RTS/CTS) | przyjęta |
 | [0007](0007-zegar-systemowy-50mhz.md) | Zegar systemowy 50 MHz z serializerami IDES8/OSER8 | przyjęta |
 | [0008](0008-stan-lacza.md) | Stan łącza: gotowość odbiornika w sekwencji bezczynności (/R/), LOS, liczniki, pętle zwrotne | przyjęta |
+| [0009](0009-interfejs-hosta.md) | Interfejs hosta: ramki w formacie surowym, rejestry zatrzaskiwane przy CS, zegar strony hosta przez DCS, zmiana trybu = reset | przyjęta |

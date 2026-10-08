@@ -29,6 +29,7 @@ kicad-thumbnails/
 *.rpt.txt
 
 # GHDL / ModelSim / simulation output
+vhdl/sim/out/
 *.cf
 work/
 work-obj*.cf
@@ -53,6 +54,9 @@ Release/
 *.bin
 *.map
 *.list
+
+# MkDocs build output
+site/
 
 # OS / editor
 .DS_Store

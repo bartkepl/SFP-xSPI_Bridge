@@ -1,0 +1,51 @@
+# Symulacja i przebiegi
+
+## Narzędzia
+
+| Narzędzie | Rola | Lokalizacja |
+|---|---|---|
+| GHDL 5.0.1 | symulator VHDL-2008 | WSL (`apt install ghdl`) |
+| GTKWave 3.4 | podgląd przebiegów | `gtkwave` w `PATH` |
+
+Uzasadnienie wyboru: [ADR 0003](../adr/0003-weryfikacja-ghdl.md).
+
+## Uruchamianie testów
+
+W PowerShell, w katalogu `vhdl\sim`:
+
+```
+.\run_tests.ps1              # wszystkie testbenche
+.\run_tests.ps1 tb_crc32     # wybrany testbench
+```
+
+Wynik:
+
+```
+  PASS  tb_8b10b  (6454 checks)
+  PASS  tb_crc32  (514 checks)
+  PASS  tb_sync  (17 checks)
+Result: 3 passed, 0 failed
+```
+
+Przy błędzie wypisywane są pierwsze nieudane sprawdzenia (`CHECK FAILED: ...`); pełny dziennik: `vhdl\sim\out\<tb>.log`.
+
+Skrypt kompiluje pliki z `sources.txt` (w tej kolejności) oraz wszystkie `tb_*.vhd`. Nowy moduł dopisuje się do `sources.txt` za modułami, od których zależy.
+
+## Podgląd przebiegów
+
+```
+.\view.ps1 tb_crc32
+```
+
+Otwiera `out\tb_crc32.ghw` w GTKWave z widokiem `waves\tb_crc32.gtkw` (sygnały pogrupowane i opisane). Podstawowe operacje w GTKWave:
+
+| Operacja | Sposób |
+|---|---|
+| dopasowanie całego przebiegu do okna | `Ctrl+Alt+F` lub przycisk „Zoom Fit” |
+| powiększenie / pomniejszenie | `Ctrl` + kółko myszy |
+| kursor i odczyt wartości | kliknięcie na przebiegu; wartości w kolumnie obok nazw |
+| zmiana formatu (hex, dec, bin) | prawy przycisk na nazwie sygnału → *Data Format* |
+| dodanie sygnału | panel *SST* (hierarchia) po lewej → przeciągnięcie sygnału |
+| zapis zmienionego widoku | *File → Write Save File* (nadpisuje `.gtkw`) |
+
+Opis, co należy zobaczyć na przebiegu każdego testbencha, znajduje się na stronie modułu (sekcja „Przebieg”).

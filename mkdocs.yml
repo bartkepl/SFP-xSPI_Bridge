@@ -1,0 +1,64 @@
+site_name: SFP-xSPI Bridge
+site_description: >-
+  Mostek OCTOSPI / QUADSPI / SPI ↔ SFP na FPGA Gowin GW1N-9: łącze światłowodowe
+  punkt–punkt z kodowaniem 8b/10b i programowym odzyskiem zegara.
+docs_dir: doc
+use_directory_urls: true
+
+theme:
+  name: material
+  language: pl
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - navigation.tracking
+    - content.code.copy
+    - toc.follow
+    - search.suggest
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Tryb ciemny
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Tryb jasny
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+
+nav:
+  - Start: index.md
+  - Plan konstrukcji: sfp-xspi-bridge-plan.md
+  - VHDL:
+      - vhdl/index.md
+      - Konwencje kodu: vhdl/konwencje.md
+      - Symulacja i przebiegi: vhdl/symulacja.md
+      - Moduły:
+          - Synchronizatory (sync_bit, reset_sync): vhdl/sync.md
+          - CRC-32 (crc32): vhdl/crc32.md
+          - Kod 8b/10b (enc_8b10b, dec_8b10b): vhdl/8b10b.md
+  - Decyzje (ADR):
+      - adr/README.md
+      - "0001 FPGA GW1N-9": adr/0001-fpga-gw1n-9.md
+      - "0002 Terminacja RX": adr/0002-terminacja-rx-zewnetrzna.md
+      - "0003 Weryfikacja GHDL": adr/0003-weryfikacja-ghdl.md
+      - "0004 Strategia resetu": adr/0004-strategia-resetu.md
+      - "0005 Protokół łącza": adr/0005-protokol-lacza.md

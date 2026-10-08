@@ -1,0 +1,47 @@
+[*] GTKWave view for tb_8b10b (open with: view.ps1 tb_8b10b)
+[timestart] 0
+[size] 1500 800
+[signals_width] 260
+[sst_width] 220
+@200
+-Clock / reset
+@28
+top.tb_8b10b.clk
+top.tb_8b10b.rst
+@200
+-Encoder input
+@28
+top.tb_8b10b.enc_en
+top.tb_8b10b.enc_k
+@22
+top.tb_8b10b.enc_data[7:0]
+@200
+-Encoder output (code(0) = bit a, sent first)
+@28
+top.tb_8b10b.enc_valid
+@22
+top.tb_8b10b.enc_code[9:0]
+@28
+top.tb_8b10b.enc_rd
+top.tb_8b10b.enc_kerr
+@200
+-Decoder input
+@28
+top.tb_8b10b.dec_en
+@22
+top.tb_8b10b.dec_code[9:0]
+@200
+-Decoder pipeline stage 1 (table lookup)
+@28
+top.tb_8b10b.u_dec.en_q
+@200
+-Decoder output
+@28
+top.tb_8b10b.dec_valid
+top.tb_8b10b.dec_k
+@22
+top.tb_8b10b.dec_data[7:0]
+@28
+top.tb_8b10b.dec_cerr
+top.tb_8b10b.dec_derr
+top.tb_8b10b.dec_rd

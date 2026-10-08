@@ -1,0 +1,23 @@
+[*] GTKWave view for tb_sync (open with: view.ps1 tb_sync)
+[timestart] 0
+[size] 1400 700
+[signals_width] 220
+[sst_width] 220
+@200
+-Clock
+@28
+top.tb_sync.clk
+top.tb_sync.clk_run
+@200
+-sync_bit: d -> q after 2 / 3 edges
+@28
+top.tb_sync.d
+top.tb_sync.q2
+top.tb_sync.q3
+@200
+-reset_sync: async assert, release after 3 edges
+@28
+top.tb_sync.arst_n
+top.tb_sync.rst
+@22
+top.tb_sync.dut_rs.chain[2:0]

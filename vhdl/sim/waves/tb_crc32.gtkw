@@ -1,0 +1,24 @@
+[*] GTKWave view for tb_crc32 (open with: view.ps1 tb_crc32)
+[timestart] 0
+[size] 1400 700
+[signals_width] 240
+[sst_width] 220
+@200
+-Clock / reset
+@28
+top.tb_crc32.clk
+top.tb_crc32.rst
+@200
+-Input bytes
+@28
+top.tb_crc32.init
+top.tb_crc32.en
+@22
+top.tb_crc32.data[7:0]
+@200
+-CRC register (internal) and outputs
+@22
+top.tb_crc32.dut.reg[31:0]
+top.tb_crc32.crc[31:0]
+@28
+top.tb_crc32.crc_ok

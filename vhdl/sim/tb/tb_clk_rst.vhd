@@ -42,7 +42,8 @@ architecture sim of tb_clk_rst is
   signal host_rst_n : std_logic := '1';
   signal soft_set   : std_logic := '0';     -- TB "CSR write" of SOFT_RST
   signal soft_q     : std_logic := '0';     -- CTRL.SOFT_RST flip-flop model
-  signal clk_fast, clk_sys, rst_sys, arst_n, pll_lock : std_logic;
+  signal n_hard_soft : natural := 0;        -- rst_hard cycles while soft_q was set
+  signal clk_fast, clk_sys, rst_sys, rst_hard, arst_n, pll_lock : std_logic;
 
 begin
 
@@ -51,13 +52,16 @@ begin
   dut : entity work.clk_rst
     generic map (HOST_FILT => 32, STAGES => STAGES)
     port map (clk_25m => clk_25m, host_rst_n => host_rst_n, soft_rst => soft_q,
-              clk_fast => clk_fast, clk_sys => clk_sys, rst_sys => rst_sys,
+              clk_fast => clk_fast, clk_sys => clk_sys, rst_sys => rst_sys, rst_hard => rst_hard,
               arst_n => arst_n, pll_lock => pll_lock);
 
   -- CTRL.SOFT_RST model: set by a write, cleared by the domain reset
   process (clk_sys)
   begin
     if rising_edge(clk_sys) then
+      if rst_hard = '1' and soft_q = '1' then
+        n_hard_soft <= n_hard_soft + 1;
+      end if;
       if rst_sys = '1' then
         soft_q <= '0';
       elsif soft_set = '1' then
@@ -159,6 +163,7 @@ begin
           "4: rst_sys released after " & integer'image(cyc) & " clk_sys cycles");
 
     -- 5. soft reset
+    check_equal(rst_hard, '0', "5: rst_hard released");
     for i in 1 to 10 loop
       wait until rising_edge(clk_sys);
     end loop;
@@ -175,6 +180,7 @@ begin
     wait for 1 ns;
     check(cyc >= STAGES and cyc <= STAGES + 2, "5: soft reset pulse " & integer'image(cyc) & " cycles");
     check_equal(soft_q, '0', "5: SOFT_RST bit cleared by the reset");
+    check_equal(n_hard_soft, 0, "5: rst_hard not asserted by the soft reset");
     check_equal(arst_n, '1', "5: arst_n high after the soft reset");
     for i in 1 to 10 loop
       wait until rising_edge(clk_sys);

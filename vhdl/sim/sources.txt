@@ -21,4 +21,5 @@ sfp_bridge/src/uart/uart_rx.vhd
 sfp_bridge/src/uart/uart_tx.vhd
 sfp_bridge/src/uart/uart_bridge.vhd
 sfp_bridge/src/host/xspi_slave.vhd
+sfp_bridge/src/host/csr_regs.vhd
 sim/tb/tb_pkg.vhd

@@ -22,6 +22,8 @@
 --   * soft_rst (CTRL.SOFT_RST) must come directly from a flip-flop of the
 --     clk_sys domain that is cleared by rst_sys: the reset clears the bit,
 --     which releases the request (self-terminating soft reset).
+--   rst_hard is the same reset without soft_rst (for registers kept over a
+--   soft reset: MODE_CTRL, ADR 0009).
 --   rst_sys (clk_sys domain, active high) is asserted immediately and
 --   released synchronously after STAGES clk_sys edges (reset_sync). Other
 --   clock domains (clk_spi) use arst_n with their own reset_sync.
@@ -51,6 +53,7 @@ entity clk_rst is
     clk_fast   : out std_logic;
     clk_sys    : out std_logic;
     rst_sys    : out std_logic;  -- clk_sys domain reset, active high
+    rst_hard   : out std_logic;  -- clk_sys reset without SOFT_RST (MODE_CTRL, ADR 0009)
     arst_n     : out std_logic;  -- asynchronous reset request for other domains
     pll_lock   : out std_logic   -- PLL lock (not synchronized)
   );
@@ -68,6 +71,7 @@ architecture rtl of clk_rst is
   signal flt_cnt    : natural range 0 to HOST_FILT - 1 := 0;
 
   signal arst_n_i   : std_logic;
+  signal arst_h_n   : std_logic;
 
 begin
 
@@ -117,6 +121,13 @@ begin
   u_rst_sys : entity work.reset_sync
     generic map (STAGES => STAGES)
     port map (clk => clk_sys_i, arst_n => arst_n_i, rst => rst_sys);
+
+  -- hard reset: PLL lock and HOST_RST_N only (keeps MODE_CTRL over a soft reset)
+  arst_h_n <= lock and host_flt;
+
+  u_rst_hard : entity work.reset_sync
+    generic map (STAGES => STAGES)
+    port map (clk => clk_sys_i, arst_n => arst_h_n, rst => rst_hard);
 
   clk_fast <= clk_fast_i;
   clk_sys  <= clk_sys_i;

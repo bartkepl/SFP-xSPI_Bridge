@@ -26,6 +26,7 @@
         <File path="src/uart/uart_tx.vhd" type="file.vhdl" enable="1"/>
         <File path="src/uart/uart_bridge.vhd" type="file.vhdl" enable="1"/>
         <File path="src/host/xspi_slave.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/host/csr_regs.vhd" type="file.vhdl" enable="1"/>
         <File path="src/top/sfp_bridge_top.vhd" type="file.vhdl" enable="1"/>
         <File path="../constraints/sfp_bridge.cst" type="file.cst" enable="1"/>
         <File path="../constraints/sfp_bridge.sdc" type="file.sdc" enable="1"/>

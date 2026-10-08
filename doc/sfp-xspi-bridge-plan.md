@@ -557,7 +557,8 @@ vhdl/
                               --   tb_link_loopback (dwa końce, 200 ppm, jitter, ramki w obu kierunkach)
                               --   tb_link_ctrl, tb_clk_rst (modele rPLL i CLKDIV), tb_uart, tb_uart_bridge
                               --   tb_xspi_slave, tb_async_fifo_stable
-                              --   planowane: tb_csr_regs, tb_i2c_sfp, tb_top
+                              --   tb_csr_regs (z xspi_slave)
+                              --   planowane: tb_i2c_sfp, tb_top
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
     run_tests.ps1 / .sh       -- uruchamianie testów (GHDL w WSL)
@@ -576,7 +577,7 @@ vhdl/
 - Kierunek IO0..7 przełączany po fazie dummy przy odczycie.
 - Interfejs do FIFO: zapis bajtów do TX FIFO / odczyt z RX FIFO bez udziału `clk_sys`. Rejestry CSR przez prosty handshake CDC.
 
-**`csr_regs`** (domena `clk_sys`) — mapa rejestrów w rozdziale 7.4; zatrzask przestrzeni odczytu przy opadnięciu CS, zapis po podniesieniu CS, przerwania, `MODE_CTRL` zachowywany przy resecie programowym.
+**`csr_regs`** — gotowy, [opis](vhdl/csr_regs.md) (domena `clk_sys`) — mapa rejestrów w rozdziale 7.4; zatrzask przestrzeni odczytu przy opadnięciu CS, zapis po podniesieniu CS, przerwania, `MODE_CTRL` zachowywany przy resecie programowym.
 
 **`host_clk`** — prymityw `DCS`: zegar strony hosta FIFO = `clk_sys` w resecie oraz w trybach UART i echa ramek, SCLK w trybie xSPI; reset strony hosta zawsze na `clk_sys`.
 

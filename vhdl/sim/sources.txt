@@ -12,4 +12,7 @@ sfp_bridge/src/link/tx_framer.vhd
 sfp_bridge/src/link/rx_deframer.vhd
 sfp_bridge/src/link/cdr_os4x8.vhd
 sfp_bridge/src/link/comma_align.vhd
+sfp_bridge/src/link/tx_gearbox.vhd
+sfp_bridge/src/link/tx_phy.vhd
+sfp_bridge/src/link/rx_phy.vhd
 sim/tb/tb_pkg.vhd

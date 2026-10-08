@@ -534,6 +534,7 @@ vhdl/
       enc_8b10b.vhd, dec_8b10b.vhd
       tx_framer.vhd           -- ramki, bezczynność /I/ /P/ (XON/XOFF)
       rx_deframer.vhd         -- kontrola ramek, odrzucanie błędnych, XOFF
+      tx_gearbox.vhd          -- symbol 10 bitów → 2 bity na takt, char_en co 5 taktów
       tx_phy.vhd              -- OSER8 (bity powielone 4×) + TLVDS_OBUF
       rx_phy.vhd              -- TLVDS_IBUF + IDES8
       cdr_os4x8.vhd           -- odzysk danych z 4× nadpróbkowania, 8 próbek na takt
@@ -552,6 +553,7 @@ vhdl/
                               --   gotowe: tb_sync, tb_crc32, tb_8b10b, tb_async_fifo, tb_link_frames
                               --   tb_cdr_os4x8 (±100…±1000 ppm, jitter do ±0,3 UI)
                               --   tb_comma_align (poślizg bitu, błędy, fałszywe comma)
+                              --   tb_phy_loopback (modele prymitywów Gowin)
                               --   planowane: tb_link_loopback,
                               --              tb_uart, tb_i2c_sfp, tb_xspi_slave, tb_top
     waves/                    -- widoki GTKWave (.gtkw)
@@ -591,10 +593,11 @@ vhdl/
 - Standardowa tabela 5b/6b + 3b/4b z bieżącym dysparytetem; tablica dekodera wyliczana z funkcji kodera (ROM w BSRAM).
 - Dekoder zgłasza flagi `code_err` i `disp_err`.
 
-**`tx_phy`**
-- `OSER8` taktowany `clk_fast` (FCLK) / `clk_sys` (PCLK), 2 bity na takt `clk_sys`, każdy bit powielony 4× → `TLVDS_OBUF`. Symbol 10-bitowy = 5 taktów.
-
-**`rx_phy`** — `TLVDS_IBUF` → `IDES8` (FCLK = 200 MHz, PCLK = 50 MHz) → 8 próbek na takt `clk_sys`.
+**`tx_gearbox`, `tx_phy`, `rx_phy`** — gotowe, [opis](vhdl/phy.md)
+- `tx_gearbox`: symbol 10-bitowy co 5 taktów `clk_sys` → 2 bity na takt; impuls `char_en` dla `tx_framer` i `enc_8b10b`.
+- `tx_phy`: `OSER8` taktowany `clk_fast` (FCLK) / `clk_sys` (PCLK), każdy bit powielony 4× → `TLVDS_OBUF`.
+- `rx_phy`: `TLVDS_IBUF` → `IDES8` (FCLK = 200 MHz, PCLK = 50 MHz) → 8 próbek na takt `clk_sys`.
+- Generyk `INVERT` — odwrócenie polaryzacji pary.
 
 **`cdr_os4x8`** — gotowy, [opis](vhdl/cdr.md)
 - Wejście: 8 próbek na takt (2 bity × 4 próbki). Wykrywanie zboczy między kolejnymi próbkami (także między taktami), liczniki zboczy w czterech klasach fazowych przez okno 32 taktów.

@@ -11,7 +11,7 @@ vhdl/
     src/pkg/              pakiety: bridge_pkg (stałe), code8b10b_pkg (kod 8b/10b)
     src/common/           elementy ogólne: sync_bit, reset_sync
     src/fifo/             async_fifo
-    src/link/             tor łącza: crc32, enc_8b10b, dec_8b10b, ...
+    src/link/             tor łącza: crc32, 8b/10b, ramkowanie, CDR, wyrównanie, PHY
     src/top/              sfp_bridge_top
   sfp_bridge_testled/     projekt testowy: miganie LED
   sim/
@@ -37,7 +37,8 @@ vhdl/
 | `tx_framer`, `rx_deframer` | `src/link/tx_framer.vhd`, `rx_deframer.vhd` | `tb_link_frames` | PASS | tak (70 MHz) | [Ramkowanie](framing.md) |
 | `cdr_os4x8` | `src/link/cdr_os4x8.vhd` | `tb_cdr_os4x8` | PASS | tak (74 MHz) | [Odzysk danych](cdr.md) |
 | `comma_align` | `src/link/comma_align.vhd` | `tb_comma_align` | PASS | tak (tor RX 83 MHz) | [Wyrównanie symboli](comma_align.md) |
-| `tx_phy`, `rx_phy`, `clk_rst` | — | — | — | — | planowany (prymitywy Gowin) |
+| `tx_gearbox`, `tx_phy`, `rx_phy` | `src/link/tx_gearbox.vhd`, `tx_phy.vhd`, `rx_phy.vhd` | `tb_phy_loopback` | PASS | tak (z PLL i IDES8/OSER8, 75 MHz) | [Warstwa fizyczna](phy.md) |
+| `clk_rst` | — | — | — | — | planowany (rPLL, CLKDIV) |
 | `link_ctrl` | — | — | — | — | planowany |
 | `uart_rx`, `uart_tx`, `uart_bridge` | — | — | — | — | planowany ([ADR 0006](../adr/0006-tryb-uart-przezroczysty.md)) |
 | `i2c_master`, `sfp_mgmt` | — | — | — | — | planowany |

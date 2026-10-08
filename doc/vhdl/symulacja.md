@@ -31,6 +31,8 @@ Przy błędzie wypisywane są pierwsze nieudane sprawdzenia (`CHECK FAILED: ...`
 
 Skrypt kompiluje pliki z `sources.txt` (w tej kolejności) oraz wszystkie `tb_*.vhd`. Nowy moduł dopisuje się do `sources.txt` za modułami, od których zależy.
 
+Moduły z prymitywami Gowin (`tx_phy`, `rx_phy`) korzystają z biblioteki `gw1n`: skrypt kompiluje do niej model symulacyjny producenta `prim_sim.vhd` (encje prymitywów) i `prim_syn.vhd` (pakiet `components` z deklaracjami komponentów) z instalacji Gowin EDA — katalog `IDE/simlib/gw1n`, ścieżka w zmiennej `GOWIN_SIMLIB`. Biblioteka jest kompilowana ponownie tylko wtedy, gdy jej brak lub model jest nowszy. Ten sam kod (`library gw1n; use gw1n.components.all;`) służy do syntezy i symulacji.
+
 ## Wspólne elementy testbenchy (`tb_pkg`)
 
 | Element | Opis |

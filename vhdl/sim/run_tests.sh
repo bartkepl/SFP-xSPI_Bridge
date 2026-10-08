@@ -7,16 +7,30 @@
 # Waveforms are written to sim/out/<tb>.ghw (open with view.ps1 <tb>).
 # Exit code: 0 when all testbenches pass, 1 otherwise.
 # Each testbench is limited to TB_TIMEOUT seconds (default 300).
+# Gowin primitive models (IDES8, OSER8, TLVDS_*) are compiled from the Gowin EDA
+# installation (GOWIN_SIMLIB, default below) into library gw1n.
 
 set -u
 SIM_DIR="$(cd "$(dirname "$0")" && pwd)"
 VHDL_DIR="$(dirname "$SIM_DIR")"
 OUT="$SIM_DIR/out"
 WORK="$OUT/work"
-GHDL_FLAGS=(--std=08 --workdir="$WORK" -frelaxed)
+GOWIN_LIB="$OUT/gowin"
+GOWIN_SIMLIB="${GOWIN_SIMLIB:-/opt/gowin/IDE/simlib/gw1n}"
+GHDL_FLAGS=(--std=08 --workdir="$WORK" -frelaxed -fsynopsys -P"$GOWIN_LIB")
 
-mkdir -p "$WORK"
+mkdir -p "$WORK" "$GOWIN_LIB"
 cd "$VHDL_DIR" || exit 1
+
+# Gowin primitive library (recompiled when missing or older than the model)
+if [ ! -f "$GOWIN_LIB/gw1n-obj08.cf" ] || [ "$GOWIN_SIMLIB/prim_sim.vhd" -nt "$GOWIN_LIB/gw1n-obj08.cf" ]; then
+  rm -f "$GOWIN_LIB"/*.cf
+  if ! ghdl -a --std=08 -frelaxed -fsynopsys --work=gw1n --workdir="$GOWIN_LIB"        "$GOWIN_SIMLIB/prim_sim.vhd" "$GOWIN_SIMLIB/prim_syn.vhd" 2>"$OUT/gowin.log"; then
+    grep -v warning "$OUT/gowin.log" | head -20
+    echo "GOWIN LIBRARY COMPILE FAILED (GOWIN_SIMLIB=$GOWIN_SIMLIB)"
+    exit 1
+  fi
+fi
 
 # Compile sources (sources.txt) and all testbenches
 SRC=()

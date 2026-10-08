@@ -1,0 +1,54 @@
+[*] GTKWave view for tb_phy_loopback (open with: view.ps1 tb_phy_loopback)
+[timestart] 0
+[size] 1400 700
+[signals_width] 260
+[sst_width] 220
+@200
+-Clocks / reset / phase
+@28
+top.tb_phy_loopback.clk_fast
+top.tb_phy_loopback.clk_sys
+top.tb_phy_loopback.rst
+@24
+top.tb_phy_loopback.ph_no
+@200
+-Transmit
+@28
+top.tb_phy_loopback.char_en
+@22
+top.tb_phy_loopback.ch_data[7:0]
+@28
+top.tb_phy_loopback.ch_k
+@22
+top.tb_phy_loopback.code[9:0]
+@28
+top.tb_phy_loopback.tx_bits[1:0]
+@200
+-Line
+@28
+top.tb_phy_loopback.td_p
+top.tb_phy_loopback.rd_p
+@200
+-Receive: samples and CDR
+@28
+top.tb_phy_loopback.samples[7:0]
+@24
+top.tb_phy_loopback.phase[1:0]
+top.tb_phy_loopback.nbits[1:0]
+@28
+top.tb_phy_loopback.bits[2:0]
+@200
+-Receive: symbols and characters
+@28
+top.tb_phy_loopback.restart
+top.tb_phy_loopback.sync
+top.tb_phy_loopback.sym_valid
+@22
+top.tb_phy_loopback.sym[9:0]
+@28
+top.tb_phy_loopback.dec_valid
+@22
+top.tb_phy_loopback.dec_data[7:0]
+@28
+top.tb_phy_loopback.dec_k
+top.tb_phy_loopback.dec_err

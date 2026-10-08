@@ -133,14 +133,14 @@ Nazwy sieci w schemacie pisane są wielkimi literami, porty VHDL małymi (`SFP_T
 | `XSPI_IO7` | inout | LVCMOS33 | **24** | 2 | IOB39B | |
 | `HOST_IRQ_N` | out | LVCMOS33 | **13** | 2 | IOB8A | open-drain lub push-pull |
 | `HOST_RST_N` | in | LVCMOS33, pull-up | **11** | 3 | IOL15B (GCLKC_6) | reset logiki, nie rekonfiguracja |
-| `SFP_TX_DIS` | out | LVCMOS33 | **38** | 1 | IOT42B | zewnętrzny pull-up 4,7 kΩ (laser wyłączony domyślnie) |
-| `SFP_TX_FAULT` | in | LVCMOS33 | **39** | 1 | IOT42A | pull-up 4,7–10 kΩ |
-| `SFP_LOS` | in | LVCMOS33 | **40** | 1 | IOT37B | pull-up 4,7–10 kΩ |
-| `SFP_MOD_ABS` | in | LVCMOS33 | **41** | 1 | IOT37A | MOD_DEF0; pull-up 4,7–10 kΩ |
+| `SFP_TX_DIS` | out | LVCMOS33 | **38** | 1 | IOT42B | pull-up wewnątrz modułu (laser wyłączony, dopóki FPGA nie wystawi 0) |
+| `SFP_TX_FAULT` | in | LVCMOS33, PULL_MODE=UP | **39** | 1 | IOT42A | brak zewnętrznego pull-upu (rev. A) — wewnętrzny pull-up FPGA |
+| `SFP_LOS` | in | LVCMOS33, PULL_MODE=UP | **40** | 1 | IOT37B | jw. |
+| `SFP_MOD_ABS` | in | LVCMOS33, PULL_MODE=UP | **41** | 1 | IOT37A | MOD_DEF0; jw. |
 | `SFP_SCL` | inout (OD) | LVCMOS33, OPEN_DRAIN | **46** | 3 | IOT12B | MOD_DEF1; pull-up 4,7 kΩ |
 | `SFP_SDA` | inout (OD) | LVCMOS33, OPEN_DRAIN | **47** | 3 | IOT12A | MOD_DEF2; pull-up 4,7 kΩ |
-| `LED_LINK` | out | LVCMOS33 | **31** | 1 | IOR12B (MCLK/D4) | |
-| `LED_ACT` | out | LVCMOS33 | **32** | 1 | IOR12A (MCS_N/D5) | |
+| `LED_LINK` | out | LVCMOS33 | **31** | 1 | IOR12B (MCLK/D4) | aktywny stanem niskim (3V3 → 1 kΩ → LED → pin) |
+| `LED_ACT` | out | LVCMOS33 | **32** | 1 | IOR12A (MCS_N/D5) | aktywny stanem niskim |
 
 Piny zapasowe: **10** (GCLKT_6), **27/28** (IOR24, para z wyjściem true LVDS), **29/30** (IOR17, para z wyjściem true LVDS, GCLKT_3), **44/45** (IOT22, bank 0, para z opcją terminacji wewnętrznej). Zaleca się wyprowadzenie ich na pola testowe lub złącze rozszerzeń.
 
@@ -151,13 +151,13 @@ Piny konfiguracyjne i zasilania, **nieużywane jako GPIO**:
 | 3 | `JTAGSEL_N` (także LPLL_T_in) | pull-up 4,7–10 kΩ; AUX programatora przez JP2 (5.6); opcja „Use JTAG as regular IO” wyłączona |
 | 4, 5, 6, 7 | `TMS`, `TCK`, `TDI`, `TDO` | złącze TC2050 (5.6); TCK z pull-downem 4,7 kΩ (UG290, tab. 7-3) |
 | 8 | `RECONFIG_N` | pull-up 10 kΩ; nRESET programatora przez JP1, domyślnie rozwartą (5.6) |
-| 9 | `DONE` | pull-up 4,7–10 kΩ, LED; opcjonalnie AUX programatora przez JP2; `READY` nie jest wyprowadzony w QN48 |
+| 9 | `DONE` | pull-up 10 kΩ (R6); opcjonalnie AUX programatora przez JP2; bez diody LED; `READY` nie jest wyprowadzony w QN48 |
 | 48 | `MODE2` + `MODE1` (MODE0 wewnętrznie do masy) | **1 kΩ do masy** (UG290, Figure 7-1) → `000` = AUTOBOOT. Wewnętrzny pull-up do 150 µA (DS100, IPU): 10 kΩ dałoby do 1,5 V, czyli ryzyko odczytu stanu wysokiego i DUAL BOOT |
 | 12, 37 | `VCC` | 3,3 V (wersja UV, wewnętrzny stabilizator rdzenia) |
 | 36 | `VCCX` | 3,3 V |
 | 1 | `VCCIO0` / `VCCIO3` | 3,3 V |
 | 25 | `VCCIO1` / `VCCIO2` | 3,3 V |
-| 2, 26, EPAD | `VSS` | masa; EPAD obowiązkowo do masy |
+| 2, 26, EPAD (49) | `VSS` | masa; **EPAD obowiązkowo do masy** — symbol nie ma pinu EPAD, połączenie wykonuje się ręcznie w PCB (5.3.5) |
 
 ### 3.2 Reguły przydziału
 
@@ -269,26 +269,131 @@ Wariant podstawowy: **terminacja zewnętrzna** ([ADR 0002](adr/0002-terminacja-r
 
 ```
 RD+ (SFP 13) ───┬──────────────── FPGA RD_P (pin 43)
-              49,9 Ω 1% 0402
-                ├── Vbias 1,2 V (dzielnik z 3,3 V: np. 2,1 kΩ / 1,2 kΩ + 100 nF do masy)
-              49,9 Ω 1% 0402
+              R9 49,9 Ω 1% 0402
+                ├── Vbias 1,2 V (R11 2,1 kΩ z 3,3 V / R12 1,2 kΩ do masy, C6 100 nF do masy)
+              R10 49,9 Ω 1% 0402
 RD− (SFP 12) ───┴──────────────── FPGA RD_N (pin 42)
 ```
 
-- Rezystory 49,9 Ω umieszcza się bezpośrednio przy pinach 42/43 (odcinek do odbiornika ≤ 2 mm). Kondensator 100 nF w węźle środkowym zwiera do masy zakłócenia wspólne.
-- Wariant awaryjny: rezystory 49,9 Ω niemontowane, w `.cst` `DIFF_RESISTOR=ON` (tylko bank 0), bias przez 2 × 10 kΩ z każdej linii do Vbias. Footprinty 10 kΩ przewiduje się jako DNP.
-- Obie terminacje jednocześnie dają ok. 50 Ω i są niedopuszczalne; domyślnie `DIFF_RESISTOR=OFF`.
+- R9 i R10 umieszcza się bezpośrednio przy pinach 42/43 (odcinek do odbiornika ≤ 2 mm). C6 w węźle Vbias zwiera do masy zakłócenia wspólne.
+- Sprzężenie AC jest wewnątrz modułu, więc linie RD± nie mają po stronie płytki określonego napięcia stałego; dzielnik Vbias jest wymagany niezależnie od wariantu terminacji.
+- Wariant awaryjny: w miejsce R9/R10 montuje się 10 kΩ (te same footprinty 0402), w `.cst` `DIFF_RESISTOR=ON` (tylko bank 0). Dodatkowe footprinty nie są potrzebne.
+- Obie terminacje jednocześnie (49,9 Ω i `DIFF_RESISTOR=ON`) dają ok. 50 Ω i są niedopuszczalne; domyślnie `DIFF_RESISTOR=OFF`.
 
-### 5.3 Reguły layoutu (100 Mbaud, zbocza SFP ok. 100–200 ps)
+### 5.3 Płytka drukowana: stackup, reguły i prowadzenie ścieżek
 
-| Reguła | Wartość |
+#### 5.3.1 Technologia (JLCPCB, najniższy próg cenowy 4 warstw)
+
+| Parametr | Wartość |
 |---|---|
-| Impedancja par TD/RD | 100 Ω różnicowo, ciągła płaszczyzna odniesienia |
-| Dopasowanie w parze | ≤ 0,5 mm |
-| Przelotki w parze | minimum, symetrycznie |
-| Sprzężenie AC | brak kondensatorów na płytce — sprzężenie AC wewnątrz modułu (INF-8074i) |
-| xSPI | wspólna długość ±5 mm, rezystory szeregowe 22–33 Ω przy źródle (MCU dla CLK/CS, przy FPGA dla IO w kierunku odczytu — footprinty z obu stron) |
-| Stack-up | min. 4 warstwy (sygnał / GND / 3V3 / sygnał) |
+| Liczba warstw / grubość | 4 / 1,6 mm |
+| Stackup | **JLC04161H-7628** |
+| Miedź zewnętrzna / wewnętrzna | 1 oz (35 µm) / 0,5 oz (15,2 µm) |
+| Wykończenie | HASL (bezołowiowy lub ołowiowy) — bez ENIG |
+| Przelotki | „Min via hole size/diameter: **0,3 mm / (0,4/0,45 mm)**” (opcja domyślna, bez dopłaty); pokrycie: tented |
+| Via-in-pad | bez wypełniania i zaślepiania (bez opcji „Epoxy Filled & Capped”) |
+| Kontrola impedancji | nie zamawia się; geometrię wyznacza się obliczeniowo (5.3.3), tolerancja ±10–15% jest bez znaczenia przy 100 Mbaud |
+
+#### 5.3.2 Stackup do wpisania w KiCad
+
+`Board Setup → Board Stackup → Physical Stackup` (warstwy miedzi: 4, grubość płytki 1,6 mm):
+
+| Warstwa | Materiał | Grubość | εr | Przeznaczenie |
+|---|---|---|---|---|
+| F.Mask | soldermaska | 0,010 mm | 3,8 | |
+| **F.Cu (L1)** | miedź 1 oz | 0,035 mm | — | sygnały, **pary LVDS**, elementy |
+| Dielectric 1 | prepreg 7628 | 0,2104 mm | 4,4 | |
+| **In1.Cu (L2)** | miedź 0,5 oz | 0,0152 mm | — | **GND — płaszczyzna ciągła, bez podziałów** |
+| Dielectric 2 | rdzeń FR-4 | 1,065 mm | 4,6 | |
+| **In2.Cu (L3)** | miedź 0,5 oz | 0,0152 mm | — | 3V3 — płaszczyzna |
+| Dielectric 3 | prepreg 7628 | 0,2104 mm | 4,4 | |
+| **B.Cu (L4)** | miedź 1 oz | 0,035 mm | — | sygnały wolne, wylewka GND |
+| B.Mask | soldermaska | 0,010 mm | 3,8 | |
+
+Wartości grubości i εr należy potwierdzić w kalkulatorze impedancji JLCPCB dla JLC04161H-7628 przed zamówieniem **[DO WERYFIKACJI]**.
+
+#### 5.3.3 Geometria linii (L1 nad L2 GND)
+
+Obliczenia: solver 2D równania Laplace'a (metoda różnic skończonych), przekrój prostokątny, soldermaska 10–15 µm, εr = 4,4, h = 0,2104 mm, t = 35 µm. Kontrola: linia 50 Ω wychodzi przy szerokości ok. 0,36 mm, zgodnie z danymi publikowanymi dla tego stackupu.
+
+| Linia | Szerokość | Odstęp w parze | Impedancja |
+|---|---|---|---|
+| **LVDS TD±, RD± — podstawowa** | **0,22 mm** | **0,20 mm** | **ok. 101 Ω różnicowo** |
+| LVDS — zwężenie przy U1 (raster 0,4 mm) i J1 | 0,20 mm | 0,20 mm | ok. 105 Ω, odcinek ≤ 1–2 mm |
+| sygnał pojedynczy 0,20 mm (xSPI, zegar, sterowanie) | 0,20 mm | — | ok. 66 Ω (niekontrolowana) |
+| sygnał pojedynczy 50 Ω (tylko dla odniesienia) | 0,36 mm | — | ok. 50 Ω |
+
+Wrażliwość: zmiana odstępu o ±0,05 mm zmienia impedancję różnicową o ok. ±7 Ω; zmiana szerokości o ±0,02 mm — o ok. ∓3,5 Ω.
+
+#### 5.3.4 Ustawienia w KiCad
+
+**Board Setup → Design Rules → Constraints** (zgodne z JLCPCB, z zapasem):
+
+| Parametr | Wartość |
+|---|---|
+| Minimalna szerokość ścieżki | 0,20 mm (technologicznie 0,09 mm; 0,20 mm wystarcza wszędzie) |
+| Minimalny odstęp (clearance) | 0,20 mm (pady QN48: 0,2 mm przy rastrze 0,4 mm) |
+| Minimalny otwór (PTH i przelotka) | **0,30 mm** |
+| Minimalna średnica przelotki | 0,45 mm (zalecane 0,6 mm) |
+| Minimalny pierścień przelotki | 0,10 mm (0,6/0,3 → 0,15 mm) |
+| Odstęp miedzi od krawędzi | 0,5 mm (JLCPCB min. 0,2–0,3 mm) |
+| Otwór–otwór | 0,25 mm |
+| Soldermaska: poszerzenie / minimalny mostek | 0,05 mm / 0,10 mm |
+| Nadruk: grubość linii / wysokość tekstu | ≥ 0,15 mm / ≥ 1,0 mm |
+
+**Board Setup → Net Classes:**
+
+| Klasa | Ścieżka | Clearance | Przelotka | Para różnicowa (szer./odstęp) | Przypisanie sieci |
+|---|---|---|---|---|---|
+| Default | 0,20 mm | 0,20 mm | 0,6 / 0,3 mm | — | wszystkie pozostałe |
+| LVDS | 0,22 mm | 0,20 mm | 0,6 / 0,3 mm (nieużywane) | **0,22 / 0,20 mm** | `/SFP/SFP_TD_*`, `/SFP/SFP_RD_*` |
+| PWR | 0,50 mm | 0,20 mm | 0,6 / 0,3 mm | — | `+3V3`, `Net-(J1-VccT)`, `Net-(J1-VccR)` |
+
+**Board Setup → Pre-defined Sizes:** ścieżki 0,20 / 0,22 / 0,30 / 0,50 / 0,80 mm; przelotki 0,6/0,3 i 0,45/0,3 mm; para różnicowa 0,22/0,20 mm.
+
+**Reguły dodatkowe:** plik [`pcb/SFP_xSPI_Bridge.kicad_dru`](../pcb/SFP_xSPI_Bridge.kicad_dru), wczytywany automatycznie obok `.kicad_pcb` (podgląd i edycja: `Board Setup → Design Rules → Custom Rules`). Zawiera:
+
+- przelotki: otwór ≥ 0,3 mm, średnica ≥ 0,45 mm (próg bez dopłaty JLCPCB),
+- pary LVDS: szerokość 0,20–0,24 mm (opt. 0,22), odstęp 0,18–0,22 mm (opt. 0,20), odcinek niesprzężony ≤ 2 mm, różnica długości w parze ≤ 0,5 mm, **zakaz przelotek**,
+- odstęp par LVDS od innych ścieżek ≥ 0,5 mm,
+- zwężenie przy U1 i J1 (w obrębie courtyardu): szerokość 0,20 mm, odstęp do 0,60 mm.
+
+#### 5.3.5 Zasady prowadzenia
+
+**Pary LVDS (TD: U1 33/34 ↔ J1 19/18; RD: U1 42/43 ↔ J1 12/13):**
+
+- W całości na L1, nad ciągłą płaszczyzną GND na L2; bez przelotek, bez przejść nad krawędzią lub przerwą w L2.
+- Router par różnicowych KiCad (`6` lub `Route → Differential Pair`) rozpoznaje pary po sufiksach `_P`/`_N`.
+- Dopasowanie długości w parze ≤ 0,5 mm; między parami TD i RD dopasowanie nie jest wymagane. Skew w parze przy 100 Mbaud (UI = 10 ns) jest pomijalny; reguła utrzymuje symetrię dla tłumienia zakłóceń wspólnych.
+- Zakręty 45° lub łukowe; meandry wyrównujące przy końcu z krótszą linią.
+- Odstęp od innych sygnałów ≥ 0,5 mm (≈ 2× szerokość pary); generator Y1 i linia `CLK_25M` jak najdalej od par.
+- Terminacja RX (R9, R10) i węzeł Vbias (R11, R12, C6) bezpośrednio przy pinach 42/43.
+- Para TD wychodzi z pinów 33/34 na prawej krawędzi U1, para RD z pinów 42/43 na górnej — obie w stronę klatki SFP przy prawym górnym narożniku U1.
+
+**Magistrala xSPI (U1 13–24 ↔ J3):**
+
+- Ścieżki 0,20 mm na L1 i/lub L4 (L4 odnosi się do płaszczyzny 3V3 — dopuszczalne dzięki odsprzęganiu).
+- Wyrównanie długości ±5 mm względem `XSPI_SCLK`; przy 50 MHz i ścieżkach < 50 mm impedancja nie jest kontrolowana.
+- Przelotki przy zmianie warstwy uzupełnia się przelotką GND w pobliżu (ścieżka powrotna).
+
+**Zasilanie i odsprzęganie:**
+
+- 3V3 rozprowadza płaszczyzna L3; od złącza J3 do płaszczyzny ścieżka ≥ 0,8 mm lub wylewka, TVS D1 przy złączu.
+- Kondensatory 100 nF (C1–C5) przy pinach zasilania U1 (1, 12, 25, 36, 37), każdy z własną przelotką do L2/L3, odległość ≤ 2 mm.
+- Filtry SFP (L1/C7 dla VccT, L2/C8/C9 dla VccR, C10–C12 po stronie 3V3) przy klatce J1; dławiki 0805 nieekranowane — kilka mm od par LVDS.
+- Generator Y1: 100 nF przy pinie 4, wyjście `CLK_25M` krótkie do pinu 35.
+
+**EPAD U1 (pad 49):**
+
+- Symbol `GW1N-6&9_QN48` z biblioteki lokalnej nie ma pinu EPAD — **pad 49 musi zostać ręcznie połączony z GND** (UG114: „Exposed pad. Connect to ground.”).
+- Footprint `QFN-48-1EP_6x6mm_P0.4mm_EP4.2x4.2mm_ThermalVias` ma przelotki Ø 0,2 mm, które wymagają płatnej opcji JLCPCB (DRC zgłasza `drill_out_of_range`). Zalecana zamiana na wariant bez przelotek (`QFN-48-1EP_6x6mm_P0.4mm_EP4.2x4.2mm`) i ręczne dodanie 5–9 przelotek 0,3/0,5 mm w polu EPAD do L2 GND.
+- Przelotki w padzie bez wypełnienia odprowadzają część lutu; otwór pasty w EPAD dzieli się na 4–9 okien (pokrycie ok. 50–60%). Moc rozpraszana przez FPGA (< 0,5 W) nie wymaga więcej przelotek.
+
+**Pozostałe:**
+
+- Wylewki GND na L1 i L4 zszywane przelotkami GND co ok. 5 mm, szczególnie wzdłuż par LVDS i krawędzi płytki.
+- Klatka SFP: otwory wg rysunku producenta wybranej klatki (press-fit), sprawdzić zgodność footprintu `Connector_SFP_and_Cage` z konkretnym numerem katalogowym klatki **[DO WERYFIKACJI]**.
+- Pola testowe na pinach zapasowych (10, 27–30, 44, 45) — opcjonalnie.
 
 ### 5.4 Zasilanie
 
@@ -296,12 +401,14 @@ RD− (SFP 12) ───┴──────────────── FPGA
 |---|---|
 | Moduł SFP | do 300 mA (INF-8074i) |
 | GW1N-UV9 (VCC=VCCX=VCCIO=3,3 V) | ok. 50–100 mA |
-| Generator, LED, reszta | ok. 20 mA |
-| **Razem** | **ok. 0,5 A → projektować na 0,6–0,8 A** |
+| Generator, LED, reszta | ok. 10 mA |
+| **Razem** | **ok. 0,45 A → projektować na 0,6–0,8 A** |
 
-Odsprzęganie: 100 nF przy każdym pinie zasilania FPGA, 4,7–10 µF na bank, bulk 47 µF na wejściu. Opcjonalnie TVS na wejściu 3,3 V.
+- Wejście: J3 piny 1–2 (3V3), TVS D1 SMF3.3A (katoda do 3V3) przy złączu. Bez PTC i koralika — każdy element szeregowy zmniejsza margines napięcia modułu SFP (min. 3,135 V na pinie VccT/VccR).
+- Odsprzęganie: 5 × 100 nF przy pinach zasilania FPGA, 7 × 10 µF ceramicznych na szynie 3V3 (ok. 70 µF łącznie), filtry SFP wg 5.1.
+- TVS ogranicza ESD i szpilki; nie chroni przed stałym przepięciem (np. 5 V na pinie 3V3) — maksymalne napięcie GW1N-UV to 3,75 V (DS100, tab. 3-1).
 
-### 5.5 Złącze hosta (propozycja: 2 × 10, raster 1,27 mm)
+### 5.5 Złącze hosta J3 (2 × 10, raster 1,27 mm)
 
 | Pin | Sygnał | Pin | Sygnał |
 |---|---|---|---|
@@ -315,6 +422,9 @@ Odsprzęganie: 100 nF przy każdym pinie zasilania FPGA, 4,7–10 µF na bank, b
 | 15 | GND | 16 | XSPI_DQS |
 | 17 | HOST_IRQ_N | 18 | HOST_RST_N |
 | 19 | GND | 20 | GND |
+
+- Footprint `PinHeader_2x10_P1.27mm_Vertical` nie ma klucza. Odwrócona wtyczka łączy 3V3 hosta z GND (piny 19/20) — zaleca się złącze z obudową i kluczem (box header 1,27 mm) albo wyraźne oznaczenie pinu 1 na nadruku.
+- Rezystory szeregowe na liniach xSPI nie są przewidziane; ewentualne dzwonienie ogranicza się ustawieniem `DRIVE` wyjść FPGA (4/8 mA) i prędkości GPIO po stronie STM32.
 
 ### 5.6 Złącze programowania (Tag-Connect TC2050)
 
@@ -341,17 +451,22 @@ Footprint `Tag-Connect_TC2050-IDC-NL_2x05_P1.27mm_Vertical` (J2). Układ zgodny 
 
 ### 5.7 Lista elementów (BOM, główne pozycje)
 
-| Pozycja | Uwagi |
-|---|---|
-| GW1N-UV9QN48C6/I5 | Mouser (jedyne źródło, stan 2026-10-08: ok. 90 szt.) |
-| Klatka SFP + złącze 20-pin | press-fit lub SMT |
-| Generator 25 MHz, ±25 ppm, CMOS 3,3 V | |
-| Dławiki 1 µH × 2 (filtr INF-8074i, Figure 2A) | DCR < 1 Ω, ≥ 0,5 A |
-| Rezystory, kondensatory 0402 | pull-upy, bias, terminacja |
-| Złącze hosta 2 × 10 / 1,27 mm | |
-| Tag-Connect TC2050-IDC-NL (footprint, bez elementu) | kabel TC2050 po stronie programatora |
-| LED × 3 (DONE, LINK, ACT) | |
-| Opcjonalnie: TVS 3,3 V, przycisk RECONFIG | |
+| Ozn. | Pozycja | Źródło / numer | Uwagi |
+|---|---|---|---|
+| U1 | GW1N-UV9QN48C6/I5 | Mouser | jedyne źródło, stan 2026-10-08: ok. 90 szt. |
+| J1 | klatka SFP + złącze 20-pin | — | press-fit lub SMT; dopasować do footprintu |
+| Y1 | generator 25 MHz CMOS, ±20 ppm, 3225 | LCSC C669088 (YXC OT322525MJBA4SL) | alternatywnie 7050: C669095 |
+| L1, L2 | dławik 1 µH, drutowy 0805 | TME Viking NL05KTC1R0 | DCR 0,169 Ω, 1,1 A wg TME (prąd do potwierdzenia w datasheecie) |
+| D1 | TVS SMF3.3A, SOD-123FL | LCSC C283866 / C37331473 / C5197392 | VRWM 3,3 V |
+| D2 | LED żółtozielona 575 nm, 0603 | LCSC C965805 (XL-1608SYGC-06) | LINK |
+| D3 | LED pomarańczowa 601 nm, 0603 | LCSC C965800 (XL-1608UOC-06) | ACT |
+| R9, R10 | 49,9 Ω 1%, 0402 | — | terminacja RX |
+| R11, R12 | 2,1 kΩ / 1,2 kΩ, 0603 | — | Vbias 1,2 V |
+| R14, R15 | 1 kΩ, 0603 | — | LED, ok. 1,4 mA |
+| R2 | 1 kΩ, 0603 | — | MODE → AUTOBOOT |
+| R13 | 4,7 kΩ, 0603 | — | pull-down TCK |
+| J3 | złącze 2 × 10, 1,27 mm | — | preferowane z kluczem |
+| J2 | Tag-Connect TC2050-IDC-NL | footprint, bez elementu | kabel TC2050 po stronie programatora |
 
 ---
 
@@ -594,7 +709,7 @@ Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny
 
 ## 9. Plan uruchomienia (bring-up)
 
-1. Zasilanie, konfiguracja FPGA przez JTAG, LED DONE.
+1. Zasilanie, konfiguracja FPGA przez JTAG, odczyt `DONE` (programator przez AUX/JP2 lub pomiar na R6).
 2. `READ_ID` przez SPI (1 linia, 1–5 MHz), potem QSPI i OCTOSPI z rosnącym zegarem.
 3. Odczyt EEPROM SFP przez mailbox I2C (vendor, part number) i DDM.
 4. Near-end loopback w FPGA (bez optyki): ramki TX → RX, liczniki CRC = 0.
@@ -612,6 +727,10 @@ Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny
 - [x] HCLK: w GW1N-9C HCLKMUX przenosi HCLK między bankami; PnR testowy umieścił `clk_fast` w `BANK0_BANK1_HCLK0` i `BANK2_BANK3_HCLK0` (UG286, rozdz. 2.2).
 - [x] Tryb konfiguracji w QN48: pin 48 = MODE2 + MODE1, MODE0 wewnętrznie do masy; pin 48 ściągnięty do masy daje AUTOBOOT (UG114, UG290 tab. 5-1).
 - [x] Zasilanie QN48 (UG114): VCC — piny 12 i 37, VCCX — pin 36, VCCIO0/VCCIO3 — pin 1, VCCIO1/VCCIO2 — pin 25, VSS — piny 2 i 26 oraz EPAD.
+- [ ] EPAD U1 połączony z GND w PCB (symbol bez pinu EPAD); przelotki w EPAD 0,3 mm.
+- [ ] Pull-upy 4,7–10 kΩ na `SFP_TX_FAULT`, `SFP_LOS`, `SFP_MOD_ABS` (INF-8074i) — w rev. A zastąpione wewnętrznymi pull-upami FPGA; dodać w kolejnej rewizji.
+- [ ] Stackup JLC04161H-7628: grubości i εr potwierdzone w kalkulatorze JLCPCB.
+- [ ] Footprint klatki SFP zgodny z wybraną klatką (otwory press-fit).
 - [ ] Minimalna amplituda wejścia TD wybranego modułu SFP względem VOD FPGA (INF-8074i: 500 mVppd min).
 - [ ] Czy wybrany moduł SFP nie ma wewnętrznego CDR (moduły z CDR nie zadziałają przy 100 Mbaud).
 - [ ] Generowanie VHDL dla FIFO IP Gowin (jeśli nie — własne `async_fifo`).

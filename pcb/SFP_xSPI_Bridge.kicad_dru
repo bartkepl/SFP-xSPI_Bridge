@@ -1,0 +1,38 @@
+(version 1)
+# SFP-xSPI Bridge - custom design rules
+# Fabrication: JLCPCB 4-layer, stackup JLC04161H-7628, 1.6 mm, HASL,
+# lowest price tier: via hole >= 0.3 mm, no via-in-pad filling/capping.
+# Rationale and dimensions: doc/sfp-xspi-bridge-plan.md, section 5.3.
+# Later rules take precedence over earlier ones.
+
+# ---- JLCPCB lowest-price-tier limits ------------------------------------------
+(rule "JLC via hole min 0.3 mm (no extra cost)"
+  (condition "A.Type == 'Via'")
+  (constraint hole_size (min 0.3mm))
+  (constraint via_diameter (min 0.45mm)))
+
+(rule "JLC copper to edge"
+  (constraint edge_clearance (min 0.3mm)))
+
+(rule "JLC hole to hole"
+  (constraint hole_to_hole (min 0.25mm)))
+
+# ---- LVDS pairs SFP_TD / SFP_RD (100 ohm differential, L1 over L2 GND) -------
+(rule "LVDS 100R geometry"
+  (condition "A.inDiffPair('*')")
+  (constraint track_width (min 0.20mm) (opt 0.22mm) (max 0.24mm))
+  (constraint diff_pair_gap (min 0.18mm) (opt 0.20mm) (max 0.22mm))
+  (constraint diff_pair_uncoupled (max 2mm))
+  (constraint skew (max 0.5mm))
+  (constraint via_count (max 0)))
+
+(rule "LVDS keep-away from other tracks"
+  (condition "A.inDiffPair('*') && B.Type == 'Track' && !B.inDiffPair('*')")
+  (constraint clearance (min 0.5mm)))
+
+# Neck-down at the FPGA (QN48, 0.4 mm pitch) and at the SFP connector (0.8 mm pitch).
+(rule "LVDS neck-down at U1 and J1"
+  (condition "A.inDiffPair('*') && (A.intersectsCourtyard('U1') || A.intersectsCourtyard('J1'))")
+  (constraint track_width (min 0.20mm) (opt 0.20mm) (max 0.24mm))
+  (constraint diff_pair_gap (min 0.18mm) (opt 0.20mm) (max 0.60mm))
+  (constraint clearance (min 0.20mm)))

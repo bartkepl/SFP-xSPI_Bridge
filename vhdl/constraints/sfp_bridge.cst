@@ -56,20 +56,23 @@ IO_LOC  "host_rst_n"   11;
 IO_PORT "host_rst_n"   IO_TYPE=LVCMOS33 PULL_MODE=UP;
 
 // ---- SFP management (low speed, any free GPIO) -------------------------------
+// TX_FAULT, LOS, MOD_ABS: open-collector/grounded in module; board rev A has no
+// external pull-ups (INF-8074i asks for 4.7-10k), internal pull-ups enabled instead.
 IO_LOC  "sfp_tx_dis"   38;
 IO_PORT "sfp_tx_dis"   IO_TYPE=LVCMOS33;
 IO_LOC  "sfp_tx_fault" 39;
-IO_PORT "sfp_tx_fault" IO_TYPE=LVCMOS33;
+IO_PORT "sfp_tx_fault" IO_TYPE=LVCMOS33 PULL_MODE=UP;
 IO_LOC  "sfp_los"      40;
-IO_PORT "sfp_los"      IO_TYPE=LVCMOS33;
+IO_PORT "sfp_los"      IO_TYPE=LVCMOS33 PULL_MODE=UP;
 IO_LOC  "sfp_mod_abs"  41;
-IO_PORT "sfp_mod_abs"  IO_TYPE=LVCMOS33;
+IO_PORT "sfp_mod_abs"  IO_TYPE=LVCMOS33 PULL_MODE=UP;
 IO_LOC  "sfp_scl"      46;
 IO_PORT "sfp_scl"      IO_TYPE=LVCMOS33 OPEN_DRAIN=ON;
 IO_LOC  "sfp_sda"      47;
 IO_PORT "sfp_sda"      IO_TYPE=LVCMOS33 OPEN_DRAIN=ON;
 
 // ---- LEDs (any free GPIO) -----------------------------------------------------
+// Active low: 3V3 -> 1k -> LED -> pin. Drive 0 to light.
 IO_LOC  "led_link"     31;
 IO_PORT "led_link"     IO_TYPE=LVCMOS33;
 IO_LOC  "led_act"      32;

@@ -5,6 +5,7 @@ sfp_bridge/src/pkg/code8b10b_pkg.vhd
 sfp_bridge/src/common/sync_bit.vhd
 sfp_bridge/src/common/reset_sync.vhd
 sfp_bridge/src/clk/clk_rst.vhd
+sfp_bridge/src/clk/host_clk.vhd
 sfp_bridge/src/link/crc32.vhd
 sfp_bridge/src/link/enc_8b10b.vhd
 sfp_bridge/src/link/dec_8b10b.vhd
@@ -22,4 +23,5 @@ sfp_bridge/src/uart/uart_tx.vhd
 sfp_bridge/src/uart/uart_bridge.vhd
 sfp_bridge/src/host/xspi_slave.vhd
 sfp_bridge/src/host/csr_regs.vhd
+sfp_bridge/src/host/frame_echo.vhd
 sim/tb/tb_pkg.vhd

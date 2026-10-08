@@ -65,6 +65,7 @@ nav:
           - Tryb UART (uart_rx, uart_tx, uart_bridge): vhdl/uart.md
           - Interfejs hosta (xspi_slave): vhdl/xspi_slave.md
           - Rejestry (csr_regs): vhdl/csr_regs.md
+          - Zegar hosta i echo ramek (host_clk, frame_echo): vhdl/host_clk.md
   - Decyzje (ADR):
       - adr/README.md
       - "0001 FPGA GW1N-9": adr/0001-fpga-gw1n-9.md

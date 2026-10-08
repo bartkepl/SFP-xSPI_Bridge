@@ -13,7 +13,7 @@ Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia 
 | Strona optyczna | moduł SFP (INF-8074i) bez wewnętrznego CDR: 100BASE-FX / OC-3 lub 1000BASE-X (MM/SM, duplex lub BiDi); SFP+ nieobsługiwane |
 | Zasilanie | jedno **3,3 V** (wersja UV FPGA, moduł SFP) |
 
-> Status dokumentu: plan konstrukcji, aktualizowany wraz z projektem. Schemat rev. A gotowy, PCB w toku, VHDL — etapy 1–7 z 10 ([stan modułów](vhdl/index.md)). Pozycje oznaczone **[DO WERYFIKACJI]** pozostają do sprawdzenia; decyzje i ich uzasadnienia są w [rejestrze ADR](adr/README.md). Kopie dokumentacji producentów: [`datasheets/`](datasheets/).
+> Status dokumentu: plan konstrukcji, aktualizowany wraz z projektem. Schemat rev. A gotowy, PCB w toku, VHDL — etapy 1–7 i 9 z 10 ([stan modułów](vhdl/index.md)). Pozycje oznaczone **[DO WERYFIKACJI]** pozostają do sprawdzenia; decyzje i ich uzasadnienia są w [rejestrze ADR](adr/README.md). Kopie dokumentacji producentów: [`datasheets/`](datasheets/).
 
 ---
 
@@ -557,7 +557,7 @@ vhdl/
                               --   tb_link_loopback (dwa końce, 200 ppm, jitter, ramki w obu kierunkach)
                               --   tb_link_ctrl, tb_clk_rst (modele rPLL i CLKDIV), tb_uart, tb_uart_bridge
                               --   tb_xspi_slave, tb_async_fifo_stable
-                              --   tb_csr_regs (z xspi_slave)
+                              --   tb_csr_regs (z xspi_slave), tb_host_clk (DCS, echo ramek)
                               --   planowane: tb_i2c_sfp, tb_top
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
@@ -579,9 +579,9 @@ vhdl/
 
 **`csr_regs`** — gotowy, [opis](vhdl/csr_regs.md) (domena `clk_sys`) — mapa rejestrów w rozdziale 7.4; zatrzask przestrzeni odczytu przy opadnięciu CS, zapis po podniesieniu CS, przerwania, `MODE_CTRL` zachowywany przy resecie programowym.
 
-**`host_clk`** — prymityw `DCS`: zegar strony hosta FIFO = `clk_sys` w resecie oraz w trybach UART i echa ramek, SCLK w trybie xSPI; reset strony hosta zawsze na `clk_sys`.
+**`host_clk`** — gotowy, [opis](vhdl/host_clk.md) — prymityw `DCS`: zegar strony hosta FIFO = `clk_sys` w resecie oraz w trybach UART i echa ramek, SCLK w trybie xSPI; reset strony hosta zawsze na `clk_sys`.
 
-**`frame_echo`** — echo ramek (`MODE_CTRL.FRAME_ECHO`): kopiowanie ramek z FIFO RX do FIFO TX po stronie hosta.
+**`frame_echo`** — gotowy, [opis](vhdl/host_clk.md) — echo ramek (`MODE_CTRL.FRAME_ECHO`): kopiowanie ramek z FIFO RX do FIFO TX po stronie hosta.
 
 **`async_fifo`** — gotowy, [opis](vhdl/async_fifo.md)
 - BSRAM w trybie semi-dual port (zapis port A, odczyt port B, różne zegary); wskaźnik odczytu w kodzie Graya, zatwierdzony wskaźnik zapisu przez handshake (zatwierdzenie przesuwa wskaźnik o całą ramkę).

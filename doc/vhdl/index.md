@@ -47,7 +47,7 @@ vhdl/
 | `i2c_master`, `sfp_mgmt` | — | — | — | — | planowany |
 | `xspi_slave` | `src/host/xspi_slave.vhd` | `tb_xspi_slave` | PASS | tak (SCLK 40 MHz) | [Interfejs hosta](xspi_slave.md) |
 | `csr_regs` | `src/host/csr_regs.vhd` | `tb_csr_regs` | PASS | tak (z xspi_slave: 82 / 45 MHz) | [Rejestry](csr_regs.md) |
-| `host_clk`, `frame_echo` | — | — | — | — | planowany ([ADR 0009](../adr/0009-interfejs-hosta.md)) |
+| `host_clk`, `frame_echo` | `src/clk/host_clk.vhd`, `src/host/frame_echo.vhd` | `tb_host_clk` | PASS | przy integracji (etap 10) | [Zegar hosta, echo](host_clk.md) |
 | `leds` | — | — | — | — | planowany |
 
 **Zegary** ([ADR 0007](../adr/0007-zegar-systemowy-50mhz.md)): `clk_sys` = 50 MHz (PCLK serializerów IDES8/OSER8), `clk_fast` = 200 MHz tylko w blokach I/O. Kryterium dla modułów domeny `clk_sys`: Fmax ≥ 50 MHz z zapasem (cel ≥ 60 MHz). Symbol 8b/10b = 5 taktów `clk_sys`.

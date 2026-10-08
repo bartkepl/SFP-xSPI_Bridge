@@ -62,27 +62,43 @@ Wynik: faza CDR podąża za opóźnieniem (0,3 ns → 0, 2,9 ns → 1, 5,5 ns �
 
 ## Test pętli łącza `tb_link_loopback`
 
-Pełne łącze między dwoma końcami mostka na poziomie bitów, z modelami prymitywów Gowin i niezależnymi zegarami — test integracyjny etapów 1–4:
+Pełne łącze między dwoma końcami mostka na poziomie bitów, z modelami prymitywów Gowin i niezależnymi zegarami — test integracyjny etapów 1–5:
 
-host → FIFO TX → `tx_framer` → `enc_8b10b` → `tx_gearbox` → `tx_phy` → linia → `rx_phy` → `cdr_os4x8` → `comma_align` → `dec_8b10b` → `rx_deframer` → FIFO RX → host (w obu kierunkach)
+host → FIFO TX → `tx_framer` → `enc_8b10b` → `tx_gearbox` → `tx_phy` → linia → `rx_phy` → [`link_ctrl`](link_ctrl.md) (multiplekser pętli) → `cdr_os4x8` → `comma_align` → `dec_8b10b` → `rx_deframer` → FIFO RX → host (w obu kierunkach); `link_ctrl` steruje każdym końcem (stan łącza, bezczynność /R/, bramkowanie nadawania, liczniki — [ADR 0008](../adr/0008-stan-lacza.md)).
 
 | Parametr | Wartość |
 |---|---|
 | zegary | każdy koniec: własny `clk_fast`, `clk_sys` z modelu `CLKDIV`; strona B szybsza o 200 ppm (`clk_fast` 4,999 ns wobec 5,000 ns) |
 | linia | opóźnienie 5 ns + niezależny jitter ±0,2 UI (±2 ns) każdego zbocza |
-| ruch | po synchronizacji obu odbiorników każdy host zapisuje 32 ramki (typ zależny od numeru, długość 1–400 B, treść zależna od numeru i pozycji) |
 | strona hosta FIFO | `clk_sys` tego samego końca (przejście między domenami weryfikuje [`tb_async_fifo`](async_fifo.md)) |
+
+| Faza | Przebieg |
+|---|---|
+| 1 | hosty zapisują po 32 ramki zaraz po własnym resecie, przed zestawieniem łącza (typ zależny od numeru, długość 1–400 B, treść zależna od numeru i pozycji); przez pierwsze 20 µs strona B ma aktywny LOS — jej odbiornik pozostaje w stanie DOWN i nadaje /R/, strona A osiąga tylko stan SYNC |
+| 2 | strona A w pętli near-end (`LB_NEAR`), zapisuje 4 ramki: wracają do jej własnego odbiornika i równocześnie docierają linią do strony B |
+| 3 | strona A wraca do pracy normalnej, strona B zapisuje 4 ramki |
 
 Sprawdzenia:
 
-1. Oba odbiorniki zsynchronizowane w ciągu 10 µs (wynik: 1,8 µs), bez późniejszej utraty synchronizacji.
-2. Po 32 ramki odebrane na każdym końcu, w kolejności i bez przekłamań.
+1. W czasie LOS po stronie B: A w stanie SYNC, B w stanie DOWN, żadna ramka nie została nadana; po zwolnieniu LOS oba końce w stanie UP (wynik: 1,4 µs), bez późniejszej utraty synchronizacji w fazie 1.
+2. Każdy czytelnik odbiera dokładnie oczekiwane ramki, w kolejności i bez przekłamań (A: 32 od B, 4 własne, 4 od B; B: 36 od A).
 3. Brak zdarzeń błędu w obu `rx_deframer` (CRC, kod, długość, ramkowanie, przepełnienie), brak odczytu z pustego FIFO RX.
-4. Śledzenie częstotliwości: po stronie A (strumień szybszy) kroki `shift_dn`, po stronie B kroki `shift_up` — po ponad 10, najwyżej 2 w kierunku przeciwnym (dostrajanie fazy tuż po synchronizacji); takty z 3 / 1 bitem odpowiednio. Wynik: 55 kroków na stronę w ciągu 680 µs — zgodnie z oczekiwanym 200 ppm × 8 próbek × 34 000 taktów ≈ 54.
+4. Śledzenie częstotliwości w fazie 1: po stronie A (strumień szybszy) kroki `shift_dn`, po stronie B kroki `shift_up` — po ponad 10, najwyżej 2 w kierunku przeciwnym (dostrajanie fazy tuż po synchronizacji); takty z 3 / 1 bitem odpowiednio. Wynik: 55 kroków w ciągu ok. 675 µs — zgodnie z oczekiwanym 200 ppm × 8 próbek × 34 000 taktów ≈ 54.
+5. Liczniki `link_ctrl` na końcu: `FRAMES_TX` A 36 / B 36, `FRAMES_RX` A 40 / B 36, liczniki błędów CRC, długości, ramkowania i przepełnienia równe 0, `SYNC_LOSS` po stronie B równy 0 (po stronie A 2 — przełączenia trybu pętli).
 
-Strona łącza w testbenchu (`tb_link_side`) składa te same moduły co docelowy top-level. Ramki nadane, zanim odbiornik drugiej strony uzyska synchronizację, zostałyby utracone; w testbenchu hosty czekają na synchronizację obu stron, w układzie docelowym zadanie to przejmuje `link_ctrl` (stan łącza UP).
+**Test mutacyjny (integracja):** wykrywane — `tx_framer` nienadający /R/ (strona A zaczyna nadawać, zanim odbiornik B jest gotowy, i ramki giną), pominięcie LOS w `link_ctrl`. Usunięcie warunku stanu UP z `tx_hold` nie jest wykrywalne: `xoff_remote` pozostaje 1, dopóki strona przeciwna nie nada /I/, co obejmuje ten sam przypadek (zabezpieczenie nadmiarowe).
 
-**Przebieg** (`.\view.ps1 tb_link_loopback`, ok. 0,68 ms): po ok. 2 µs `a_sync` i `b_sync` = 1; następnie serie `a_wr`/`b_wr` (zapis ramek) i impulsy `a_ok`/`b_ok` po każdej ramce, licznik `a_frames`/`b_frames` rośnie do 32; `a_dn` i `b_up` co ok. 625 taktów, przy zawinięciu fazy `a_nbits` = 3 i `b_nbits` = 1; `a_err` i `b_err` stale 0.
+Strona łącza w testbenchu (`tb_link_side`) składa te same moduły co docelowy top-level.
+
+**Przebieg** (`.\view.ps1 tb_link_loopback`, ok. 0,88 ms):
+
+| Czas (ok.) | Co widać |
+|---|---|
+| 0–20 µs | `b_los` = 1: `b_st` = 00 (DOWN), `a_st` = 01 (SYNC); `a_wr`/`b_wr` zapisują ramki do FIFO, ale `a_ok`/`b_ok` milczą |
+| ok. 21,5 µs | `b_los` = 0, po 1,4 µs `a_st` = `b_st` = 10 (UP) |
+| 21,5–695 µs | impulsy `a_ok`/`b_ok` po każdej ramce, `a_frames`/`b_frames` rośnie do 32; `a_dn` i `b_up` co ok. 625 taktów, przy zawinięciu fazy `a_nbits` = 3 i `b_nbits` = 1 |
+| ok. 695 µs | `a_lb` = 01: krótko `a_st` = 00, potem 10; 4 ramki — impulsy `a_ok` i `b_ok` |
+| do końca | `a_lb` = 00, 4 ramki od B; `a_err` i `b_err` stale 0 |
 
 ## Przebieg
 

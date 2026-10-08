@@ -95,6 +95,8 @@ Wejścia sterowane bezpośrednio; druga instancja z `CNT_W` = 4 sprawdza zawijan
 | 8 | pętla near-end: `cdr_samples` = `tx_bits` powielone 4× (takt opóźnienia), SFP pomijane, jednotaktowy `align_restart` przy zmianie trybu; praca normalna i `LB_FAR`: `cdr_samples` = `phy_samples` |
 | 9 | impulsy `activity` dla ramki nadanej i odebranej |
 
+Integrację z pełnym łączem (wstrzymanie ramek do stanu UP, LOS po jednej stronie, pętla near-end, liczniki) sprawdza [`tb_link_loopback`](phy.md).
+
 **Test mutacyjny:** wykrywane — pominięcie `LOS_IGNORE`, zliczanie `CODE_ERR` bez synchronizacji, brak pętli near-end, pominięcie `TX_EN`, brak stanu SYNC, brak kasowania liczników.
 
 ## Przebieg

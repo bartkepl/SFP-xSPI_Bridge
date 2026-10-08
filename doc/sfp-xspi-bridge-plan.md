@@ -551,7 +551,8 @@ vhdl/
     tb/                       -- tb_pkg + testbenche tb_<moduł>.vhd
                               --   gotowe: tb_sync, tb_crc32, tb_8b10b, tb_async_fifo, tb_link_frames
                               --   tb_cdr_os4x8 (±100…±1000 ppm, jitter do ±0,3 UI)
-                              --   planowane: tb_comma_align, tb_link_loopback,
+                              --   tb_comma_align (poślizg bitu, błędy, fałszywe comma)
+                              --   planowane: tb_link_loopback,
                               --              tb_uart, tb_i2c_sfp, tb_xspi_slave, tb_top
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
@@ -601,9 +602,9 @@ vhdl/
 - Śledzenie dryfu: przy zawinięciu fazy wydanie **1 albo 3 bitów** zamiast 2, co kompensuje różnicę ppm (zakres ok. 3900 ppm).
 - Wyjście: liczba bitów (1–3) + `bits(2:0)`.
 
-**`comma_align`**
-- Rejestr przesuwny ≥ 20 bitów, wykrywanie wzorca comma (`0011111` / `1100000`) i ustalenie granicy słowa 10-bit.
-- Synchronizacja po N poprawnych K28.5, utrata po M błędach kodu (maszyna stanów jak w 1000BASE-X PCS).
+**`comma_align`** — gotowy, [opis](vhdl/comma_align.md)
+- Rejestr przesuwny 12 bitów, wykrywanie wzorca comma (`0011111` / `1100000`) w do 3 położeniach na takt i ustalenie granicy słowa 10-bit.
+- Synchronizacja po 4 comma w oczekiwanej pozycji bez błędów dekodera; w synchronizacji granica nie jest przesuwana, utrata po 4 błędach (licznik maleje po 4 poprawnych symbolach) — maszyna stanów jak w 1000BASE-X PCS, ze sprzężeniem zwrotnym z `dec_8b10b`.
 
 **`rx_deframer`** — gotowy, [opis](vhdl/framing.md)
 - Oczekiwanie na SOF, odczyt typu i długości, zapis do RX FIFO, liczenie CRC.

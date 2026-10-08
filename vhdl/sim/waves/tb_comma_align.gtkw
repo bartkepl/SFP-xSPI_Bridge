@@ -1,0 +1,56 @@
+[*] GTKWave view for tb_comma_align (open with: view.ps1 tb_comma_align)
+[timestart] 0
+[size] 1400 700
+[signals_width] 260
+[sst_width] 220
+@200
+-Clock / reset / segment
+@28
+top.tb_comma_align.clk
+top.tb_comma_align.rst
+top.tb_comma_align.restart
+@24
+top.tb_comma_align.seg
+@200
+-Input bits (from CDR)
+@24
+top.tb_comma_align.in_n[1:0]
+@28
+top.tb_comma_align.in_bits[2:0]
+@200
+-Alignment (internal)
+@22
+top.tb_comma_align.dut.sr[11:0]
+@24
+top.tb_comma_align.dut.cnt[3:0]
+@28
+top.tb_comma_align.dut.found_q
+top.tb_comma_align.dut.aln_q
+@200
+-Symbols
+@28
+top.tb_comma_align.sym_valid
+@22
+top.tb_comma_align.sym[9:0]
+@28
+top.tb_comma_align.sym_comma
+@200
+-Decoder
+@28
+top.tb_comma_align.dec_valid
+@22
+top.tb_comma_align.dec_data[7:0]
+@28
+top.tb_comma_align.dec_k
+top.tb_comma_align.dec_err
+@200
+-Synchronization
+@24
+top.tb_comma_align.dut.good
+top.tb_comma_align.dut.err
+@28
+top.tb_comma_align.sync
+top.tb_comma_align.ev_realign
+top.tb_comma_align.ev_sync_loss
+@24
+top.tb_comma_align.epoch

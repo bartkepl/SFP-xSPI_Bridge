@@ -92,6 +92,9 @@ architecture rtl of cdr_os4x8 is
   signal wcnt     : unsigned(WIN_LOG2 - 1 downto 0) := (others => '0');
   signal dec_go   : std_logic := '0';
 
+  -- decision stage 0: counts rotated to the current phase
+  signal d0_go    : std_logic := '0';
+  signal rel      : t_acc := (others => (others => '0'));   -- rel(r) = n_r
   -- decision stage 1 results
   signal d1_go    : std_logic := '0';
   signal late_q   : unsigned(TOT_W - 1 downto 0) := (others => '0');  -- 3*n0 + n3
@@ -131,6 +134,7 @@ begin
         lat     <= (others => (others => '0'));
         wcnt    <= (others => '0');
         dec_go  <= '0';
+        d0_go   <= '0';
         d1_go   <= '0';
         p       <= (others => '0');
         act     <= A_NONE;
@@ -202,15 +206,25 @@ begin
         act <= A_NONE;
 
         ------------------------------------------------------------------------
-        -- Decision stage 1: counts relative to the current phase
+        -- Decision stage 0: counts relative to the current phase
         ------------------------------------------------------------------------
-        d1_go <= dec_go;
+        d0_go <= dec_go;
         if dec_go = '1' then
-          r  := to_integer(p);
-          n0 := lat(r);
-          n1 := lat((r + 1) mod 4);
-          n2 := lat((r + 2) mod 4);
-          n3 := lat((r + 3) mod 4);
+          r := to_integer(p);
+          for i in 0 to 3 loop
+            rel(i) <= lat((r + i) mod 4);
+          end loop;
+        end if;
+
+        ------------------------------------------------------------------------
+        -- Decision stage 1: weighted sums
+        ------------------------------------------------------------------------
+        d1_go <= d0_go;
+        if d0_go = '1' then
+          n0 := rel(0);
+          n1 := rel(1);
+          n2 := rel(2);
+          n3 := rel(3);
           n0w := resize(n0, TOT_W);
           n1w := resize(n1, TOT_W);
           late_q  <= n0w + shift_left(n0w, 1) + resize(n3, TOT_W);

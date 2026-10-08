@@ -11,4 +11,5 @@ sfp_bridge/src/fifo/async_fifo.vhd
 sfp_bridge/src/link/tx_framer.vhd
 sfp_bridge/src/link/rx_deframer.vhd
 sfp_bridge/src/link/cdr_os4x8.vhd
+sfp_bridge/src/link/comma_align.vhd
 sim/tb/tb_pkg.vhd

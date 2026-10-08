@@ -65,10 +65,10 @@ Nadajnik szybszy od odbiornika (więcej bitów na takt) powoduje kroki p − 1 i
 
 ## Implementacja i czasy
 
-- Stopień 0: rejestr próbek. Stopień A: wykrycie zboczy (także między taktami, przez zapamiętaną próbkę 7), akumulacja liczników klas, wybór bitów i aktualizacja fazy. Dwa stopnie decyzji raz na okno: sumy ważone względem fazy, porównanie.
+- Stopień 0: rejestr próbek. Stopień A: wykrycie zboczy (także między taktami, przez zapamiętaną próbkę 7), akumulacja liczników klas, wybór bitów i aktualizacja fazy. Trzy stopnie decyzji raz na okno: obrót liczników do fazy p, sumy ważone, porównanie.
 - Liczniki zboczy są prowadzone w klasach bezwzględnych, więc krok fazy w trakcie okna nie zaburza statystyki.
 
-Próbna synteza (GW1N-9C, ograniczenie 12 ns): 319 LUT/ALU, 116 rejestrów, Fmax 74,3 MHz — zapas ok. 1,5× przy `clk_sys` = 50 MHz.
+Próbna synteza (GW1N-9C, ograniczenie 12 ns): sam moduł — ok. 320 LUT/ALU, 120 rejestrów; tor odbiorczy `cdr_os4x8` + [`comma_align`](comma_align.md) + `dec_8b10b` — 436 LUT/ALU, 203 rejestry, 1 BSRAM, Fmax 83,4 MHz (zapas ok. 1,7× przy `clk_sys` = 50 MHz).
 
 ## Testbench `tb_cdr_os4x8`
 

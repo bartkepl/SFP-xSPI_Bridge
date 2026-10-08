@@ -25,3 +25,4 @@ Plik `NNNN-krotki-opis.md`, numeracja od `0001`:
 | Nr | Decyzja | Stan |
 |---|---|---|
 | [0001](0001-fpga-gw1n-9.md) | FPGA: GW1N-UV9QN48C6/I5 zamiast GW1N-UV4QN48C6/I5 | przyjęta |
+| [0002](0002-terminacja-rx-zewnetrzna.md) | Terminacja toru RX zewnętrzna (2 × 49,9 Ω z biasem), wewnętrzna jako opcja awaryjna | przyjęta |

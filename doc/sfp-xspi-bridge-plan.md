@@ -75,61 +75,122 @@ Ważne ograniczenia z DS100:
 - **GW1N-9 wersja C:** ograniczenia VCCIO dla Bank0/1/3 nie obowiązują. Wszystkie banki pracują przy 3,3 V.
 - Ograniczenie GW1N-4 (piny `IOL10x`/`IOR10x` bez IO logic) nie dotyczy GW1N-9 (UG289, rozdz. 4).
 - **UV:** jeżeli w obudowie VCC i VCCX dzielą pin, VCC musi wynosić 2,5–3,3 V. Przy jednym 3,3 V spełnione.
-- **True LVDS input** wymaga terminacji 100 Ω. W GW1N-9 wewnętrzna programowalna terminacja 100 Ω jest dostępna **wyłącznie w banku 0** (UG289, rozdz. 3.3.2; atrybut `.cst`: `DIFF_RESISTOR=ON`). Na PCB przewidziany jest także footprint terminacji zewnętrznej.
+- **True LVDS input** wymaga terminacji 100 Ω. W GW1N-9 wewnętrzna programowalna terminacja 100 Ω jest dostępna **wyłącznie w banku 0** (UG289, rozdz. 3.3.2; atrybut `.cst`: `DIFF_RESISTOR=ON`). Wariantem podstawowym jest terminacja zewnętrzna (5.2, [ADR 0002](adr/0002-terminacja-rx-zewnetrzna.md)); wewnętrzna pozostaje opcją awaryjną.
 - Wejście różnicowe (`TLVDS_IBUF`) obsługują wszystkie banki. Wyjście true LVDS (`TLVDS_OBUF`) wyłącznie pary oznaczone w UG114 jako *TRUE*. Prąd wyjścia LVDS25 w GW1N-9: 1,25 / 2 / 2,5 / 3,5 mA (DS100, tab. 2-1).
 - Podczas konfiguracji wszystkie GPIO są w stanie wysokiej impedancji ze słabym pull-upem. Uwzględnić w sterowaniu `TX_DISABLE` (pull-up = laser wyłączony, to dobrze).
 - **QN48, tryb konfiguracji:** MODE0 jest wewnętrznie zwarty do masy, MODE1 i MODE2 są połączone na pinie 48. Pin 48 w stanie niskim daje `000` = AUTOBOOT, w stanie wysokim `110` = DUAL BOOT (UG290, tab. 5-1). Ze względu na wewnętrzny pull-up pin 48 wymaga **zewnętrznego rezystora do masy**.
 
 ---
 
-## 3. Przydział pinów (logiczny)
+## 3. Przydział pinów
 
-QN48 ma 40 I/O użytkownika. Projekt wymaga 26 I/O (z DQS i diodami LED), więc zostaje 14 zapasu.
+Numery pinów pochodzą z UG114 (GW1N-9 Pinout, kolumna QN48). Przydział, wszystkie alternatywy z tabeli 3.3 oraz warianty negatywne zostały sprawdzone przebiegiem syntezy i PnR w Gowin EDA 1.9.11.03 (projekt testowy z rPLL, CLKDIV, IDES4, OSER4 i wszystkimi 26 portami). Plik ograniczeń: [`vhdl/constraints/sfp_bridge.cst`](../vhdl/constraints/sfp_bridge.cst).
 
-**Fizyczne numery pinów:** z UG114 (GW1N-9 Pinout), kolumna QN48. Poniżej reguły wyboru dla każdego sygnału.
+Bilans: 41 wyprowadzeń I/O w QN48, z czego 8 to piny konfiguracyjne (3–9, 48), 26 jest przydzielonych, 7 pozostaje w zapasie.
+
+Rozkład na obudowie (numeracja przeciwnie do ruchu wskazówek zegara od lewego górnego narożnika): lewa krawędź 1–12, dolna 13–24, prawa 25–36, górna 37–48. Wynikający z tego układ płytki: **złącze hosta przy dolnej krawędzi, klatka SFP przy prawym górnym narożniku, JTAG przy lewej krawędzi**.
+
+```
+                   48   47  46  45  44  43  42  41  40  39  38  37
+                  MODE SDA SCL  -   -  RDP RDN ABS LOS FLT DIS VCC
+     VCCIO0/3  1                                                    36  VCCX
+          VSS  2                                                    35  CLK_25M
+    JTAGSEL_N  3                                                    34  TD_P
+          TMS  4                                                    33  TD_N
+          TCK  5                                                    32  LED_ACT
+          TDI  6                    GW1N-UV9QN48                    31  LED_LINK
+          TDO  7                                                    30  -
+   RECONFIG_N  8                                                    29  -
+         DONE  9                                                    28  -
+            - 10                                                    27  -
+   HOST_RST_N 11                                                    26  VSS
+          VCC 12                                                    25  VCCIO1/2
+                  IRQ  CS  IO0 IO1 IO2 IO3 SCLK DQS IO4 IO5 IO6 IO7
+                   13   14  15  16  17  18  19  20  21  22  23  24
+```
 
 ### 3.1 Tabela sygnałów
 
-| # | Sygnał | Kier. | Standard I/O | Reguła wyboru pinu | Pin QN48 |
-|---|---|---|---|---|---|
-| 1 | `SFP_TD_P` | out | LVDS25 (TLVDS) | para oznaczona *True LVDS* z obsługą wyjścia, pin „True/A” pary, IO logic dostępna | TBD |
-| 2 | `SFP_TD_N` | out | LVDS25 (TLVDS) | „Comp/B” tej samej pary | TBD |
-| 3 | `SFP_RD_P` | in | LVDS25 (TLVDS) | para *True LVDS*, IO logic (IDES4), najlepiej bank z wewnętrzną terminacją 100 Ω | TBD |
-| 4 | `SFP_RD_N` | in | LVDS25 (TLVDS) | „Comp/B” tej samej pary | TBD |
-| 5 | `CLK_25M` | in | LVCMOS33 | **pin GCLKT_x** będący dedykowanym wejściem PLL (PLL_CLKIN), blisko PLL obsługującego bank RX | TBD |
-| 6 | `XSPI_SCLK` | in | LVCMOS33 | **pin GCLKT_x** (inny niż `CLK_25M`) — SCLK taktuje slave bezpośrednio | TBD |
-| 7 | `XSPI_CS_N` | in | LVCMOS33, pull-up | dowolny GPIO, ten sam bank co IO0..7 | TBD |
-| 8–15 | `XSPI_IO0..IO7` | inout | LVCMOS33 | jeden bank, krótkie i równe ścieżki do złącza | TBD |
-| 16 | `XSPI_DQS` | out | LVCMOS33 | opcjonalny (tylko OCTOSPI DDR w przyszłości), ten sam bank | TBD |
-| 17 | `HOST_IRQ_N` | out | LVCMOS33, open-drain lub push-pull | dowolny GPIO | TBD |
-| 18 | `HOST_RST_N` | in | LVCMOS33, pull-up | dowolny GPIO (reset logiki, nie rekonfiguracja) | TBD |
-| 19 | `SFP_TX_DIS` | out | LVCMOS33 | dowolny GPIO; zewnętrzny pull-up 4,7 kΩ (laser off domyślnie) | TBD |
-| 20 | `SFP_TX_FAULT` | in | LVCMOS33 | dowolny GPIO; pull-up 4,7–10 kΩ | TBD |
-| 21 | `SFP_LOS` | in | LVCMOS33 | dowolny GPIO; pull-up 4,7–10 kΩ | TBD |
-| 22 | `SFP_MOD_ABS` | in | LVCMOS33 | MOD_DEF0; pull-up 4,7–10 kΩ | TBD |
-| 23 | `SFP_SCL` | inout (OD) | LVCMOS33, open-drain | MOD_DEF1; pull-up 4,7 kΩ | TBD |
-| 24 | `SFP_SDA` | inout (OD) | LVCMOS33, open-drain | MOD_DEF2; pull-up 4,7 kΩ | TBD |
-| 25 | `LED_LINK` | out | LVCMOS33 | dowolny GPIO | TBD |
-| 26 | `LED_ACT` | out | LVCMOS33 | dowolny GPIO | TBD |
+Nazwy sieci w schemacie pisane są wielkimi literami, porty VHDL małymi (`SFP_TD_P` ↔ `sfp_td_p`).
 
-Piny dedykowane, **nieużywane jako GPIO**:
+| Sygnał | Kier. | Standard I/O | Pin | Bank | Miejsce w UG114 | Uwagi |
+|---|---|---|---|---|---|---|
+| `SFP_TD_P` | out | LVDS25, DRIVE=3.5 | **34** | 1 | IOR11A (MI/D7) | para z wyjściem true LVDS; funkcja MSPI nieużywana w AUTOBOOT |
+| `SFP_TD_N` | out | LVDS25 | **33** | 1 | IOR11B (MO/D6) | |
+| `SFP_RD_P` | in | LVDS25 | **43** | 0 | IOT32A | IDES4; terminacja zewnętrzna (5.2), wewnętrzna jako opcja awaryjna |
+| `SFP_RD_N` | in | LVDS25 | **42** | 0 | IOT32B | |
+| `CLK_25M` | in | LVCMOS33 | **35** | 1 | IOR5A (RPLL_T_in) | dedykowane wejście prawego PLL |
+| `XSPI_SCLK` | in | LVCMOS33 | **19** | 2 | IOB29A (GCLKT_4) | wejście zegara globalnego, środek magistrali |
+| `XSPI_CS_N` | in | LVCMOS33, pull-up | **14** | 2 | IOB8B | |
+| `XSPI_IO0` | inout | LVCMOS33 | **15** | 2 | IOB17A | |
+| `XSPI_IO1` | inout | LVCMOS33 | **16** | 2 | IOB17B | |
+| `XSPI_IO2` | inout | LVCMOS33 | **17** | 2 | IOB27A | |
+| `XSPI_IO3` | inout | LVCMOS33 | **18** | 2 | IOB27B | |
+| `XSPI_DQS` | out | LVCMOS33 | **20** | 2 | IOB29B (GCLKC_4) | GCLKC nie jest wejściem zegara przy SCLK single-ended |
+| `XSPI_IO4` | inout | LVCMOS33 | **21** | 2 | IOB35A | |
+| `XSPI_IO5` | inout | LVCMOS33 | **22** | 2 | IOB35B | |
+| `XSPI_IO6` | inout | LVCMOS33 | **23** | 2 | IOB39A | |
+| `XSPI_IO7` | inout | LVCMOS33 | **24** | 2 | IOB39B | |
+| `HOST_IRQ_N` | out | LVCMOS33 | **13** | 2 | IOB8A | open-drain lub push-pull |
+| `HOST_RST_N` | in | LVCMOS33, pull-up | **11** | 3 | IOL15B (GCLKC_6) | reset logiki, nie rekonfiguracja |
+| `SFP_TX_DIS` | out | LVCMOS33 | **38** | 1 | IOT42B | zewnętrzny pull-up 4,7 kΩ (laser wyłączony domyślnie) |
+| `SFP_TX_FAULT` | in | LVCMOS33 | **39** | 1 | IOT42A | pull-up 4,7–10 kΩ |
+| `SFP_LOS` | in | LVCMOS33 | **40** | 1 | IOT37B | pull-up 4,7–10 kΩ |
+| `SFP_MOD_ABS` | in | LVCMOS33 | **41** | 1 | IOT37A | MOD_DEF0; pull-up 4,7–10 kΩ |
+| `SFP_SCL` | inout (OD) | LVCMOS33, OPEN_DRAIN | **46** | 3 | IOT12B | MOD_DEF1; pull-up 4,7 kΩ |
+| `SFP_SDA` | inout (OD) | LVCMOS33, OPEN_DRAIN | **47** | 3 | IOT12A | MOD_DEF2; pull-up 4,7 kΩ |
+| `LED_LINK` | out | LVCMOS33 | **31** | 1 | IOR12B (MCLK/D4) | |
+| `LED_ACT` | out | LVCMOS33 | **32** | 1 | IOR12A (MCS_N/D5) | |
 
-| Sygnał | Funkcja | Połączenie |
+Piny zapasowe: **10** (GCLKT_6), **27/28** (IOR24, para z wyjściem true LVDS), **29/30** (IOR17, para z wyjściem true LVDS, GCLKT_3), **44/45** (IOT22, bank 0, para z opcją terminacji wewnętrznej). Zaleca się wyprowadzenie ich na pola testowe lub złącze rozszerzeń.
+
+Piny konfiguracyjne i zasilania, **nieużywane jako GPIO**:
+
+| Pin | Sygnał | Połączenie |
 |---|---|---|
-| `TCK`, `TMS`, `TDI`, `TDO` | JTAG | złącze JTAG + opcjonalnie do MCU (aktualizacja w polu) |
-| `JTAGSEL_N` | wybór JTAG | pull-up; nie zaznaczać „Use JTAG as regular IO” |
-| `RECONFIG_N` | rekonfiguracja | pull-up 10 kΩ + opcjonalny przycisk / GPIO MCU (open-drain) |
-| `READY`, `DONE` | status konfiguracji | pull-up 4,7–10 kΩ; LED na DONE |
-| `MODE` (pin 48 = MODE2 + MODE1; MODE0 wewnętrznie do masy) | tryb konfiguracji | rezystor do masy (np. 1 kΩ) → `000` = AUTOBOOT; stan wysoki dałby DUAL BOOT |
+| 3 | `JTAGSEL_N` (także LPLL_T_in) | pull-up 4,7–10 kΩ; opcja „Use JTAG as regular IO” wyłączona |
+| 4, 5, 6, 7 | `TMS`, `TCK`, `TDI`, `TDO` | złącze JTAG, opcjonalnie do MCU (aktualizacja w polu) |
+| 8 | `RECONFIG_N` | pull-up 10 kΩ, opcjonalnie przycisk lub GPIO MCU (open-drain) |
+| 9 | `DONE` | pull-up 4,7–10 kΩ, LED; `READY` nie jest wyprowadzony w QN48 |
+| 48 | `MODE2` + `MODE1` (MODE0 wewnętrznie do masy) | rezystor do masy, np. 1 kΩ → `000` = AUTOBOOT; stan wysoki dałby DUAL BOOT |
+| 12, 37 | `VCC` | 3,3 V (wersja UV, wewnętrzny stabilizator rdzenia) |
+| 36 | `VCCX` | 3,3 V |
+| 1 | `VCCIO0` / `VCCIO3` | 3,3 V |
+| 25 | `VCCIO1` / `VCCIO2` | 3,3 V |
+| 2, 26, EPAD | `VSS` | masa; EPAD obowiązkowo do masy |
 
-### 3.2 Reguły przydziału (do sprawdzenia w pinoucie)
+### 3.2 Reguły przydziału
 
-1. **Wszystkie banki VCCIO = 3,3 V.** LVDS25 (TLVDS) działa przy VCCIO 2,5/3,3 V, więc jedno napięcie wystarczy.
-2. Para TD na parze z wyjściem true LVDS (kolumna „LVDS” = TRUE w UG114). Para RD w banku 0 (wewnętrzna terminacja 100 Ω). Pary LVDS wybiera się najpierw, resztę sygnałów potem.
-3. RD w banku obsługiwanym przez HCLK, który może taktować IDES4. W GW1N-9C HCLKMUX przenosi HCLK między bankami (UG286, rozdz. 2.2).
-4. `XSPI_SCLK` musi być pinem GCLK. Przy 25–50 MHz SCLK nie da się go nadpróbkować zegarem 100 MHz.
-5. Magistrala xSPI w jednym banku, po jednej stronie układu, z krótkimi i równymi ścieżkami.
-6. `CLK_25M` na dedykowanym wejściu PLL. Inaczej PLL dostaje zegar przez sieć globalną z dodatkowym jitterem.
+1. **Wszystkie banki VCCIO = 3,3 V.** LVDS25 (TLVDS) działa przy VCCIO 2,5/3,3 V jako wejście i wyjście (DS100, tab. 2-1, 2-2).
+2. **TD wyłącznie na parze z wyjściem true LVDS** (kolumna „LVDS” = TRUE w UG114). Umieszczenie `TLVDS_OBUF` na parze bez tej cechy (np. 45/44, 39/38) kończy się błędem CT1005.
+3. **RD na dowolnej parze różnicowej** — wejście `TLVDS_IBUF` obsługują wszystkie banki. Atrybut `DIFF_RESISTOR` jest akceptowany wyłącznie w banku 0 (poza nim błąd CT1118, także przy wartości `OFF`); po przeniesieniu RD poza bank 0 atrybut należy usunąć.
+4. **IDES4/OSER4:** HCLK z PLL obejmuje wszystkie banki (PnR: `BANK0_BANK1_HCLK0`, `BANK2_BANK3_HCLK0`); w GW1N-9 nie ma pinów bez IO logic.
+5. **`XSPI_SCLK` na pinie GCLKT.** Przy 25–50 MHz SCLK nie da się go nadpróbkować zegarem 100 MHz. Pin GCLKC tej samej pary pozostaje zwykłym I/O.
+6. **Magistrala xSPI w jednym banku** (bank 2, dolna krawędź) z krótkimi i równymi ścieżkami.
+7. **`CLK_25M` na dedykowanym wejściu PLL.** Wejście przez sieć globalną (pin GCLKT) działa, ale dodaje jitter na wejściu PLL.
+8. **Piny MSPI (31–34)** pracują jako GPIO dzięki opcji `-use_mspi_as_gpio 1`; wymaga to trybu AUTOBOOT (pin 48 do masy).
+
+### 3.3 Alternatywy przydziału
+
+Warianty na wypadek trudności w schemacie lub prowadzeniu ścieżek. Wariant oznaczony „PnR OK” przeszedł syntezę, PnR i generację bitstreamu przy pozostałych pinach bez zmian, o ile w kolumnie warunków nie podano inaczej.
+
+| Sygnał | Podstawowy | Alternatywa | Warunki / koszt | Weryfikacja |
+|---|---|---|---|---|
+| `SFP_TD_P/N` | 34/33 | **28/27** (IOR24) | prawa krawędź niżej, dalej od SFP | PnR OK |
+| | | **30/29** (IOR17) | zajmuje GCLKT_3 | PnR OK |
+| | | **11/10** (IOL15) | lewa krawędź; `HOST_RST_N` → np. 28; zajmuje GCLKT_6 | PnR OK |
+| | | 13–24 (bank 2) | pary TRUE, ale kolidują z magistralą xSPI | nie zalecane |
+| `SFP_RD_P/N` | 43/42 | **45/44** (IOT22, bank 0) | zachowuje opcję terminacji wewnętrznej | PnR OK (z `DIFF_RESISTOR=ON`) |
+| | | **39/38** (IOT42, bank 1) | najbliżej narożnika SFP; tylko terminacja zewnętrzna; `SFP_TX_DIS`/`SFP_TX_FAULT` → 44/45 | PnR OK |
+| | | **41/40** (IOT37, bank 1) | tylko terminacja zewnętrzna; `SFP_LOS`/`SFP_MOD_ABS` → 44/45 | PnR OK |
+| | | **28/27**, **30/29** (bank 1) | tylko terminacja zewnętrzna | PnR OK |
+| `CLK_25M` | 35 | **30** (GCLKT_3) lub **10** (GCLKT_6) | wejście PLL przez sieć globalną, większy jitter | PnR OK (30) |
+| | | 3 (LPLL_T_in) | koliduje z `JTAGSEL_N` | nie zalecane |
+| `XSPI_SCLK` | 19 | **10** (GCLKT_6) lub **30** (GCLKT_3) | 19 staje się zwykłym I/O banku 2 | PnR OK (oba) |
+| `XSPI_IO0..7`, `XSPI_CS_N`, `XSPI_DQS`, `HOST_IRQ_N` | 13–18, 20–24 | **dowolna permutacja** w obrębie 13–24 (poza pinem SCLK) | kolejność bitów ustala `.cst`; logika bez zmian | — |
+| Wolne sygnały SFP, LED, `HOST_RST_N` | jak w 3.1 | dowolny pin zapasowy: 10, 27–30, 44, 45 | `OPEN_DRAIN=ON` dla SCL/SDA działa na każdym pinie | — |
+
+Jako alternatyw **nie** wolno użyć pinów 3–9 i 48 (konfiguracja) ani 1, 2, 12, 25, 26, 36, 37 (zasilanie).
 
 ---
 
@@ -158,7 +219,7 @@ CLK_25M (25 MHz, ±25 ppm, CMOS 3,3 V)
 | VccT, VccR | osobne filtry wg SFF-8431: 1 µH (≥0,5 A, niski DCR) + 22 µF + 0,1 µF każdy |
 | VeeT, VeeR | masa |
 | TD+ / TD− | z `SFP_TD_P/N` przez 2 × 100 nF 0402 (moduł zwykle ma też sprzężenie wewnętrzne — zostawić footprinty, ewentualnie 0 Ω) |
-| RD+ / RD− | przez 2 × 100 nF 0402 → terminacja 100 Ω (wewn. FPGA lub zewn.) → bias trybu wspólnego ok. 1,2 V → `SFP_RD_P/N` |
+| RD+ / RD− | przez 2 × 100 nF 0402 → terminacja zewnętrzna 2 × 49,9 Ω z biasem ok. 1,2 V (5.2) → `SFP_RD_P/N` |
 | TX_DISABLE | `SFP_TX_DIS`, pull-up 4,7 kΩ do 3,3 V |
 | TX_FAULT, LOS, MOD_DEF0 | pull-upy 4,7–10 kΩ do 3,3 V → GPIO |
 | MOD_DEF1/2 | `SFP_SCL/SDA`, pull-upy 4,7 kΩ |
@@ -170,17 +231,21 @@ CLK_25M (25 MHz, ±25 ppm, CMOS 3,3 V)
 - TX: GW1N-9 daje VOD 250–450 mV, czyli **500–900 mVppd**. Wejście SFP 1G (MSA) wymaga zwykle 500–2400 mVppd. Margines przy dolnej granicy jest minimalny, więc ustawić **drive 3,5 mA** w constraints i sprawdzić w datasheecie wybranego modułu **[DO WERYFIKACJI]**.
 - RX: wyjście SFP to zwykle 370–2000 mVppd (CML, sprzężone AC). VTHD FPGA ±100 mV daje duży zapas. Bias około 1,2 V mieści się w VCM 0,05–2,1 V.
 
-### 5.2 Bias toru RX (wariant z zewnętrzną terminacją)
+### 5.2 Terminacja i bias toru RX
+
+Wariant podstawowy: **terminacja zewnętrzna** ([ADR 0002](adr/0002-terminacja-rx-zewnetrzna.md)).
 
 ```
-RD+ ──||── ┬──────────────── FPGA RD_P
-          50 Ω
-           ├── Vbias 1,2 V (dzielnik 3,3 V: np. 2,1 kΩ / 1,2 kΩ + 100 nF do masy)
-          50 Ω
-RD− ──||── ┴──────────────── FPGA RD_N
+RD+ ──||── ┬──────────────── FPGA RD_P (pin 43)
+         49,9 Ω 1% 0402
+           ├── Vbias 1,2 V (dzielnik z 3,3 V: np. 2,1 kΩ / 1,2 kΩ + 100 nF do masy)
+         49,9 Ω 1% 0402
+RD− ──||── ┴──────────────── FPGA RD_N (pin 42)
 ```
 
-Przy wewnętrznej terminacji FPGA: AC + rezystory biasu ok. 10 kΩ z każdej linii do Vbias, bez 2 × 50 Ω.
+- Rezystory 49,9 Ω umieszcza się bezpośrednio przy pinach 42/43 (odcinek do odbiornika ≤ 2 mm). Kondensator 100 nF w węźle środkowym zwiera do masy zakłócenia wspólne.
+- Wariant awaryjny: rezystory 49,9 Ω niemontowane, w `.cst` `DIFF_RESISTOR=ON` (tylko bank 0), bias przez 2 × 10 kΩ z każdej linii do Vbias. Footprinty 10 kΩ przewiduje się jako DNP.
+- Obie terminacje jednocześnie dają ok. 50 Ω i są niedopuszczalne; domyślnie `DIFF_RESISTOR=OFF`.
 
 ### 5.3 Reguły layoutu (100 Mbaud, zbocza SFP ok. 100–200 ps)
 
@@ -247,28 +312,10 @@ Osobne złącze JTAG (1 × 6: 3V3, GND, TCK, TMS, TDI, TDO) dla programatora FT2
 | Dual-purpose pins | JTAG, JTAGSEL_N, RECONFIG_N, DONE, MODE: dedykowane; MSPI jako GPIO (`-use_mspi_as_gpio 1`) |
 | Background upgrade | aktualizacja Flash przez JTAG bez przerywania pracy, aktywacja przez `RECONFIG_N` **[DO WERYFIKACJI w UG290 dla GW1N-9C]** |
 | Bitstream | kompresja wł., security bit wg potrzeb |
-| Constraints (.cst) | IO_TYPE: `LVDS25` dla par TD/RD, `LVCMOS33` dla reszty; DRIVE=3.5 dla TD; DIFF_RESISTOR=ON dla RD; PULL_MODE=UP dla CS_N, RST_N; OPEN_DRAIN=ON dla SCL/SDA |
+| Constraints (.cst) | IO_TYPE: `LVDS25` dla par TD/RD, `LVCMOS33` dla reszty; DRIVE=3.5 dla TD; DIFF_RESISTOR=OFF dla RD (terminacja zewnętrzna); PULL_MODE=UP dla CS_N, RST_N; OPEN_DRAIN=ON dla SCL/SDA |
 | Timing (.sdc) | `create_clock` 25 MHz (`CLK_25M`), 50 MHz (`XSPI_SCLK`); clock groups asynchroniczne między `clk_spi` a `clk_sys`; set_input/output_delay dla xSPI wg timingu STM32 |
 
-Przykładowe constraints (do uzupełnienia numerami pinów):
-
-```text
-// sfp_bridge.cst
-IO_LOC  "SFP_TD_P"   <pin>;  IO_PORT "SFP_TD_P"  IO_TYPE=LVDS25 DRIVE=3.5;
-IO_LOC  "SFP_RD_P"   <pin>;  IO_PORT "SFP_RD_P"  IO_TYPE=LVDS25 DIFF_RESISTOR=ON;
-IO_LOC  "CLK_25M"    <pin>;  IO_PORT "CLK_25M"   IO_TYPE=LVCMOS33;
-IO_LOC  "XSPI_SCLK"  <pin>;  IO_PORT "XSPI_SCLK" IO_TYPE=LVCMOS33;
-IO_LOC  "XSPI_CS_N"  <pin>;  IO_PORT "XSPI_CS_N" IO_TYPE=LVCMOS33 PULL_MODE=UP;
-IO_LOC  "SFP_SCL"    <pin>;  IO_PORT "SFP_SCL"   IO_TYPE=LVCMOS33 OPEN_DRAIN=ON;
-IO_LOC  "SFP_SDA"    <pin>;  IO_PORT "SFP_SDA"   IO_TYPE=LVCMOS33 OPEN_DRAIN=ON;
-```
-
-```text
-// sfp_bridge.sdc
-create_clock -name clk_25m  -period 40.000 [get_ports {CLK_25M}]
-create_clock -name clk_spi  -period 20.000 [get_ports {XSPI_SCLK}]
-set_clock_groups -asynchronous -group [get_clocks {clk_spi}] -group [get_clocks {clk_25m}]
-```
+Ograniczenia: [`vhdl/constraints/sfp_bridge.cst`](../vhdl/constraints/sfp_bridge.cst) (piny, standardy I/O) i [`vhdl/constraints/sfp_bridge.sdc`](../vhdl/constraints/sfp_bridge.sdc) (zegary).
 
 Składnia atrybutów `DRIVE=3.5` (LVDS25) i `DIFF_RESISTOR=ON` została potwierdzona przebiegiem syntezy i PnR w Gowin EDA 1.9.11.03.
 
@@ -507,7 +554,7 @@ Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny
 
 ## 10. Otwarte punkty / do weryfikacji
 
-- [ ] Numery pinów QN48 (UG114): przydział do zatwierdzenia i wpisania do tabeli 3.1.
+- [x] Numery pinów QN48 (UG114): przydział w tabeli 3.1, alternatywy w 3.3, sprawdzone w PnR.
 - [x] Programowalna terminacja 100 Ω: w GW1N-9 wyłącznie bank 0 (UG289, rozdz. 3.3.2).
 - [x] HCLK: w GW1N-9C HCLKMUX przenosi HCLK między bankami; PnR testowy umieścił `clk_fast` w `BANK0_BANK1_HCLK0` i `BANK2_BANK3_HCLK0` (UG286, rozdz. 2.2).
 - [x] Tryb konfiguracji w QN48: pin 48 = MODE2 + MODE1, MODE0 wewnętrznie do masy; pin 48 ściągnięty do masy daje AUTOBOOT (UG114, UG290 tab. 5-1).

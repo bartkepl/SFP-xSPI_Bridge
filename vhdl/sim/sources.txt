@@ -17,4 +17,6 @@ sfp_bridge/src/link/tx_gearbox.vhd
 sfp_bridge/src/link/tx_phy.vhd
 sfp_bridge/src/link/rx_phy.vhd
 sfp_bridge/src/link/link_ctrl.vhd
+sfp_bridge/src/uart/uart_rx.vhd
+sfp_bridge/src/uart/uart_tx.vhd
 sim/tb/tb_pkg.vhd

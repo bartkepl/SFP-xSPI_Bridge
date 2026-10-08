@@ -12,7 +12,8 @@ vhdl/
     src/common/           elementy ogólne: sync_bit, reset_sync
     src/clk/              clk_rst (rPLL, CLKDIV, reset domeny clk_sys)
     src/fifo/             async_fifo
-    src/link/             tor łącza: crc32, 8b/10b, ramkowanie, CDR, wyrównanie, PHY
+    src/link/             tor łącza: crc32, 8b/10b, ramkowanie, CDR, wyrównanie, PHY, link_ctrl
+    src/uart/             tryb przezroczysty UART: uart_rx, uart_tx, uart_bridge
     src/top/              sfp_bridge_top
   sfp_bridge_testled/     projekt testowy: miganie LED
   sim/
@@ -41,7 +42,8 @@ vhdl/
 | `tx_gearbox`, `tx_phy`, `rx_phy` | `src/link/tx_gearbox.vhd`, `tx_phy.vhd`, `rx_phy.vhd` | `tb_phy_loopback`, `tb_link_loopback` | PASS | tak (z PLL i IDES8/OSER8, 75 MHz) | [Warstwa fizyczna](phy.md) |
 | `clk_rst` | `src/clk/clk_rst.vhd` | `tb_clk_rst` | PASS | tak (z torem łącza, 85 MHz) | [Zegary i reset](clk_rst.md) |
 | `link_ctrl` | `src/link/link_ctrl.vhd` | `tb_link_ctrl`, `tb_link_loopback` | PASS | tak (113 MHz) | [Sterowanie łączem](link_ctrl.md) |
-| `uart_rx`, `uart_tx`, `uart_bridge` | — | — | — | — | planowany ([ADR 0006](../adr/0006-tryb-uart-przezroczysty.md)) |
+| `uart_rx`, `uart_tx` | `src/uart/uart_rx.vhd`, `uart_tx.vhd` | `tb_uart` | PASS | tak (98 MHz) | [UART](uart.md) |
+| `uart_bridge` | — | — | — | — | planowany ([ADR 0006](../adr/0006-tryb-uart-przezroczysty.md)) |
 | `i2c_master`, `sfp_mgmt` | — | — | — | — | planowany |
 | `xspi_slave`, `csr_regs` | — | — | — | — | planowany |
 | `leds` | — | — | — | — | planowany |

@@ -555,8 +555,8 @@ vhdl/
                               --   tb_comma_align (poślizg bitu, błędy, fałszywe comma)
                               --   tb_phy_loopback (modele prymitywów Gowin)
                               --   tb_link_loopback (dwa końce, 200 ppm, jitter, ramki w obu kierunkach)
-                              --   tb_link_ctrl, tb_clk_rst (modele rPLL i CLKDIV)
-                              --   planowane: tb_uart, tb_i2c_sfp, tb_xspi_slave, tb_top
+                              --   tb_link_ctrl, tb_clk_rst (modele rPLL i CLKDIV), tb_uart
+                              --   planowane: tb_uart_bridge, tb_i2c_sfp, tb_xspi_slave, tb_top
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
     run_tests.ps1 / .sh       -- uruchamianie testów (GHDL w WSL)

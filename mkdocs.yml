@@ -62,6 +62,7 @@ nav:
           - Wyrównanie symboli (comma_align): vhdl/comma_align.md
           - Warstwa fizyczna (tx_gearbox, tx_phy, rx_phy): vhdl/phy.md
           - Sterowanie łączem (link_ctrl): vhdl/link_ctrl.md
+          - Tryb UART (uart_rx, uart_tx, uart_bridge): vhdl/uart.md
   - Decyzje (ADR):
       - adr/README.md
       - "0001 FPGA GW1N-9": adr/0001-fpga-gw1n-9.md

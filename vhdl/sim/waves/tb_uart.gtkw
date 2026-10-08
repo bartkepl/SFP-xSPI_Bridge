@@ -1,0 +1,37 @@
+[*] GTKWave view for tb_uart (open with: view.ps1 tb_uart)
+[timestart] 0
+[size] 1400 700
+[signals_width] 240
+[sst_width] 220
+@28
+top.tb_uart.clk
+top.tb_uart.rst
+@24
+top.tb_uart.div[15:0]
+@200
+-Transmitter
+@22
+top.tb_uart.tx_data[7:0]
+@28
+top.tb_uart.tx_start
+top.tb_uart.tx_ready
+top.tb_uart.tx_line
+@200
+-Line at the receiver
+@28
+top.tb_uart.use_tb
+top.tb_uart.tb_line
+top.tb_uart.rx_line
+@200
+-Receiver
+@28
+top.tb_uart.u_rx.state
+top.tb_uart.rx_busy
+top.tb_uart.rx_valid
+@22
+top.tb_uart.rx_data[7:0]
+@28
+top.tb_uart.rx_ferr
+@24
+top.tb_uart.n_rx
+top.tb_uart.n_bad

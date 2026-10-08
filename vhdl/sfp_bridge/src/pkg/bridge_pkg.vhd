@@ -57,6 +57,19 @@ package bridge_pkg is
 
 
   ------------------------------------------------------------------------------
+  -- Frame types (ADR 0005, ADR 0006)
+  ------------------------------------------------------------------------------
+  constant TYPE_DATA : std_logic_vector(7 downto 0) := x"00";
+  constant TYPE_UART : std_logic_vector(7 downto 0) := x"01";   -- transparent UART stream
+
+  ------------------------------------------------------------------------------
+  -- Transparent UART (ADR 0006): UART_DIV = clk_sys cycles per bit
+  ------------------------------------------------------------------------------
+  constant UART_BAUD_DEFAULT : natural := 115_200;
+  constant UART_DIV_DEFAULT  : natural := (CLK_SYS_HZ + UART_BAUD_DEFAULT / 2) / UART_BAUD_DEFAULT;  -- 434
+  constant UART_DIV_MIN      : natural := 8;
+
+  ------------------------------------------------------------------------------
   -- Link control (ADR 0008)
   ------------------------------------------------------------------------------
   -- Link state

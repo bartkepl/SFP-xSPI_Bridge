@@ -13,7 +13,7 @@ Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia 
 | Strona optyczna | moduł SFP (INF-8074i) bez wewnętrznego CDR: 100BASE-FX / OC-3 lub 1000BASE-X (MM/SM, duplex lub BiDi); SFP+ nieobsługiwane |
 | Zasilanie | jedno **3,3 V** (wersja UV FPGA, moduł SFP) |
 
-> Status dokumentu: plan konstrukcji, aktualizowany wraz z projektem. Schemat rev. A gotowy, PCB w toku, VHDL — etapy 1–6 z 10 ([stan modułów](vhdl/index.md)). Pozycje oznaczone **[DO WERYFIKACJI]** pozostają do sprawdzenia; decyzje i ich uzasadnienia są w [rejestrze ADR](adr/README.md). Kopie dokumentacji producentów: [`datasheets/`](datasheets/).
+> Status dokumentu: plan konstrukcji, aktualizowany wraz z projektem. Schemat rev. A gotowy, PCB w toku, VHDL — etapy 1–7 z 10 ([stan modułów](vhdl/index.md)). Pozycje oznaczone **[DO WERYFIKACJI]** pozostają do sprawdzenia; decyzje i ich uzasadnienia są w [rejestrze ADR](adr/README.md). Kopie dokumentacji producentów: [`datasheets/`](datasheets/).
 
 ---
 
@@ -555,8 +555,8 @@ vhdl/
                               --   tb_comma_align (poślizg bitu, błędy, fałszywe comma)
                               --   tb_phy_loopback (modele prymitywów Gowin)
                               --   tb_link_loopback (dwa końce, 200 ppm, jitter, ramki w obu kierunkach)
-                              --   tb_link_ctrl, tb_clk_rst (modele rPLL i CLKDIV), tb_uart
-                              --   planowane: tb_uart_bridge, tb_i2c_sfp, tb_xspi_slave, tb_top
+                              --   tb_link_ctrl, tb_clk_rst (modele rPLL i CLKDIV), tb_uart, tb_uart_bridge
+                              --   planowane: tb_i2c_sfp, tb_xspi_slave, tb_top
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
     run_tests.ps1 / .sh       -- uruchamianie testów (GHDL w WSL)
@@ -707,7 +707,7 @@ Decyzja i uzasadnienie: [ADR 0006](adr/0006-tryb-uart-przezroczysty.md).
 - Piny J3 w trybie UART: `XSPI_IO0` = `UART_RX` (wejście), `XSPI_IO1` = `UART_TX` (wyjście), opcjonalnie `XSPI_IO2` = `UART_RTS_N` (wyjście), `XSPI_IO3` = `UART_CTS_N` (wejście); pozostałe linie xSPI w stanie wysokiej impedancji, `HOST_IRQ_N` = stan łącza.
 - 8N1, domyślnie 115200 baud; inna prędkość (do ok. 3 Mbaud) przez `UART_DIV` w trybie xSPI.
 - Pakietyzacja: ramka `TYPE = 0x01` po 64 bajtach lub po przerwie > 2 czasy znaku; odbiór: treść ramek `TYPE = 0x01` na `UART_TX`.
-- Moduły: `uart_rx`, `uart_tx`, `uart_bridge`; multipleksowanie pinów w `sfp_bridge_top`.
+- Moduły: `uart_rx`, `uart_tx`, `uart_bridge` — gotowe, [opis](vhdl/uart.md); `UART_DIV` = liczba taktów `clk_sys` na bit (434 = 115 200, minimum 8); RTS wstrzymuje nadawcę przy zapełnieniu FIFO TX; multipleksowanie pinów i zegara strony hosta FIFO w `sfp_bridge_top` (etap integracji).
 
 ---
 

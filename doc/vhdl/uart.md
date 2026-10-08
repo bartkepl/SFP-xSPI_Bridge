@@ -1,8 +1,13 @@
-# Tryb przezroczysty UART: `uart_rx`, `uart_tx`
+# Tryb przezroczysty UART: `uart_rx`, `uart_tx`, `uart_bridge`
 
-Pliki: `vhdl/sfp_bridge/src/uart/uart_rx.vhd`, `uart_tx.vhd` · testbench: `vhdl/sim/tb/tb_uart.vhd`
+Pliki: `vhdl/sfp_bridge/src/uart/uart_rx.vhd`, `uart_tx.vhd`, `uart_bridge.vhd` · testbenche: `vhdl/sim/tb/tb_uart.vhd`, `tb_uart_bridge.vhd`
 
-Odbiornik i nadajnik UART trybu przezroczystego ([ADR 0006](../adr/0006-tryb-uart-przezroczysty.md); [plan, rozdz. 7.7](../sfp-xspi-bridge-plan.md)). Format 8N1, najmłodszy bit pierwszy, linia w spoczynku w stanie wysokim.
+Odbiornik, nadajnik i pakietyzator UART trybu przezroczystego ([ADR 0006](../adr/0006-tryb-uart-przezroczysty.md); [plan, rozdz. 7.7](../sfp-xspi-bridge-plan.md)). Format 8N1, najmłodszy bit pierwszy, linia w spoczynku w stanie wysokim.
+
+```
+UART_RX ─> uart_rx ─> bufor 64 B ─> ramka TYPE 0x01 ─> FIFO TX ─> łącze
+UART_TX <─ uart_tx <─ treść ramek TYPE 0x01 <─ FIFO RX <─ łącze   (inne TYPE: odrzucane)
+```
 
 ## Prędkość
 
@@ -66,6 +71,64 @@ Zegar 50 MHz. Każdy odebrany bajt jest porównywany z kolejnym bajtem z kolejki
 | 4 | impuls niski o długości `div`/4: nic nie odebrano, brak błędu |
 
 **Test mutacyjny:** wykrywane — próbkowanie przy zboczu bitu, odwrócona kolejność bitów, brak kontroli bitu stopu, brak odrzucania fałszywego startu, zbyt długi bit nadajnika, brak oczekiwania na koniec stanu break.
+
+## `uart_bridge`
+
+Łączy UART ze stroną hosta FIFO łącza (w miejsce `xspi_slave`), w domenie zegara tej strony (`clk_sys` w trybie UART).
+
+| Generyk | Domyślnie | Opis |
+|---|---|---|
+| `MAX_PAY` | 64 | bajty treści w ramce |
+| `FREE_W` | 13 | szerokość `tx_free` (ADDR_W FIFO TX + 1) |
+| `RTS_FREE` | 512 | wolne miejsce w FIFO TX, poniżej którego RTS zatrzymuje nadawcę |
+
+| Port | Kierunek | Opis |
+|---|---|---|
+| `clk`, `rst` | in | zegar, reset synchroniczny |
+| `cfg_div[15:0]`, `cfg_rtscts` | in | `UART_DIV`, bit `RTSCTS_EN` rejestru `MODE_CTRL` |
+| `uart_rx`, `uart_cts_n` | in | piny (asynchroniczne) |
+| `uart_tx`, `uart_rts_n` | out | piny |
+| `tx_wr`, `tx_data`, `tx_commit` / `tx_free` | out / in | strona zapisu FIFO TX (tryb commit) |
+| `rx_rd` / `rx_data`, `rx_valid`, `rx_empty` | out / in | strona odczytu FIFO RX |
+| `ev_rx_ovf` | out | impuls: bajt UART utracony (bufor i FIFO pełne) |
+| `ev_frame_err` | out | impuls: błąd ramki UART (bajt odrzucony) |
+| `ev_frame` | out | impuls: ramka zapisana do FIFO TX |
+| `ev_skip` | out | impuls: odebrana ramka innego typu odrzucona |
+
+**UART → łącze:**
+
+- Odebrane bajty trafiają do bufora 64 B (pamięć rozproszona, RAM16).
+- Ramka TYPE 0x01 (`TYPE`, `LEN_H` = 0, `LEN_L`, treść) jest zapisywana do FIFO TX, gdy bufor jest pełny albo gdy linia RX jest bezczynna przez 2 czasy znaku (20 okresów bitu) po bicie stopu ostatniego bajtu.
+- Zapis zaczyna się dopiero przy miejscu na całą ramkę (`tx_free` ≥ LEN + 4); ostatni bajt zatwierdza ramkę. Zapis trwa LEN + 3 takty.
+- Bajt odebrany w czasie zapisu ramki lub oczekiwania na miejsce trafia do rejestru `hold`; kolejny jest tracony (`ev_rx_ovf`).
+- Przy włączonym RTS/CTS `uart_rts_n` = 1 (wstrzymanie nadawcy), gdy w FIFO TX jest mniej niż `RTS_FREE` wolnych bajtów. Bez RTS/CTS dane przychodzące przy zatrzymanym łączu (stan inny niż UP, XOFF) są tracone po zapełnieniu FIFO TX i zliczane.
+
+**Łącze → UART:**
+
+- Ramki w FIFO RX są kompletne (zatwierdzone przez `rx_deframer`). Treść ramek TYPE 0x01 jest nadawana na `uart_tx` w kolejności odbioru; ramki innych typów są czytane i odrzucane (`ev_skip`).
+- Bajty są czytane z FIFO tylko w tempie nadawania UART (jeden bajt w przód), więc wolny UART zatrzymuje stronę przeciwną przez XOFF łącza — po tej stronie dane nie giną.
+- Przy włączonym RTS/CTS kolejny bajt startuje tylko przy `uart_cts_n` = 0.
+
+Próbna synteza (GW1N-9C, ograniczenie 12 ns): 496 LUT/ALU, 8 × RAM16, 268 rejestrów, Fmax 84,9 MHz.
+
+### Testbench `tb_uart_bridge`
+
+Bridge z rzeczywistymi FIFO (TX 512 B — małe, aby szybko osiągnąć próg RTS i przepełnienie, `RTS_FREE` = 128; RX 1 KiB). Testbench modeluje urządzenie UART (nadajnik behawioralny na `UART_RX`, odbiornik na `UART_TX`) i łącze (czyta ramki z FIFO TX, zapisuje ramki do FIFO RX).
+
+| Faza | Sprawdzenie |
+|---|---|
+| 0 | `div` = 434: 10 bajtów bez przerw → jedna ramka 10 B, zapisana 2–2,5 czasu znaku po bicie stopu ostatniego bajtu |
+| 1 | `div` = 54: 200 bajtów bez przerw → ramki 64, 64, 64, 8 B |
+| 2 | 5 bajtów, przerwa 1,5 znaku, 5 bajtów → jedna ramka 10 B; bajt z błędnym bitem stopu → `ev_frame_err`, poza ramkami |
+| 3 | ramki (TYPE 0x01, 10 B), (TYPE 0x10, 20 B), (TYPE 0x01, 300 B) → na `UART_TX` dokładnie 310 bajtów ramek TYPE 0x01, w kolejności; jeden `ev_skip` |
+| 4 | RTS/CTS, `CTS_N` = 1: ramka 5 B czeka (nic nie nadano przez 50 czasów znaku); po `CTS_N` = 0 nadane 5 bajtów |
+| 5 | RTS/CTS, łącze zatrzymane, nadawca ignorujący RTS, `div` = 17: `RTS_N` = 1 przed pierwszym utraconym bajtem; potem straty (`ev_rx_ovf`); po wznowieniu łącza `RTS_N` = 0, ramki poprawne, bajty w ramkach + utracone = wysłane (wynik: 187 z 700 utraconych) |
+
+W fazach 0–3 każdy bajt w ramkach jest porównywany z bajtami wysłanymi, w fazach 3–4 każdy bajt na `UART_TX` — z treścią ramek.
+
+**Test mutacyjny:** wykrywane — brak filtrowania typu ramki, brak RTS, pominięcie CTS, ramka 63 B zamiast 64, brak sprawdzenia miejsca w FIFO. Usunięcie rejestru `hold` nie jest wykrywane: zapis ramki trwa ok. 70 taktów, a przy testowanych prędkościach bajt przychodzi najwyżej co 170 taktów; `hold` ma znaczenie przy dzielniku bliskim minimum i w czasie oczekiwania na miejsce (straty są wtedy i tak zliczane).
+
+**Przebieg** (`.\view.ps1 tb_uart_bridge`, ok. 10,6 ms): w fazie 0 (ok. 1–1,3 ms) `dev_tx` niesie 10 znaków, po przerwie `pk` przechodzi P_WAIT → P_PAY, seria `tf_wr` z `tf_commit` na końcu, `last_len` = 10; w fazie 1 serie zapisów co 64 bajty; w fazie 3 `br_tx` nadaje ciągle, `ev_skip` przy ramce TYPE 0x10; w fazie 4 `br_tx` stoi przy `cts_n` = 1; w fazie 5 `tf_free` spada, `rts_n` = 1, potem impulsy `ev_ovf`.
 
 ## Przebieg
 

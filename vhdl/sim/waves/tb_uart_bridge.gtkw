@@ -1,0 +1,43 @@
+[*] GTKWave view for tb_uart_bridge (open with: view.ps1 tb_uart_bridge)
+[timestart] 0
+[size] 1400 700
+[signals_width] 260
+[sst_width] 220
+@28
+top.tb_uart_bridge.clk
+top.tb_uart_bridge.rst
+@24
+top.tb_uart_bridge.div[15:0]
+@28
+top.tb_uart_bridge.rtscts
+@200
+-UART -> link
+@28
+top.tb_uart_bridge.dev_tx
+@24
+top.tb_uart_bridge.dut.n
+@28
+top.tb_uart_bridge.dut.pk
+top.tb_uart_bridge.tf_wr
+@22
+top.tb_uart_bridge.tf_wdata[7:0]
+@28
+top.tb_uart_bridge.tf_commit
+top.tb_uart_bridge.rts_n
+top.tb_uart_bridge.ev_ovf
+top.tb_uart_bridge.ev_ferr
+@24
+top.tb_uart_bridge.tf_free[9:0]
+top.tb_uart_bridge.n_frames
+top.tb_uart_bridge.last_len
+@200
+-link -> UART
+@28
+top.tb_uart_bridge.rf_empty
+top.tb_uart_bridge.rf_rd
+top.tb_uart_bridge.dut.up
+top.tb_uart_bridge.ev_skip
+top.tb_uart_bridge.cts_n
+top.tb_uart_bridge.br_tx
+@24
+top.tb_uart_bridge.n_down

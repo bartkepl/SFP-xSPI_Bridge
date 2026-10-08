@@ -43,7 +43,7 @@ vhdl/
 | `clk_rst` | `src/clk/clk_rst.vhd` | `tb_clk_rst` | PASS | tak (z torem łącza, 85 MHz) | [Zegary i reset](clk_rst.md) |
 | `link_ctrl` | `src/link/link_ctrl.vhd` | `tb_link_ctrl`, `tb_link_loopback` | PASS | tak (113 MHz) | [Sterowanie łączem](link_ctrl.md) |
 | `uart_rx`, `uart_tx` | `src/uart/uart_rx.vhd`, `uart_tx.vhd` | `tb_uart` | PASS | tak (98 MHz) | [UART](uart.md) |
-| `uart_bridge` | — | — | — | — | planowany ([ADR 0006](../adr/0006-tryb-uart-przezroczysty.md)) |
+| `uart_bridge` | `src/uart/uart_bridge.vhd` | `tb_uart_bridge` | PASS | tak (85 MHz) | [UART](uart.md) |
 | `i2c_master`, `sfp_mgmt` | — | — | — | — | planowany |
 | `xspi_slave`, `csr_regs` | — | — | — | — | planowany |
 | `leds` | — | — | — | — | planowany |

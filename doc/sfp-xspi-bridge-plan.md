@@ -363,7 +363,7 @@ Wrażliwość: zmiana odstępu o ±0,05 mm zmienia impedancję różnicową o ok
 
 - przelotki: otwór ≥ 0,3 mm, średnica ≥ 0,45 mm (próg bez dopłaty JLCPCB),
 - pary LVDS: szerokość 0,20–0,24 mm (opt. 0,22), odstęp 0,18–0,22 mm (opt. 0,20), odcinek niesprzężony ≤ 2 mm, różnica długości w parze ≤ 0,5 mm, **zakaz przelotek**,
-- odstęp par LVDS od innych ścieżek ≥ 0,5 mm,
+- odstęp par LVDS od innych ścieżek, przelotek i wylewek ≥ 0,5 mm (wylewka GND bliżej pary obniża jej impedancję przez sprzężenie z masą w tej samej warstwie),
 - zwężenie przy U1 i J1 (w obrębie courtyardu): szerokość 0,20 mm, odstęp do 0,60 mm.
 
 #### 5.3.5 Zasady prowadzenia

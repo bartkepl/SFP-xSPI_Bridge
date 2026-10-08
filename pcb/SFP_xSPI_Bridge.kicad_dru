@@ -26,8 +26,10 @@
   (constraint skew (max 0.5mm))
   (constraint via_count (max 0)))
 
-(rule "LVDS keep-away from other tracks"
-  (condition "A.inDiffPair('*') && B.Type == 'Track' && !B.inDiffPair('*')")
+# Covers tracks, vias and zone fills (GND pour next to the pair lowers its
+# impedance by coupling to the coplanar ground).
+(rule "LVDS keep-away from other copper"
+  (condition "A.inDiffPair('*') && !B.inDiffPair('*') && (B.Type == 'Track' || B.Type == 'Via' || B.Type == 'Zone')")
   (constraint clearance (min 0.5mm)))
 
 # Neck-down at the FPGA (QN48, 0.4 mm pitch) and at the SFP connector (0.8 mm pitch).

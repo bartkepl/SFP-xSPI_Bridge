@@ -9,6 +9,7 @@
         <File path="src/pkg/code8b10b_pkg.vhd" type="file.vhdl" enable="1"/>
         <File path="src/common/sync_bit.vhd" type="file.vhdl" enable="1"/>
         <File path="src/common/reset_sync.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/clk/clk_rst.vhd" type="file.vhdl" enable="1"/>
         <File path="src/link/crc32.vhd" type="file.vhdl" enable="1"/>
         <File path="src/link/enc_8b10b.vhd" type="file.vhdl" enable="1"/>
         <File path="src/link/dec_8b10b.vhd" type="file.vhdl" enable="1"/>

@@ -10,6 +10,7 @@ vhdl/
   sfp_bridge/             projekt docelowy Gowin EDA
     src/pkg/              pakiety: bridge_pkg (stałe), code8b10b_pkg (kod 8b/10b)
     src/common/           elementy ogólne: sync_bit, reset_sync
+    src/clk/              clk_rst (rPLL, CLKDIV, reset domeny clk_sys)
     src/fifo/             async_fifo
     src/link/             tor łącza: crc32, 8b/10b, ramkowanie, CDR, wyrównanie, PHY
     src/top/              sfp_bridge_top
@@ -38,7 +39,7 @@ vhdl/
 | `cdr_os4x8` | `src/link/cdr_os4x8.vhd` | `tb_cdr_os4x8` | PASS | tak (74 MHz) | [Odzysk danych](cdr.md) |
 | `comma_align` | `src/link/comma_align.vhd` | `tb_comma_align` | PASS | tak (tor RX 83 MHz) | [Wyrównanie symboli](comma_align.md) |
 | `tx_gearbox`, `tx_phy`, `rx_phy` | `src/link/tx_gearbox.vhd`, `tx_phy.vhd`, `rx_phy.vhd` | `tb_phy_loopback`, `tb_link_loopback` | PASS | tak (z PLL i IDES8/OSER8, 75 MHz) | [Warstwa fizyczna](phy.md) |
-| `clk_rst` | — | — | — | — | planowany (rPLL, CLKDIV) |
+| `clk_rst` | `src/clk/clk_rst.vhd` | `tb_clk_rst` | PASS | tak (z torem łącza, 85 MHz) | [Zegary i reset](clk_rst.md) |
 | `link_ctrl` | `src/link/link_ctrl.vhd` | `tb_link_ctrl`, `tb_link_loopback` | PASS | tak (113 MHz) | [Sterowanie łączem](link_ctrl.md) |
 | `uart_rx`, `uart_tx`, `uart_bridge` | — | — | — | — | planowany ([ADR 0006](../adr/0006-tryb-uart-przezroczysty.md)) |
 | `i2c_master`, `sfp_mgmt` | — | — | — | — | planowany |

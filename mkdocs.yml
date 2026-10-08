@@ -53,6 +53,7 @@ nav:
       - Symulacja i przebiegi: vhdl/symulacja.md
       - Moduły:
           - Synchronizatory (sync_bit, reset_sync): vhdl/sync.md
+          - Zegary i reset (clk_rst): vhdl/clk_rst.md
           - CRC-32 (crc32): vhdl/crc32.md
           - Kod 8b/10b (enc_8b10b, dec_8b10b): vhdl/8b10b.md
           - FIFO dwuzegarowe (async_fifo): vhdl/async_fifo.md

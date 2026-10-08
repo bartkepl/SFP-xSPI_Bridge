@@ -1,0 +1,28 @@
+[*] GTKWave view for tb_clk_rst (open with: view.ps1 tb_clk_rst)
+[timestart] 0
+[size] 1400 700
+[signals_width] 240
+[sst_width] 220
+@200
+-Reference and PLL
+@28
+top.tb_clk_rst.clk_25m
+top.tb_clk_rst.pll_lock
+top.tb_clk_rst.clk_fast
+top.tb_clk_rst.clk_sys
+@200
+-Reset requests
+@28
+top.tb_clk_rst.host_rst_n
+top.tb_clk_rst.dut.host_s
+top.tb_clk_rst.dut.host_flt
+@24
+top.tb_clk_rst.dut.flt_cnt
+@28
+top.tb_clk_rst.soft_set
+top.tb_clk_rst.soft_q
+@200
+-Resets
+@28
+top.tb_clk_rst.arst_n
+top.tb_clk_rst.rst_sys

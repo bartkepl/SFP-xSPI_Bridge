@@ -49,7 +49,7 @@ mkdocs.yml              — konfiguracja serwisu dokumentacji
 |---|---|
 | Schemat | rev. A gotowy; do dodania zworka `MODE_SEL` (pin 10) dla trybu UART |
 | PCB | w toku (4 warstwy, JLCPCB JLC04161H-7628) |
-| FPGA | etapy 1–5 z 10: synchronizatory, CRC-32, kod 8b/10b, FIFO dwuzegarowe, ramkowanie łącza, warstwa fizyczna (IDES8/OSER8), odzysk danych (soft-CDR), wyrównanie symboli i sterowanie łączem — z testbenchami (PASS), w tym pełna pętla łącza dwóch końców z odchyłką 200 ppm i jitterem; kolejny etap: zegary i reset (`clk_rst`) — [stan modułów](doc/vhdl/index.md) |
+| FPGA | etapy 1–6 z 10: synchronizatory, CRC-32, kod 8b/10b, FIFO dwuzegarowe, ramkowanie łącza, warstwa fizyczna (IDES8/OSER8), odzysk danych (soft-CDR), wyrównanie symboli, sterowanie łączem, zegary i reset — z testbenchami (PASS), w tym pełna pętla łącza dwóch końców z odchyłką 200 ppm i jitterem; kolejny etap: tryb przezroczysty UART — [stan modułów](doc/vhdl/index.md) |
 | Firmware | nierozpoczęte |
 
 Otwarte punkty: rozdział 10 planu.

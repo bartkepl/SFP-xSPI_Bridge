@@ -13,7 +13,7 @@ Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia 
 | Strona optyczna | moduł SFP (INF-8074i) bez wewnętrznego CDR: 100BASE-FX / OC-3 lub 1000BASE-X (MM/SM, duplex lub BiDi); SFP+ nieobsługiwane |
 | Zasilanie | jedno **3,3 V** (wersja UV FPGA, moduł SFP) |
 
-> Status dokumentu: plan konstrukcji, aktualizowany wraz z projektem. Schemat rev. A gotowy, PCB w toku, VHDL — etapy 1–5 z 10 ([stan modułów](vhdl/index.md)). Pozycje oznaczone **[DO WERYFIKACJI]** pozostają do sprawdzenia; decyzje i ich uzasadnienia są w [rejestrze ADR](adr/README.md). Kopie dokumentacji producentów: [`datasheets/`](datasheets/).
+> Status dokumentu: plan konstrukcji, aktualizowany wraz z projektem. Schemat rev. A gotowy, PCB w toku, VHDL — etapy 1–6 z 10 ([stan modułów](vhdl/index.md)). Pozycje oznaczone **[DO WERYFIKACJI]** pozostają do sprawdzenia; decyzje i ich uzasadnienia są w [rejestrze ADR](adr/README.md). Kopie dokumentacji producentów: [`datasheets/`](datasheets/).
 
 ---
 
@@ -555,7 +555,7 @@ vhdl/
                               --   tb_comma_align (poślizg bitu, błędy, fałszywe comma)
                               --   tb_phy_loopback (modele prymitywów Gowin)
                               --   tb_link_loopback (dwa końce, 200 ppm, jitter, ramki w obu kierunkach)
-                              --   tb_link_ctrl
+                              --   tb_link_ctrl, tb_clk_rst (modele rPLL i CLKDIV)
                               --   planowane: tb_uart, tb_i2c_sfp, tb_xspi_slave, tb_top
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
@@ -565,9 +565,9 @@ vhdl/
 
 ### 7.2 Moduły — co powinny zawierać
 
-**`clk_rst`**
-- `rPLL` (25 → 200 MHz), `CLKDIV` (/4 → 50 MHz).
-- Reset globalny trzymany do `LOCK` PLL. Osobne synchronizatory resetu dla `clk_sys` i `clk_spi` (reset asynchroniczny, zwalnianie synchroniczne).
+**`clk_rst`** — gotowy, [opis](vhdl/clk_rst.md)
+- `rPLL` (25 → 200 MHz), `CLKDIV` (/4 → 50 MHz); parametry PLL wyliczane z `LINE_BAUD` w `bridge_pkg`.
+- Reset globalny trzymany do `LOCK` PLL; `HOST_RST_N` z filtrem zakłóceń 640 ns; `CTRL.SOFT_RST` kończący się samoczynnie. Reset domeny `clk_sys` przez `reset_sync`; żądanie `arst_n` dla mostka resetu domeny `clk_spi` (reset asynchroniczny, zwalnianie synchroniczne).
 
 **`xspi_slave`** (domena `clk_spi`, CS_N jako asynchroniczny reset maszyny stanów)
 - Fazy: instrukcja (zawsze 1 linia) → opcjonalny adres → dummy → dane, szerokość fazy danych wynika z opkodu (tabela 7.3).
@@ -785,7 +785,7 @@ Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny
 - [x] FIFO: własne `async_fifo` (BSRAM SDPB wnioskowany z kodu), bez IP Gowin.
 - [x] Architektura zegarów: `clk_sys` = 50 MHz, IDES8/OSER8 ([ADR 0007](adr/0007-zegar-systemowy-50mhz.md)).
 - [ ] Zworka `MODE_SEL` (JP3, pin 10 ↔ GND) i pull-up R16 10 kΩ w schemacie i na PCB ([ADR 0006](adr/0006-tryb-uart-przezroczysty.md)).
-- [ ] Ograniczenie `clk_sys` w `.sdc` z zapasem (np. 60 MHz) po integracji top-level.
+- [ ] Jawne zegary `clk_fast` / `clk_sys` w `.sdc` przy integracji top-level (składnia sprawdzona — [`clk_rst`](vhdl/clk_rst.md)); ograniczenie `clk_sys` z zapasem (np. 60 MHz).
 - [ ] Timing xSPI przy 50 MHz: setup/hold FPGA vs STM32 OCTOSPI (dummy cycles, opóźnienie próbkowania po stronie MCU).
 
 ## 11. Dokumentacja źródłowa

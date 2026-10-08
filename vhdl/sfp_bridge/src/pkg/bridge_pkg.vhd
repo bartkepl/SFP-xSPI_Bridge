@@ -26,6 +26,14 @@ package bridge_pkg is
   constant BITS_PER_CLK  : natural := 2;                  -- nominal, at clk_sys
   constant CLKS_PER_CHAR : natural := 10 / BITS_PER_CLK;  -- 5 clk_sys cycles per symbol
 
+  -- rPLL (clk_rst): clk_fast = CLK_REF_HZ * (FBDIV_SEL + 1) / (IDIV_SEL + 1),
+  -- VCO = clk_fast * ODIV_SEL must lie in 400..1200 MHz (GW1N-9 C6/I5, DS100).
+  --   100 Mbaud: 25 * 8 = 200 MHz, VCO 800 MHz;  125 Mbaud: 25 * 10 = 250 MHz, VCO 1000 MHz
+  constant PLL_FCLKIN    : string  := "25";
+  constant PLL_IDIV_SEL  : natural := 0;
+  constant PLL_FBDIV_SEL : natural := CLK_FAST_HZ / CLK_REF_HZ - 1;
+  constant PLL_ODIV_SEL  : natural := 4;
+
   ------------------------------------------------------------------------------
   -- Identification (CSR 0x00 / 0x01)
   ------------------------------------------------------------------------------

@@ -8,7 +8,7 @@ Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia 
 | Narzędzia | KiCad (PCB), Gowin EDA (VHDL), biblioteka C dla STM32 |
 | Prędkość linii | **100 Mbaud** (8b/10b → 80 Mbit/s → ok. 9 MB/s danych użytecznych) |
 | Interfejs hosta | SPI (1-1-1), QSPI (1-1-4 / 1-4-4), OCTOSPI (1-1-8 / 1-8-8), SDR |
-| Strona optyczna | Dowolny moduł SFP 1.25G (MM/SM, duplex lub BiDi) |
+| Strona optyczna | moduł SFP (INF-8074i) bez wewnętrznego CDR: 100BASE-FX / OC-3 lub 1000BASE-X (MM/SM, duplex lub BiDi); SFP+ nieobsługiwane |
 | Zasilanie | jedno **3,3 V** (wersja UV FPGA, moduł SFP) |
 
 > Status dokumentu: plan wstępny. Pozycje oznaczone **[DO WERYFIKACJI]** wymagają sprawdzenia w dokumentacji Gowin (UG114, UG289, UG290, UG286) przed rysowaniem schematu. Kopie dokumentacji: [`datasheets/`](datasheets/).
@@ -148,11 +148,11 @@ Piny konfiguracyjne i zasilania, **nieużywane jako GPIO**:
 
 | Pin | Sygnał | Połączenie |
 |---|---|---|
-| 3 | `JTAGSEL_N` (także LPLL_T_in) | pull-up 4,7–10 kΩ; opcja „Use JTAG as regular IO” wyłączona |
-| 4, 5, 6, 7 | `TMS`, `TCK`, `TDI`, `TDO` | złącze JTAG, opcjonalnie do MCU (aktualizacja w polu) |
-| 8 | `RECONFIG_N` | pull-up 10 kΩ, opcjonalnie przycisk lub GPIO MCU (open-drain) |
-| 9 | `DONE` | pull-up 4,7–10 kΩ, LED; `READY` nie jest wyprowadzony w QN48 |
-| 48 | `MODE2` + `MODE1` (MODE0 wewnętrznie do masy) | rezystor do masy, np. 1 kΩ → `000` = AUTOBOOT; stan wysoki dałby DUAL BOOT |
+| 3 | `JTAGSEL_N` (także LPLL_T_in) | pull-up 4,7–10 kΩ; AUX programatora przez JP2 (5.6); opcja „Use JTAG as regular IO” wyłączona |
+| 4, 5, 6, 7 | `TMS`, `TCK`, `TDI`, `TDO` | złącze TC2050 (5.6); TCK z pull-downem 4,7 kΩ (UG290, tab. 7-3) |
+| 8 | `RECONFIG_N` | pull-up 10 kΩ; nRESET programatora przez JP1, domyślnie rozwartą (5.6) |
+| 9 | `DONE` | pull-up 4,7–10 kΩ, LED; opcjonalnie AUX programatora przez JP2; `READY` nie jest wyprowadzony w QN48 |
+| 48 | `MODE2` + `MODE1` (MODE0 wewnętrznie do masy) | **1 kΩ do masy** (UG290, Figure 7-1) → `000` = AUTOBOOT. Wewnętrzny pull-up do 150 µA (DS100, IPU): 10 kΩ dałoby do 1,5 V, czyli ryzyko odczytu stanu wysokiego i DUAL BOOT |
 | 12, 37 | `VCC` | 3,3 V (wersja UV, wewnętrzny stabilizator rdzenia) |
 | 36 | `VCCX` | 3,3 V |
 | 1 | `VCCIO0` / `VCCIO3` | 3,3 V |
@@ -214,33 +214,65 @@ CLK_25M (25 MHz, ±25 ppm, CMOS 3,3 V)
 
 ### 5.1 SFP
 
-| Pin SFP | Połączenie |
-|---|---|
-| VccT, VccR | osobne filtry wg SFF-8431: 1 µH (≥0,5 A, niski DCR) + 22 µF + 0,1 µF każdy |
-| VeeT, VeeR | masa |
-| TD+ / TD− | z `SFP_TD_P/N` przez 2 × 100 nF 0402 (moduł zwykle ma też sprzężenie wewnętrzne — zostawić footprinty, ewentualnie 0 Ω) |
-| RD+ / RD− | przez 2 × 100 nF 0402 → terminacja zewnętrzna 2 × 49,9 Ω z biasem ok. 1,2 V (5.2) → `SFP_RD_P/N` |
-| TX_DISABLE | `SFP_TX_DIS`, pull-up 4,7 kΩ do 3,3 V |
-| TX_FAULT, LOS, MOD_DEF0 | pull-upy 4,7–10 kΩ do 3,3 V → GPIO |
-| MOD_DEF1/2 | `SFP_SCL/SDA`, pull-upy 4,7 kΩ |
-| RS0, RS1 (RATE_SELECT) | 10 kΩ do masy |
-| Klatka (cage) | masa obudowy (chassis), zgodnie z wytycznymi producenta klatki |
+Moduł i złącze zgodne z SFP MSA (INF-8074i). SFF-8431 opisuje elektrykę SFP+ (10 Gb/s) i nie jest podstawą tego projektu. Klatka i złącze 20-pinowe są wspólne dla SFP i SFP+.
+
+**Klasa modułów.** Obsługiwane są moduły SFP bez wewnętrznego CDR: 100BASE-FX / OC-3 (125–155 Mb/s, zakres zgodny z linią 100–125 Mbaud) oraz 1000BASE-X (1,25 Gb/s). Moduły SFP+ (10G) nie są obsługiwane: zwykle zawierają CDR zablokowany na ok. 10 Gbaud i nie są specyfikowane dla 100 Mbaud.
+
+Przyporządkowanie pinów złącza (INF-8074i, Table 1; numeracja zgodna z symbolem `Connector_SFP_and_Cage`):
+
+| Pin SFP | Nazwa (INF-8074i) | Sieć / FPGA | Połączenie |
+|---|---|---|---|
+| 1, 17, 20 | VeeT | GND | masa nadajnika |
+| 2 | TX Fault | `SFP_TX_FAULT` → pin 39 | wyjście OC/OD modułu; pull-up 4,7–10 kΩ do 3,3 V |
+| 3 | TX Disable | `SFP_TX_DIS` ← pin 38 | wejście modułu z wewnętrznym pull-upem 4,7–10 kΩ (stan wysoki lub rozwarty = laser wyłączony); dodatkowy pull-up 4,7 kΩ na płytce |
+| 4 | MOD-DEF2 | `SFP_SDA` ↔ pin 47 | SDA interfejsu 2-wire (EEPROM A0h, DDM A2h); pull-up 4,7–10 kΩ |
+| 5 | MOD-DEF1 | `SFP_SCL` ← pin 46 | SCL, maks. 100 kHz; pull-up 4,7–10 kΩ |
+| 6 | MOD-DEF0 | `SFP_MOD_ABS` → pin 41 | zwarte do masy w module = moduł obecny; pull-up 4,7–10 kΩ |
+| 7 | Rate Select | — | **jeden pin**; opcjonalne wejście modułu z wewnętrznym pull-downem > 30 kΩ (niski lub rozwarty = pasmo zmniejszone, wysoki = pełne); 10 kΩ do masy. W SFP+ ten pin nazywa się RS0 |
+| 8 | LOS | `SFP_LOS` → pin 40 | wyjście OC/OD modułu; pull-up 4,7–10 kΩ |
+| 9, 10, 11, 14 | VeeR | GND | masa odbiornika. W SFP+ pin 9 to wejście RS1 — połączenie z masą jest dla modułu SFP+ stanem niskim, więc pozostaje poprawne |
+| 12 | RD− | → `SFP_RD_N` (pin 42) | połączenie bezpośrednie; terminacja i bias przy FPGA (5.2) |
+| 13 | RD+ | → `SFP_RD_P` (pin 43) | jw. |
+| 15 | VccR | 3,3 V przez filtr | filtr odbiornika (poniżej) |
+| 16 | VccT | 3,3 V przez filtr | filtr nadajnika (poniżej) |
+| 18 | TD+ | ← `SFP_TD_P` (pin 34) | połączenie bezpośrednie |
+| 19 | TD− | ← `SFP_TD_N` (pin 33) | jw. |
+| — | klatka (cage) | masa obudowy | zgodnie z wytycznymi producenta klatki |
+
+Napięcia pull-upów sygnałów sterujących: 2,0 V … VccT/VccR + 0,3 V; przy zasilaniu 3,3 V pull-upy do szyny 3,3 V spełniają wymaganie.
+
+**Sprzężenie AC.** Sprzężenie AC jest realizowane wewnątrz modułu na TD± i RD±, a kondensatory na płytce hosta nie są wymagane (INF-8074i, Table 1, uwagi 7 i 9). Pary TD i RD łączą się z FPGA bezpośrednio. Ponieważ wyjście RD± modułu jest odcięte stałoprądowo, napięcie wspólne po stronie FPGA ustala dzielnik Vbias (5.2); bez niego wejście LVDS nie ma określonego punktu pracy. Wyjście TD FPGA (VOS ok. 1,2 V) podaje się wprost na wewnętrzne kondensatory modułu.
+
+**Filtr zasilania** (INF-8074i, Figure 2A):
+
+```
+                  ┌──[1 µH]──┬──────────── VccT (16)
+                  │        0,1 µF
+3,3 V ──┬──────┬──┤
+      10 µF  0,1 µF
+                  └──[1 µH]──┬───────┬──── VccR (15)
+                           0,1 µF  10 µF
+```
+
+- Dławiki 1 µH, DCR < 1 Ω (spadek napięcia przy 300 mA), prąd znamionowy ≥ 0,5 A.
+- Kondensatory 0,1 µF przy pinach VccT i VccR; 10 µF na gałęzi VccR; 10 µF + 0,1 µF po stronie szyny 3,3 V.
+- Przy tym filtrze prąd udarowy przy wpięciu modułu na gorąco nie przekracza prądu ustalonego o więcej niż 30 mA. Maksymalny prąd modułu: 300 mA.
 
 **Poziomy sygnałów:**
 
-- TX: GW1N-9 daje VOD 250–450 mV, czyli **500–900 mVppd**. Wejście SFP 1G (MSA) wymaga zwykle 500–2400 mVppd. Margines przy dolnej granicy jest minimalny, więc ustawić **drive 3,5 mA** w constraints i sprawdzić w datasheecie wybranego modułu **[DO WERYFIKACJI]**.
-- RX: wyjście SFP to zwykle 370–2000 mVppd (CML, sprzężone AC). VTHD FPGA ±100 mV daje duży zapas. Bias około 1,2 V mieści się w VCM 0,05–2,1 V.
+- TX: GW1N-9 daje VOD 250–450 mV, czyli **500–900 mVppd**. Wejście TD± modułu przyjmuje 500–2400 mVppd, zalecane 500–1200 mVppd (INF-8074i, uwaga 9). Margines przy dolnej granicy jest minimalny, dlatego obowiązuje **DRIVE=3.5** (maksymalny prąd wyjścia LVDS25). Wymaganie minimalnej amplitudy wybranego modułu **[DO WERYFIKACJI]** w jego datasheecie.
+- RX: wyjście RD± modułu 370–2000 mVppd przy terminacji 100 Ω (INF-8074i, uwaga 7). VTHD FPGA ±100 mV daje duży zapas. Bias ok. 1,2 V mieści się w VCM 0,05–2,1 V.
 
 ### 5.2 Terminacja i bias toru RX
 
 Wariant podstawowy: **terminacja zewnętrzna** ([ADR 0002](adr/0002-terminacja-rx-zewnetrzna.md)).
 
 ```
-RD+ ──||── ┬──────────────── FPGA RD_P (pin 43)
-         49,9 Ω 1% 0402
-           ├── Vbias 1,2 V (dzielnik z 3,3 V: np. 2,1 kΩ / 1,2 kΩ + 100 nF do masy)
-         49,9 Ω 1% 0402
-RD− ──||── ┴──────────────── FPGA RD_N (pin 42)
+RD+ (SFP 13) ───┬──────────────── FPGA RD_P (pin 43)
+              49,9 Ω 1% 0402
+                ├── Vbias 1,2 V (dzielnik z 3,3 V: np. 2,1 kΩ / 1,2 kΩ + 100 nF do masy)
+              49,9 Ω 1% 0402
+RD− (SFP 12) ───┴──────────────── FPGA RD_N (pin 42)
 ```
 
 - Rezystory 49,9 Ω umieszcza się bezpośrednio przy pinach 42/43 (odcinek do odbiornika ≤ 2 mm). Kondensator 100 nF w węźle środkowym zwiera do masy zakłócenia wspólne.
@@ -254,7 +286,7 @@ RD− ──||── ┴──────────────── FPGA RD
 | Impedancja par TD/RD | 100 Ω różnicowo, ciągła płaszczyzna odniesienia |
 | Dopasowanie w parze | ≤ 0,5 mm |
 | Przelotki w parze | minimum, symetrycznie |
-| Kondensatory AC | 0402, przy odbiorniku |
+| Sprzężenie AC | brak kondensatorów na płytce — sprzężenie AC wewnątrz modułu (INF-8074i) |
 | xSPI | wspólna długość ±5 mm, rezystory szeregowe 22–33 Ω przy źródle (MCU dla CLK/CS, przy FPGA dla IO w kierunku odczytu — footprinty z obu stron) |
 | Stack-up | min. 4 warstwy (sygnał / GND / 3V3 / sygnał) |
 
@@ -262,7 +294,7 @@ RD− ──||── ┴──────────────── FPGA RD
 
 | Odbiornik | Prąd (szac.) |
 |---|---|
-| Moduł SFP 1.25G | do ok. 300 mA |
+| Moduł SFP | do 300 mA (INF-8074i) |
 | GW1N-UV9 (VCC=VCCX=VCCIO=3,3 V) | ok. 50–100 mA |
 | Generator, LED, reszta | ok. 20 mA |
 | **Razem** | **ok. 0,5 A → projektować na 0,6–0,8 A** |
@@ -284,19 +316,40 @@ Odsprzęganie: 100 nF przy każdym pinie zasilania FPGA, 4,7–10 µF na bank, b
 | 17 | HOST_IRQ_N | 18 | HOST_RST_N |
 | 19 | GND | 20 | GND |
 
-Osobne złącze JTAG (1 × 6: 3V3, GND, TCK, TMS, TDI, TDO) dla programatora FT2232H/FT232H (openFPGALoader) albo oficjalnego kabla Gowin.
+### 5.6 Złącze programowania (Tag-Connect TC2050)
 
-### 5.6 Lista elementów (BOM, główne pozycje)
+Footprint `Tag-Connect_TC2050-IDC-NL_2x05_P1.27mm_Vertical` (J2). Układ zgodny ze złączem ARM Cortex Debug 10-pin, z wykorzystaniem pinu 7 (w standardzie Cortex: klucz, niepodłączony) na sygnał AUX programatora.
+
+| Pin TC2050 | Sygnał | Połączenie w FPGA |
+|---|---|---|
+| 1 | 3V3 (VTref) | szyna 3,3 V |
+| 2 | TMS | pin 4 |
+| 3 | GND | |
+| 4 | TCK | pin 5; pull-down 4,7 kΩ (UG290, tab. 7-3, uwaga 2) |
+| 5 | GND | |
+| 6 | TDO | pin 7 |
+| 7 | AUX | przez 1 kΩ (R7) na zworkę trójpozycyjną JP2: `JTAGSEL_N` (pin 3) lub `DONE` (pin 9) |
+| 8 | TDI | pin 6 |
+| 9 | GND (GNDDetect) | |
+| 10 | nRESET | przez zworkę JP1 (domyślnie rozwartą) na `RECONFIG_N` (pin 8) |
+
+- **nRESET → `RECONFIG_N`** przeładowuje konfigurację z Flash. `RECONFIG_N` nie może przyjąć stanu niskiego w czasie programowania Flash ani ładowania AUTOBOOT (UG290, rozdz. 7 — ryzyko trwałego uszkodzenia Flash), dlatego połączenie jest domyślnie rozwarte (JP1) i zamykane tylko dla programatora sterującego resetem wyłącznie na żądanie.
+- **AUX → `JTAGSEL_N`** przywraca funkcję JTAG pinów 4–7, gdyby bitstream przełączył je na GPIO (działa przy MODE ≠ `001`). **AUX → `DONE`** pozwala programatorowi odczytać stan konfiguracji. Rezystor 1 kΩ chroni oba układy przy różnych stanach zasilania.
+- Do samego programowania (SRAM i Flash) wystarczają TCK, TMS, TDI, TDO; przeładowanie po zapisie Flash odbywa się instrukcją JTAG.
+- Poziomy logiczne programatora: 3,3 V (bank 3, VCCIO3 = 3,3 V).
+
+
+### 5.7 Lista elementów (BOM, główne pozycje)
 
 | Pozycja | Uwagi |
 |---|---|
 | GW1N-UV9QN48C6/I5 | Mouser (jedyne źródło, stan 2026-10-08: ok. 90 szt.) |
 | Klatka SFP + złącze 20-pin | press-fit lub SMT |
 | Generator 25 MHz, ±25 ppm, CMOS 3,3 V | |
-| Dławiki 1 µH × 2 (filtr SFF-8431) | ≥ 0,5 A |
-| Rezystory, kondensatory 0402 | pull-upy, bias, terminacja, AC |
+| Dławiki 1 µH × 2 (filtr INF-8074i, Figure 2A) | DCR < 1 Ω, ≥ 0,5 A |
+| Rezystory, kondensatory 0402 | pull-upy, bias, terminacja |
 | Złącze hosta 2 × 10 / 1,27 mm | |
-| Złącze JTAG 1 × 6 | |
+| Tag-Connect TC2050-IDC-NL (footprint, bez elementu) | kabel TC2050 po stronie programatora |
 | LED × 3 (DONE, LINK, ACT) | |
 | Opcjonalnie: TVS 3,3 V, przycisk RECONFIG | |
 
@@ -559,7 +612,7 @@ Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny
 - [x] HCLK: w GW1N-9C HCLKMUX przenosi HCLK między bankami; PnR testowy umieścił `clk_fast` w `BANK0_BANK1_HCLK0` i `BANK2_BANK3_HCLK0` (UG286, rozdz. 2.2).
 - [x] Tryb konfiguracji w QN48: pin 48 = MODE2 + MODE1, MODE0 wewnętrznie do masy; pin 48 ściągnięty do masy daje AUTOBOOT (UG114, UG290 tab. 5-1).
 - [x] Zasilanie QN48 (UG114): VCC — piny 12 i 37, VCCX — pin 36, VCCIO0/VCCIO3 — pin 1, VCCIO1/VCCIO2 — pin 25, VSS — piny 2 i 26 oraz EPAD.
-- [ ] Minimalna amplituda wejścia TD wybranego modułu SFP względem VOD FPGA (500 mVppd min).
+- [ ] Minimalna amplituda wejścia TD wybranego modułu SFP względem VOD FPGA (INF-8074i: 500 mVppd min).
 - [ ] Czy wybrany moduł SFP nie ma wewnętrznego CDR (moduły z CDR nie zadziałają przy 100 Mbaud).
 - [ ] Generowanie VHDL dla FIFO IP Gowin (jeśli nie — własne `async_fifo`).
 - [ ] Timing xSPI przy 50 MHz: setup/hold FPGA vs STM32 OCTOSPI (dummy cycles, opóźnienie próbkowania po stronie MCU).
@@ -577,6 +630,6 @@ Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny
 | UG284 — GW1N/GW1NR Schematic Manual | zasilanie, odsprzęganie, piny konfiguracyjne |
 | UG285 — BSRAM & SSRAM User Guide | SDPB, FIFO |
 | SUG935 — Physical Constraints | składnia .cst |
-| SFF-8431 / SFP MSA (INF-8074) | elektryka i zasilanie SFP |
+| INF-8074i — SFP MSA | pinout złącza, sygnały sterujące, poziomy TD/RD, filtr zasilania ([`datasheets/INF-8074i.pdf`](datasheets/INF-8074i.pdf)) |
 | SFF-8472 | mapa pamięci DDM (A0h/A2h) |
 | Xilinx XAPP224 / XAPP523 | odzysk danych z nadpróbkowania |

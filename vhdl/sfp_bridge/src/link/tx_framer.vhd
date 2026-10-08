@@ -26,8 +26,9 @@
 --   char_en. After reset the prepared character is K28.5.
 --
 -- Assumptions:
---   * char_en pulses at most once every 4 clock cycles (nominally every 10:
---     one symbol per 10 bit periods); the FIFO has a 1-cycle read latency.
+--   * char_en pulses at most once every 4 clock cycles (nominally every 5
+--     cycles of clk_sys = 50 MHz: one symbol per 10 bit periods, ADR 0007);
+--     the FIFO has a 1-cycle read latency.
 --     This leaves time to prefetch the next byte and to finish the CRC.
 --   * LEN = 0 is sent as a frame without payload; LEN > MAX_LEN is sent with
 --     its full length (keeps the FIFO aligned) and flagged on len_err; the

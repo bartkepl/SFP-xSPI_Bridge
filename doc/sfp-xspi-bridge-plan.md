@@ -31,7 +31,7 @@ Wewnątrz FPGA:
 ```
  xSPI slave ─> rejestry/CSR ─┬─> TX FIFO ─> framer ─> CRC32 ─> enc 8b/10b ─> serializer ─> TLVDS_OBUF ─> SFP TD±
   (domena SCLK)              │
-                             ├─< RX FIFO <─ deframer <─ CRC check <─ dec 8b/10b <─ comma align <─ soft-CDR <─ IDES4 <─ TLVDS_IBUF <─ SFP RD±
+                             ├─< RX FIFO <─ deframer <─ CRC check <─ dec 8b/10b <─ comma align <─ soft-CDR <─ IDES8 <─ TLVDS_IBUF <─ SFP RD±
                              │
                              ├─> I2C master + mailbox + autopolling DDM ─> SFP SCL/SDA
                              └─> GPIO SFP, LED, IRQ
@@ -42,8 +42,8 @@ Domeny zegarowe:
 | Domena | Źródło | Częstotliwość | Co pracuje |
 |---|---|---|---|
 | `clk_spi` | pin SCLK od MCU | do 50 MHz (cel: 25–50 MHz) | slave xSPI, strona zapisu/odczytu FIFO od hosta |
-| `clk_fast` | PLL | 200 MHz | FCLK gearboxa IDES4 (i opcjonalnie OSER4) |
-| `clk_sys` | CLKDIV(/2) z `clk_fast` | 100 MHz | całe łącze: CDR, 8b/10b, framer, CRC, I2C, CSR |
+| `clk_fast` | PLL | 200 MHz | FCLK serializerów IDES8 / OSER8 |
+| `clk_sys` | CLKDIV(/4) z `clk_fast` | 50 MHz | całe łącze: CDR, 8b/10b, framer, CRC, FIFO (strona łącza), I2C, UART, CSR — [ADR 0007](adr/0007-zegar-systemowy-50mhz.md) |
 
 Przejścia między domenami: asynchroniczne FIFO (BSRAM w trybie semi-dual port, liczniki w kodzie Graya) oraz synchronizatory 2-FF dla pojedynczych bitów.
 
@@ -60,8 +60,8 @@ Kolumna GW1N-4 pozostaje dla porównania; układem docelowym jest GW1N-9 ([ADR 0
 | PLL | 2 | 2 | |
 | User Flash | 256 kbit | 608 kbit | wewnętrzny Flash konfiguracji + user Flash |
 | QN48: I/O użytkownika (pary true LVDS) | **40 (9)** | **40 (12)** | QN48F dla GW1N-9: 40 (11) |
-| IDES4, max szybkość szeregowa (C6/I5) | 750 Mbps | 750 Mbps | wykorzystujemy 400 Msps |
-| IDES8/10, max (C6/I5) | 1000 Mbps | 1000 Mbps | rezerwa na wyższe prędkości |
+| IDES4, max szybkość szeregowa (C6/I5) | 750 Mbps | 750 Mbps | |
+| IDES8/10, max (C6/I5) | 1000 Mbps | 1000 Mbps | wykorzystujemy IDES8/OSER8 przy 400 Msps |
 | PLL FIN | 3–400 MHz | 3–400 MHz | |
 | PLL VCO (C6/I5) | 400–1000 MHz | 400–1200 MHz | |
 | PLL FOUT max (C6/I5) | 500 MHz | 600 MHz | |
@@ -117,7 +117,7 @@ Nazwy sieci w schemacie pisane są wielkimi literami, porty VHDL małymi (`SFP_T
 |---|---|---|---|---|---|---|
 | `SFP_TD_P` | out | LVDS25, DRIVE=3.5 | **34** | 1 | IOR11A (MI/D7) | para z wyjściem true LVDS; funkcja MSPI nieużywana w AUTOBOOT |
 | `SFP_TD_N` | out | LVDS25 | **33** | 1 | IOR11B (MO/D6) | |
-| `SFP_RD_P` | in | LVDS25 | **43** | 0 | IOT32A | IDES4; terminacja zewnętrzna (5.2), wewnętrzna jako opcja awaryjna |
+| `SFP_RD_P` | in | LVDS25 | **43** | 0 | IOT32A | IDES8; terminacja zewnętrzna (5.2), wewnętrzna jako opcja awaryjna |
 | `SFP_RD_N` | in | LVDS25 | **42** | 0 | IOT32B | |
 | `CLK_25M` | in | LVCMOS33 | **35** | 1 | IOR5A (RPLL_T_in) | dedykowane wejście prawego PLL |
 | `XSPI_SCLK` | in | LVCMOS33 | **19** | 2 | IOB29A (GCLKT_4) | wejście zegara globalnego, środek magistrali |
@@ -165,8 +165,8 @@ Piny konfiguracyjne i zasilania, **nieużywane jako GPIO**:
 1. **Wszystkie banki VCCIO = 3,3 V.** LVDS25 (TLVDS) działa przy VCCIO 2,5/3,3 V jako wejście i wyjście (DS100, tab. 2-1, 2-2).
 2. **TD wyłącznie na parze z wyjściem true LVDS** (kolumna „LVDS” = TRUE w UG114). Umieszczenie `TLVDS_OBUF` na parze bez tej cechy (np. 45/44, 39/38) kończy się błędem CT1005.
 3. **RD na dowolnej parze różnicowej** — wejście `TLVDS_IBUF` obsługują wszystkie banki. Atrybut `DIFF_RESISTOR` jest akceptowany wyłącznie w banku 0 (poza nim błąd CT1118, także przy wartości `OFF`); po przeniesieniu RD poza bank 0 atrybut należy usunąć.
-4. **IDES4/OSER4:** HCLK z PLL obejmuje wszystkie banki (PnR: `BANK0_BANK1_HCLK0`, `BANK2_BANK3_HCLK0`); w GW1N-9 nie ma pinów bez IO logic.
-5. **`XSPI_SCLK` na pinie GCLKT.** Przy 25–50 MHz SCLK nie da się go nadpróbkować zegarem 100 MHz. Pin GCLKC tej samej pary pozostaje zwykłym I/O.
+4. **IDES8/OSER8:** HCLK z PLL obejmuje wszystkie banki (PnR: `BANK0_BANK1_HCLK0`, `BANK2_BANK3_HCLK0`); w GW1N-9 nie ma pinów bez IO logic.
+5. **`XSPI_SCLK` na pinie GCLKT.** Przy 25–50 MHz SCLK nie da się go nadpróbkować zegarem `clk_sys`. Pin GCLKC tej samej pary pozostaje zwykłym I/O.
 6. **Magistrala xSPI w jednym banku** (bank 2, dolna krawędź) z krótkimi i równymi ścieżkami.
 7. **`CLK_25M` na dedykowanym wejściu PLL.** Wejście przez sieć globalną (pin GCLKT) działa, ale dodaje jitter na wejściu PLL.
 8. **Piny MSPI (31–34)** pracują jako GPIO dzięki opcji `-use_mspi_as_gpio 1`; wymaga to trybu AUTOBOOT (pin 48 do masy).
@@ -200,14 +200,14 @@ Jako alternatyw **nie** wolno użyć pinów 3–9 i 48 (konfiguracja) ani 1, 2, 
 ```
 CLK_25M (25 MHz, ±25 ppm, CMOS 3,3 V)
    └─> rPLL: IDIV=1, FBDIV=8, ODIV=4  → VCO = 800 MHz, CLKOUT = 200 MHz  (clk_fast, HCLK)
-          └─> CLKDIV (DIV_MODE="2")   → 100 MHz                           (clk_sys)
+          └─> CLKDIV (DIV_MODE="4")   → 50 MHz                            (clk_sys)
 ```
 
-- 200 MHz FCLK × DDR daje **400 Msps**, czyli dokładnie **4× nadpróbkowanie przy 100 Mbaud**. IDES4 oddaje 4 próbki co takt `clk_sys` (100 MHz).
+- 200 MHz FCLK × DDR daje **400 Msps**, czyli dokładnie **4× nadpróbkowanie przy 100 Mbaud**. IDES8 oddaje 8 próbek (2 bity) co takt `clk_sys` (50 MHz) — [ADR 0007](adr/0007-zegar-systemowy-50mhz.md).
 - VCO 800 MHz mieści się w zakresie 400–1200 MHz (GW1N-9 C6/I5).
 - `CLKDIV` zamiast drugiego wyjścia PLL, żeby `clk_sys` był fazowo powiązany z FCLK gearboxa (wymagane przez IDES/OSER).
-- Oba końce łącza pracują na niezależnych generatorach. Różnicę ppm absorbuje sam CDR z nadpróbkowaniem (wydaje 0, 1 lub 2 bity na takt), więc **bufor elastyczny nie jest potrzebny**.
-- Docelowo wyższe prędkości: 125 Mbaud → `clk_fast` = 250 MHz, `clk_sys` = 125 MHz (VCO 1000 MHz, w zakresie GW1N-9 do 1200 MHz). Prędkość linii parametryzowana stałymi w pakiecie VHDL.
+- Oba końce łącza pracują na niezależnych generatorach. Różnicę ppm absorbuje sam CDR z nadpróbkowaniem (wydaje 1, 2 lub 3 bity na takt, nominalnie 2), więc **bufor elastyczny nie jest potrzebny**.
+- Docelowo wyższe prędkości: 125 Mbaud → `clk_fast` = 250 MHz, `clk_sys` = 62,5 MHz (VCO 1000 MHz, w zakresie GW1N-9 do 1200 MHz). Prędkość linii parametryzowana stałymi w pakiecie VHDL.
 
 ---
 
@@ -517,9 +517,9 @@ vhdl/
       tx_framer.vhd           -- SOF/EOF, długość, idle
       crc32.vhd               -- CRC-32 (bajtowo)
       enc_8b10b.vhd
-      tx_phy.vhd              -- rejestr wyjściowy / OSER4 + TLVDS_OBUF
-      rx_phy.vhd              -- TLVDS_IBUF + IDES4
-      cdr_os4.vhd             -- odzysk danych z 4× nadpróbkowania
+      tx_phy.vhd              -- OSER8 (bity powielone 4×) + TLVDS_OBUF
+      rx_phy.vhd              -- TLVDS_IBUF + IDES8
+      cdr_os4x8.vhd           -- odzysk danych z 4× nadpróbkowania, 8 próbek na takt
       comma_align.vhd         -- wyrównanie do K28.5
       dec_8b10b.vhd           -- dekoder + błędy kodu/dysparytetu
       rx_deframer.vhd         -- SOF/EOF, długość, sprawdzenie CRC
@@ -530,7 +530,7 @@ vhdl/
       leds.vhd
   sim/
     tb_enc_dec_8b10b.vhd
-    tb_cdr_os4.vhd            -- z modelowanym odchyleniem ±100 ppm i jitterem
+    tb_cdr_os4x8.vhd          -- z modelowanym odchyleniem ±100 ppm i jitterem
     tb_link_loopback.vhd      -- TX → (model kanału) → RX
     tb_xspi_slave.vhd         -- model STM32 OCTOSPI w trybach 1-1-1/1-1-4/1-1-8
 ```
@@ -538,7 +538,7 @@ vhdl/
 ### 7.2 Moduły — co powinny zawierać
 
 **`clk_rst`**
-- `rPLL` (25 → 200 MHz), `CLKDIV` (/2 → 100 MHz).
+- `rPLL` (25 → 200 MHz), `CLKDIV` (/4 → 50 MHz).
 - Reset globalny trzymany do `LOCK` PLL. Osobne synchronizatory resetu dla `clk_sys` i `clk_spi` (reset asynchroniczny, zwalnianie synchroniczne).
 
 **`xspi_slave`** (domena `clk_spi`, CS_N jako asynchroniczny reset maszyny stanów)
@@ -567,16 +567,15 @@ vhdl/
 - Dekoder zgłasza flagi `code_err` i `disp_err`.
 
 **`tx_phy`**
-- Wariant A (prostszy): serializacja 10 → 1 w `clk_sys` (100 MHz = 100 Mbaud), rejestr wyjściowy w IOB → `TLVDS_OBUF`.
-- Wariant B: `OSER4` taktowany `clk_fast`/`clk_sys`, każdy bit powielony 4×. Daje identyczne opóźnienia jak tor RX i łatwe przejście na wyższe prędkości.
+- `OSER8` taktowany `clk_fast` (FCLK) / `clk_sys` (PCLK), 2 bity na takt `clk_sys`, każdy bit powielony 4× → `TLVDS_OBUF`. Symbol 10-bitowy = 5 taktów.
 
-**`rx_phy`** — `TLVDS_IBUF` → `IDES4` (FCLK = 200 MHz, PCLK = 100 MHz) → 4 próbki na takt `clk_sys`.
+**`rx_phy`** — `TLVDS_IBUF` → `IDES8` (FCLK = 200 MHz, PCLK = 50 MHz) → 8 próbek na takt `clk_sys`.
 
-**`cdr_os4`** (serce odbiornika, wzorowany na XAPP224 / XAPP523)
-- Wejście: 4 próbki na takt. Wykrywanie zboczy między kolejnymi próbkami (także między taktami).
+**`cdr_os4x8`** (serce odbiornika, wzorowany na XAPP224 / XAPP523)
+- Wejście: 8 próbek na takt (2 bity × 4 próbki). Wykrywanie zboczy między kolejnymi próbkami (także między taktami).
 - Statystyka zboczy w oknie kilkunastu taktów → wybór fazy próbkowania najdalej od zboczy.
-- Śledzenie dryfu: przy zawinięciu fazy wydanie **0 albo 2 bitów** zamiast 1, co kompensuje różnicę ppm.
-- Wyjście: `bit_valid(1:0)` + `bits(1:0)` do rejestru przesuwnego.
+- Śledzenie dryfu: przy zawinięciu fazy wydanie **1 albo 3 bitów** zamiast 2, co kompensuje różnicę ppm.
+- Wyjście: liczba bitów (1–3) + `bits(2:0)` do rejestru przesuwnego.
 - Filtr histerezy, żeby jitter nie przełączał fazy co takt.
 
 **`comma_align`**
@@ -673,9 +672,9 @@ Zasady:
 
 ### 7.6 Prymitywy Gowin (VHDL)
 
-Deklaracje komponentów są w bibliotece prymitywów dostarczanej z Gowin EDA. Użyte prymitywy: `rPLL`, `CLKDIV`, `TLVDS_IBUF`, `TLVDS_OBUF`, `IDES4`, opcjonalnie `OSER4`, `IODELAY` (strojenie fazy RX), `SDPB` (BSRAM semi-dual port) lub wnioskowanie RAM z kodu, `IOBUF` (I2C, xSPI IO).
+Deklaracje komponentów są w bibliotece prymitywów dostarczanej z Gowin EDA. Użyte prymitywy: `rPLL`, `CLKDIV`, `TLVDS_IBUF`, `TLVDS_OBUF`, `IDES8`, `OSER8`, `IODELAY` (strojenie fazy RX), `SDPB` (BSRAM semi-dual port) lub wnioskowanie RAM z kodu, `IOBUF` (I2C, xSPI IO).
 
-Plan weryfikacji: symulacja w GHDL lub ModelSim z modelami prymitywów Gowin. Testbench `tb_cdr_os4` z odchyleniem częstotliwości ±100 ppm i losowym jitterem ±0,2 UI.
+Plan weryfikacji: symulacja w GHDL lub ModelSim z modelami prymitywów Gowin. Testbench `tb_cdr_os4x8` z odchyleniem częstotliwości ±100 ppm i losowym jitterem ±0,2 UI.
 
 ---
 
@@ -729,7 +728,7 @@ Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny
 3. Odczyt EEPROM SFP przez mailbox I2C (vendor, part number) i DDM.
 4. Near-end loopback w FPGA (bez optyki): ramki TX → RX, liczniki CRC = 0.
 5. **Niska prędkość linii (10–25 Mbaud)** na dwóch modułach połączonych patchcordem: wykres oczkowy na RD±, CDR na 8–10× nadpróbkowaniu w logice.
-6. 100 Mbaud z IDES4, test BER (pseudolosowe ramki, liczniki, ≥ 10¹² bitów).
+6. 100 Mbaud z IDES8, test BER (pseudolosowe ramki, liczniki, ≥ 10¹² bitów).
 7. Test z tłumikiem optycznym i różnymi modułami (MM, SM, BiDi).
 8. Opcjonalnie: 125 Mbaud i wyżej.
 

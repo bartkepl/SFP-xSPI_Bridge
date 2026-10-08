@@ -39,7 +39,7 @@ Aktualizacja o bajt jest liniowa w GF(2): każdy bit nowego rejestru to XOR wybr
 
 **Opóźnienie:** wynik w rejestrze po zboczu, w którym `en = '1'`; wyjścia są kombinacyjne z rejestru.
 
-**Zapas czasowy:** przy `clk_sys` = 100 MHz zapas wynosi ok. 25%. Dla 125 Mbaud (`clk_sys` = 125 MHz) CRC znajdzie się na granicy; wtedy przewiduje się aktualizację dwutaktową (bajt nadawany jest co 10 taktów, więc przepustowość pozostaje wystarczająca).
+**Zapas czasowy:** ścieżka krytyczna 7,6 ns (ok. 130 MHz) przy `clk_sys` = 50 MHz ([ADR 0007](../adr/0007-zegar-systemowy-50mhz.md)) — także przy 125 Mbaud (`clk_sys` = 62,5 MHz).
 
 ## Testbench `tb_crc32`
 

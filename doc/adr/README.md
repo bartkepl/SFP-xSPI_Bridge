@@ -30,3 +30,4 @@ Plik `NNNN-krotki-opis.md`, numeracja od `0001`:
 | [0004](0004-strategia-resetu.md) | Reset synchroniczny w domenie, asynchroniczne załączenie i synchroniczne zwolnienie na wejściu domeny | przyjęta |
 | [0005](0005-protokol-lacza.md) | Protokół łącza: ramka z CRC-32 bez retransmisji, XON/XOFF w sekwencji bezczynności | przyjęta |
 | [0006](0006-tryb-uart-przezroczysty.md) | Tryb przezroczysty UART obok trybu xSPI (zworka MODE_SEL, 115200, opcjonalne RTS/CTS) | przyjęta |
+| [0007](0007-zegar-systemowy-50mhz.md) | Zegar systemowy 50 MHz z serializerami IDES8/OSER8 | przyjęta |

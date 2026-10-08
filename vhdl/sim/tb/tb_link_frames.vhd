@@ -8,7 +8,7 @@
 --   side B: dec_8b10b -> rx_deframer -> RX FIFO (8 KiB) -> reader
 --   reverse direction carries B's idle pairs (XON/XOFF) back to side A.
 --
--- One character per 10 clock cycles (100 Mbaud at clk_sys = 100 MHz).
+-- One character per 5 clock cycles (100 Mbaud at clk_sys = 50 MHz, ADR 0007).
 --
 -- Model: payload, type and length of frame <id> are pure functions of id;
 -- ids of frames that must arrive are queued, the reader compares every
@@ -27,7 +27,7 @@
 --      dropped, later frames delivered.
 --   5. Flow control: reader on side B stopped while 16 frames of 1000 bytes
 --      are sent (twice the RX FIFO size). Side B must send XOFF, side A must
---      pause; no overflow (ev_ovf = 0); after the reader resumes all frames
+--      pause for at least 10000 cycles; no overflow (ev_ovf = 0); after the reader resumes all frames
 --      are delivered and XOFF is released.
 --   6. Final: every expected frame received, event counters as expected,
 --      no frame delivered twice or out of order.
@@ -50,7 +50,7 @@ end entity tb_link_frames;
 
 architecture sim of tb_link_frames is
 
-  constant T_CLK   : time := 10 ns;
+  constant T_CLK   : time := 20 ns;          -- clk_sys = 50 MHz (ADR 0007)
   constant MAX_LEN : positive := 1024;
 
   -- frame content as functions of the frame id
@@ -167,13 +167,13 @@ begin
 
   clk_gen(clk, T_CLK, stop);
 
-  -- one character every 10 cycles
+  -- one character every 5 cycles (10 bits at 2 bits per clk_sys cycle)
   process (clk)
-    variable n : natural range 0 to 9 := 0;
+    variable n : natural range 0 to 4 := 0;
   begin
     if rising_edge(clk) then
       char_en <= '0';
-      if n = 9 then
+      if n = 4 then
         n := 0;
         char_en <= '1';
       else
@@ -397,7 +397,7 @@ begin
 
   ------------------------------------------------------------------ reader control (phase 5)
   -- Holds the reader while side B's RX FIFO fills, verifies that side A is
-  -- paused by XOFF for 20000 cycles, then resumes the reader.
+  -- paused by XOFF for 10000 cycles (200 us), then resumes the reader.
   reader_ctl : process
   begin
     reader_on <= true;
@@ -410,7 +410,7 @@ begin
     check_equal(b_xoff_local, '1', "phase 5: side B requests XOFF");
     check_equal(a_xoff_remote, '1', "phase 5: side A sees XOFF");
     check(a_tf_empty = '0', "phase 5: side A holds frames back");
-    for i in 1 to 20000 loop
+    for i in 1 to 10000 loop
       wait until rising_edge(clk);
       if a_busy = '1' then
         check(false, "phase 5: side A started a frame during XOFF");
@@ -460,7 +460,7 @@ begin
 
     procedure wait_frames_done(timeout_us : natural) is
     begin
-      for i in 1 to timeout_us * 100 loop
+      for i in 1 to timeout_us * 50 loop
         wait until rising_edge(clk);
         exit when expq.size = 0 and a_tf_empty = '1' and a_busy = '0' and b_busy = '0'
                   and b_rempty = '1';
@@ -542,9 +542,9 @@ begin
     ok_before := cnt_ok;
     send_frame(id, 200, 200, false); id := id + 1;
     wait until a_busy = '1';
-    for i in 1 to 600 loop wait until rising_edge(clk); end loop;   -- inside the payload
+    for i in 1 to 300 loop wait until rising_edge(clk); end loop;   -- inside the payload
     b_sync <= '0';
-    for i in 1 to 50 loop wait until rising_edge(clk); end loop;
+    for i in 1 to 25 loop wait until rising_edge(clk); end loop;
     b_sync <= '1';
     send_frame(id, 30, 30, true); id := id + 1;
     wait_frames_done(1000);

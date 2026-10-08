@@ -47,10 +47,7 @@ Bufor między domenami zegarowymi na bloku BSRAM, z **zatwierdzaniem i odrzucani
 - Flagi `full`/`empty` na następny takt wyznaczane są wyłącznie porównaniami równości z wartościami policzonymi wcześniej w rejestrach (wskaźnik − 1, wskaźnik z odwróconym bitem zawinięcia) — w pętli sprzężenia nie ma sumatora. Cztery porównania dla `empty` liczone są równolegle, multiplekser wybiera wynik 1-bitowy.
 - Konwersja Gray → binarny: zrównoważone drzewa XOR, wynik rejestrowany.
 
-Próbna synteza (4096 × 8, oba zegary 100 MHz, GW1N-9C): 273 LUT, 190 rejestrów, 2 BSRAM; Fmax zapisu 101,3 MHz, odczytu 101,4 MHz.
-
-!!! warning "Zapas czasowy"
-    Przy 100 MHz zapas wynosi ok. 1%. Ścieżki krytyczne (porównania i liczniki 13-bitowe) mają po ok. 9 ns — to granica szybkości logiki GW1N-9, a nie pojedyncze wąskie gardło. W mostku strona FIFO w `clk_sys` przetwarza bajt najwyżej co 10 taktów, a strona `clk_spi` pracuje z częstotliwością ≤ 50 MHz. Jeżeli po integracji timing nie zostanie domknięty, rozważany jest wariant `clk_sys` = 50 MHz z IDES8 (8 próbek na takt) — decyzja na etapie modułów warstwy fizycznej.
+Próbna synteza (4096 × 8, oba zegary 100 MHz, GW1N-9C): 273 LUT, 190 rejestrów, 2 BSRAM; Fmax zapisu 101,3 MHz, odczytu 101,4 MHz. W mostku FIFO pracuje przy `clk_sys` = 50 MHz ([ADR 0007](../adr/0007-zegar-systemowy-50mhz.md)) i `clk_spi` ≤ 50 MHz — zapas ok. 2×. Ścieżki krytyczne (porównania i liczniki 13-bitowe, ok. 9 ns) wyznaczają granicę szybkości logiki GW1N-9.
 
 ## Testbench `tb_async_fifo`
 

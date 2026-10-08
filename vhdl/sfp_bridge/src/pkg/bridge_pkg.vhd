@@ -16,10 +16,14 @@ package bridge_pkg is
   ------------------------------------------------------------------------------
   -- Reference oscillator Y1 on pin 35 (RPLL_T_in)
   constant CLK_REF_HZ  : natural := 25_000_000;
-  -- Line rate (baud) and derived clocks: clk_sys = line rate, clk_fast = 2x
-  constant LINE_BAUD   : natural := 100_000_000;
-  constant CLK_SYS_HZ  : natural := LINE_BAUD;
-  constant CLK_FAST_HZ : natural := 2 * LINE_BAUD;
+  -- Line rate (baud) and derived clocks (ADR 0007):
+  --   clk_fast = 2 x line rate (FCLK of IDES8/OSER8, DDR -> 4 samples per bit)
+  --   clk_sys  = clk_fast / 4  (PCLK; 8 samples = 2 bits per cycle)
+  constant LINE_BAUD     : natural := 100_000_000;
+  constant CLK_FAST_HZ   : natural := 2 * LINE_BAUD;
+  constant CLK_SYS_HZ    : natural := CLK_FAST_HZ / 4;
+  constant BITS_PER_CLK  : natural := 2;                  -- nominal, at clk_sys
+  constant CLKS_PER_CHAR : natural := 10 / BITS_PER_CLK;  -- 5 clk_sys cycles per symbol
 
   ------------------------------------------------------------------------------
   -- Identification (CSR 0x00 / 0x01)

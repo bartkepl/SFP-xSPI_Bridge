@@ -37,7 +37,7 @@
 --
 -- Assumptions:
 --   * Characters arrive at most once every 4 clock cycles (nominally every
---     10 cycles); char_valid marks a character.
+--     5 cycles of clk_sys = 50 MHz, ADR 0007); char_valid marks a character.
 --   * wr_free is the async_fifo write-side free count (one cycle behind,
 --     overstates by at most one word); the space check adds one word.
 --------------------------------------------------------------------------------

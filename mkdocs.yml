@@ -48,6 +48,7 @@ nav:
   - Start: index.md
   - Plan konstrukcji: sfp-xspi-bridge-plan.md
   - "Interfejs hosta (datasheet)": datasheet/index.md
+  - Biblioteka C (STM32): firmware.md
   - VHDL:
       - vhdl/index.md
       - Konwencje kodu: vhdl/konwencje.md

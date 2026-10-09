@@ -11,6 +11,8 @@ STM32 <== xSPI ==> GW1N-9 <== LVDS ==> SFP ~~~ światłowód ~~~ SFP <==> GW1N-9
 | Część | Zawartość |
 |---|---|
 | [Plan konstrukcji](sfp-xspi-bridge-plan.md) | architektura, przydział pinów, zegary, PCB, moduły VHDL, komendy xSPI, rejestry, biblioteka C, plan uruchomienia |
+| [Interfejs hosta (datasheet)](datasheet/index.md) | komendy xSPI, mapa rejestrów, tryb UART, parametry czasowe |
+| [Biblioteka C (STM32)](firmware.md) | konfiguracja, porty HAL, API, weryfikacja |
 | [VHDL](vhdl/index.md) | struktura projektu FPGA, konwencje kodu, symulacja, opisy modułów |
 | [Decyzje (ADR)](adr/README.md) | rejestr decyzji projektowych z uzasadnieniem |
 

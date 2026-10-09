@@ -432,6 +432,8 @@ Konfiguracja OCTOSPI w trybie pośrednim (indirect): instrukcja 8-bitowa na 1 li
 
 ### 8.2 Przykład: inicjalizacja i wymiana ramek
 
+Poniższa sekwencja pokazuje kolejność komend; gotową implementację dla STM32 zawiera [biblioteka C](../firmware.md).
+
 ```c
 /* 1. gotowość */
 do { read_id(id, 2); } while (id[0] != 0x5B || id[1] != 0x5F);

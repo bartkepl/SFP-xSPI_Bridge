@@ -727,44 +727,24 @@ Decyzja i uzasadnienie: [ADR 0006](adr/0006-tryb-uart-przezroczysty.md).
 
 ## 8. Biblioteka C dla STM32
 
-```
-firmware/sfp_bridge/
-  include/sfp_bridge.h
-  src/sfp_bridge.c          -- logika: ramki, rejestry, I2C SFP, DDM
-  port/sfp_bridge_port.h    -- warstwa abstrakcji transportu
-  port/stm32_ospi_port.c    -- HAL_XSPI / HAL_OSPI (H5/H7/U5)
-  port/stm32_qspi_port.c    -- HAL_QSPI (F7/H7)
-  port/stm32_spi_port.c     -- HAL_SPI + DMA
-```
+Biblioteka `sfp_bridge` — gotowa, [opis](firmware.md). C11, bez dynamicznej alokacji, prefiks `sfpb_`, konfiguracja przez `#define` w `sfpb_config.h`.
 
-Warstwa portu (do zaimplementowania per MCU):
-
-```c
-typedef struct {
-    int (*cmd_write)(void *ctx, uint8_t opcode, const uint8_t *addr, uint8_t addr_len,
-                     const uint8_t *data, size_t len, uint8_t data_lines);
-    int (*cmd_read)(void *ctx, uint8_t opcode, const uint8_t *addr, uint8_t addr_len,
-                    uint8_t dummy_cycles, uint8_t *data, size_t len, uint8_t data_lines);
-    void (*delay_ms)(uint32_t ms);
-    void *ctx;
-} sfpb_port_t;
+```
+firmware/
+  sfp_bridge/include/   sfp_bridge.h (API), sfpb_regs.h (komendy, rejestry),
+                        sfpb_port.h (transport), sfpb_config_default.h
+  sfp_bridge/config/    sfpb_config_template.h
+  sfp_bridge/src/       sfp_bridge.c (transakcje, rejestry, ramki, zdarzenia,
+                        liczniki, UART), sfpb_sfp.c (I2C, identyfikacja, DDM)
+  sfp_bridge/port/      sfpb_port_ospi.c, sfpb_port_xspi.c, sfpb_port_qspi.c,
+                        sfpb_port_spi.c (HAL + GPIO CS), sfpb_port_stm32.c
+  examples/             example_bridge.c
+  tests/                testy na PC z modelem mostka (make)
 ```
 
-API (szkic):
-
-```c
-int  sfpb_init(sfpb_t *dev, const sfpb_port_t *port, uint8_t data_lines);   // 1, 4 lub 8
-int  sfpb_link_status(sfpb_t *dev, sfpb_status_t *st);
-int  sfpb_send(sfpb_t *dev, const void *buf, uint16_t len);                // blokująco lub z timeoutem
-int  sfpb_recv(sfpb_t *dev, void *buf, uint16_t maxlen, uint16_t *len);
-int  sfpb_irq_handler(sfpb_t *dev);                                         // z EXTI na HOST_IRQ_N
-int  sfpb_sfp_read(sfpb_t *dev, uint8_t i2c_addr, uint8_t off, void *buf, uint8_t len);
-int  sfpb_sfp_ddm(sfpb_t *dev, sfpb_ddm_t *ddm);                            // przeliczone jednostki
-int  sfpb_set_loopback(sfpb_t *dev, sfpb_loopback_t mode);
-int  sfpb_counters(sfpb_t *dev, sfpb_counters_t *cnt);
-```
-
-Założenia: bez dynamicznej alokacji, obsługa DMA w warstwie portu, opcjonalny tryb nieblokujący z callbackami.
+- Transport: `SFPB_TRANSPORT_OSPI` / `_XSPI` / `_QSPI` / `_SPI` (porty HAL, opcjonalnie DMA) lub `_CUSTOM` (struktura `sfpb_port_t`: transakcja xSPI, `HOST_RST_N`, zegar ms, opóźnienie). Port domyślny z makr konfiguracji; kolejne mostki — porty budowane w czasie wykonania.
+- Funkcje: ramki (`sfpb_send()`, `sfpb_recv()` z obsługą obcięcia), rejestry i stan, przerwania (`sfpb_irq_notify()` z EXTI, `sfpb_process()` z wywołaniami zwrotnymi), liczniki, pamięć modułu SFP i identyfikacja, DDM w jednostkach SFF-8472 z kalibracją wewnętrzną i zewnętrzną, alarmy, tryb UART (`UART_DIV`, RTS/CTS, `UART_STATUS`), echo ramek, reset programowy i sprzętowy.
+- Weryfikacja: testy na PC z modelem mostka na poziomie transakcji (207 sprawdzeń, kontrola każdej transakcji z tabelą komend 7.3), test mutacyjny (17 wariantów), kompilacja portów z nagłówkami STM32Cube dla L4R5 (OSPI), H563 (XSPI), F446 / L476 (QSPI), G0B1 (SPI).
 
 ---
 

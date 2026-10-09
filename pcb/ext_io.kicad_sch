@@ -1574,8 +1574,8 @@
 			(on_board yes)
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "U"
-				(at 5.08 6.35 0)
+			(property "Reference" "U1"
+				(at 24.13 -3.8099 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -1586,7 +1586,7 @@
 				)
 			)
 			(property "Value" "GW1N-6&9_QN48"
-				(at 5.08 3.81 0)
+				(at 24.13 -6.3499 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -1596,7 +1596,7 @@
 					(justify left)
 				)
 			)
-			(property "Footprint" ""
+			(property "Footprint" "Package_DFN_QFN:QFN-48-1EP_6x6mm_P0.4mm_EP4.2x4.2mm_ThermalVias"
 				(at 5.08 1.27 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1641,6 +1641,50 @@
 						(size 1.524 1.524)
 					)
 					(justify left)
+				)
+			)
+			(property "MF" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "MPN" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "PARTNO" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "LCSC" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
 				)
 			)
 			(property "ki_locked" ""
@@ -2599,6 +2643,25 @@
 						)
 					)
 				)
+				(pin power_in line
+					(at 0 -10.16 0)
+					(length 5.08)
+					(hide yes)
+					(name "EPAD"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "49"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 			)
 			(embedded_fonts no)
 		)
@@ -2611,8 +2674,8 @@
 			(on_board yes)
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "U"
-				(at 5.08 6.35 0)
+			(property "Reference" "U1"
+				(at 24.13 -3.8099 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -2623,7 +2686,7 @@
 				)
 			)
 			(property "Value" "GW1N-6&9_QN48"
-				(at 5.08 3.81 0)
+				(at 24.13 -6.3499 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -2633,7 +2696,7 @@
 					(justify left)
 				)
 			)
-			(property "Footprint" ""
+			(property "Footprint" "Package_DFN_QFN:QFN-48-1EP_6x6mm_P0.4mm_EP4.2x4.2mm_ThermalVias"
 				(at 5.08 1.27 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2678,6 +2741,50 @@
 						(size 1.524 1.524)
 					)
 					(justify left)
+				)
+			)
+			(property "MF" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "MPN" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "PARTNO" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "LCSC" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
 				)
 			)
 			(property "ki_locked" ""
@@ -3636,6 +3743,25 @@
 						)
 					)
 				)
+				(pin power_in line
+					(at 0 -10.16 0)
+					(length 5.08)
+					(hide yes)
+					(name "EPAD"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "49"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 			)
 			(embedded_fonts no)
 		)
@@ -3648,8 +3774,8 @@
 			(on_board yes)
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "U"
-				(at 5.08 6.35 0)
+			(property "Reference" "U1"
+				(at 24.13 -3.8099 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -3660,7 +3786,7 @@
 				)
 			)
 			(property "Value" "GW1N-6&9_QN48"
-				(at 5.08 3.81 0)
+				(at 24.13 -6.3499 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -3670,7 +3796,7 @@
 					(justify left)
 				)
 			)
-			(property "Footprint" ""
+			(property "Footprint" "Package_DFN_QFN:QFN-48-1EP_6x6mm_P0.4mm_EP4.2x4.2mm_ThermalVias"
 				(at 5.08 1.27 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -3715,6 +3841,50 @@
 						(size 1.524 1.524)
 					)
 					(justify left)
+				)
+			)
+			(property "MF" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "MPN" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "PARTNO" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "LCSC" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
 				)
 			)
 			(property "ki_locked" ""
@@ -4669,6 +4839,25 @@
 						(effects
 							(font
 								(size 0 0)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 -10.16 0)
+					(length 5.08)
+					(hide yes)
+					(name "EPAD"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "49"
+						(effects
+							(font
+								(size 1.27 1.27)
 							)
 						)
 					)
@@ -9115,6 +9304,9 @@
 		(pin "37"
 			(uuid "e2bf48c6-e4bb-4f10-9b76-6796cf7ce2e9")
 		)
+		(pin "49"
+			(uuid "110ed2cb-3536-4109-b23d-0b3ab0110390")
+		)
 		(instances
 			(project "SFP_xSPI_Bridge"
 				(path "/ca6491fd-e294-4986-aca7-b24059be2f57/7eb2e6d1-c37f-42de-89f7-3b01f01576cd"
@@ -10404,7 +10596,7 @@
 		(fields_autoplaced yes)
 		(uuid "75e864c5-3f62-4ccd-bc7b-dc9dd458cda8")
 		(property "Reference" "U1"
-			(at 175.26 63.4999 0)
+			(at 172.72 54.6099 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -10415,7 +10607,7 @@
 			)
 		)
 		(property "Value" "GW1N-6&9_QN48"
-			(at 175.26 66.0399 0)
+			(at 172.72 57.1499 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -10662,6 +10854,9 @@
 		)
 		(pin "37"
 			(uuid "4f24c28f-168a-4e6f-b63a-d5fb0ea11d1a")
+		)
+		(pin "49"
+			(uuid "907e10eb-81be-4fdc-ab91-f363de9084aa")
 		)
 		(instances
 			(project "SFP_xSPI_Bridge"
@@ -12078,7 +12273,7 @@
 		(fields_autoplaced yes)
 		(uuid "ce9ae3e2-4c56-424d-b8bd-de2b652b2b4f")
 		(property "Reference" "U1"
-			(at 205.74 123.1899 0)
+			(at 187.96 113.0299 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -12089,7 +12284,7 @@
 			)
 		)
 		(property "Value" "GW1N-6&9_QN48"
-			(at 205.74 125.7299 0)
+			(at 187.96 115.5699 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -12336,6 +12531,9 @@
 		)
 		(pin "37"
 			(uuid "4f24c28f-168a-4e6f-b63a-d5fb0ea11d1c")
+		)
+		(pin "49"
+			(uuid "de381d08-fc65-46e5-a63e-5349d5bfe5c5")
 		)
 		(instances
 			(project "SFP_xSPI_Bridge"

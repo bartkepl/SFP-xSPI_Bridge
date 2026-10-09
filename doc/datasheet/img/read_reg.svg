@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="854" height="244" font-family="Consolas, Menlo, monospace" font-size="11">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="8" y="18" font-size="13" font-weight="bold" fill="#1f2328">READ_REG (0x0B), format 1-1-1: odczyt STATUS (0x05) i STATUS_FAST (0x06)</text>
+<text x="8" y="63.0" fill="#1f2328">CS_N</text>
+<line x1="120.0" y1="49.0" x2="137.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="137.0" y1="49.0" x2="137.0" y2="69.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="137.0" y1="69.0" x2="817.0" y2="69.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="817.0" y1="69.0" x2="817.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="817.0" y1="49.0" x2="834.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<text x="8" y="97.0" fill="#1f2328">SCLK</text>
+<line x1="120.0" y1="103.0" x2="137.0" y2="103.0" stroke="#1565c0" stroke-width="1.4"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="137.0,103.0 145.5,103.0 145.5,83.0 154.0,83.0 154.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="154.0,103.0 162.5,103.0 162.5,83.0 171.0,83.0 171.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="171.0,103.0 179.5,103.0 179.5,83.0 188.0,83.0 188.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="188.0,103.0 196.5,103.0 196.5,83.0 205.0,83.0 205.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="205.0,103.0 213.5,103.0 213.5,83.0 222.0,83.0 222.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="222.0,103.0 230.5,103.0 230.5,83.0 239.0,83.0 239.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="239.0,103.0 247.5,103.0 247.5,83.0 256.0,83.0 256.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="256.0,103.0 264.5,103.0 264.5,83.0 273.0,83.0 273.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="273.0,103.0 281.5,103.0 281.5,83.0 290.0,83.0 290.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="290.0,103.0 298.5,103.0 298.5,83.0 307.0,83.0 307.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="307.0,103.0 315.5,103.0 315.5,83.0 324.0,83.0 324.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="324.0,103.0 332.5,103.0 332.5,83.0 341.0,83.0 341.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="341.0,103.0 349.5,103.0 349.5,83.0 358.0,83.0 358.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="358.0,103.0 366.5,103.0 366.5,83.0 375.0,83.0 375.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="375.0,103.0 383.5,103.0 383.5,83.0 392.0,83.0 392.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="392.0,103.0 400.5,103.0 400.5,83.0 409.0,83.0 409.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="409.0,103.0 417.5,103.0 417.5,83.0 426.0,83.0 426.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="426.0,103.0 434.5,103.0 434.5,83.0 443.0,83.0 443.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="443.0,103.0 451.5,103.0 451.5,83.0 460.0,83.0 460.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="460.0,103.0 468.5,103.0 468.5,83.0 477.0,83.0 477.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="477.0,103.0 485.5,103.0 485.5,83.0 494.0,83.0 494.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="494.0,103.0 502.5,103.0 502.5,83.0 511.0,83.0 511.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="511.0,103.0 519.5,103.0 519.5,83.0 528.0,83.0 528.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="528.0,103.0 536.5,103.0 536.5,83.0 545.0,83.0 545.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="545.0,103.0 553.5,103.0 553.5,83.0 562.0,83.0 562.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="562.0,103.0 570.5,103.0 570.5,83.0 579.0,83.0 579.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="579.0,103.0 587.5,103.0 587.5,83.0 596.0,83.0 596.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="596.0,103.0 604.5,103.0 604.5,83.0 613.0,83.0 613.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="613.0,103.0 621.5,103.0 621.5,83.0 630.0,83.0 630.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="630.0,103.0 638.5,103.0 638.5,83.0 647.0,83.0 647.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="647.0,103.0 655.5,103.0 655.5,83.0 664.0,83.0 664.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="664.0,103.0 672.5,103.0 672.5,83.0 681.0,83.0 681.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="681.0,103.0 689.5,103.0 689.5,83.0 698.0,83.0 698.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="698.0,103.0 706.5,103.0 706.5,83.0 715.0,83.0 715.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="715.0,103.0 723.5,103.0 723.5,83.0 732.0,83.0 732.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="732.0,103.0 740.5,103.0 740.5,83.0 749.0,83.0 749.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="749.0,103.0 757.5,103.0 757.5,83.0 766.0,83.0 766.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="766.0,103.0 774.5,103.0 774.5,83.0 783.0,83.0 783.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="783.0,103.0 791.5,103.0 791.5,83.0 800.0,83.0 800.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="800.0,103.0 808.5,103.0 808.5,83.0 817.0,83.0 817.0,103.0"/>
+<line x1="817.0" y1="103.0" x2="834.0" y2="103.0" stroke="#1565c0" stroke-width="1.4"/>
+<text x="8" y="131.0" fill="#1f2328">IO0 (host)</text>
+<line x1="120.0" y1="127.0" x2="137.0" y2="127.0" stroke="#9aa4b2" stroke-width="1.4" stroke-dasharray="3 2"/>
+<line x1="137.0" y1="137.0" x2="205.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="205.0" y1="137.0" x2="205.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="205.0" y1="117.0" x2="222.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="222.0" y1="117.0" x2="222.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="222.0" y1="137.0" x2="239.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="239.0" y1="137.0" x2="239.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="239.0" y1="117.0" x2="273.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="273.0" y1="117.0" x2="273.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="273.0" y1="137.0" x2="358.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="358.0" y1="137.0" x2="358.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="358.0" y1="117.0" x2="375.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="375.0" y1="117.0" x2="375.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="375.0" y1="137.0" x2="392.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="392.0" y1="137.0" x2="392.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="392.0" y1="117.0" x2="409.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="409.0" y1="127.0" x2="834.0" y2="127.0" stroke="#9aa4b2" stroke-width="1.4" stroke-dasharray="3 2"/>
+<text x="8" y="165.0" fill="#1f2328">IO1 (mostek)</text>
+<line x1="120.0" y1="161.0" x2="545.0" y2="161.0" stroke="#9aa4b2" stroke-width="1.4" stroke-dasharray="3 2"/>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="545.0,161.0 548.0,151.0 559.0,151.0 562.0,161.0 559.0,171.0 548.0,171.0"/>
+<text x="553.5" y="165.0" text-anchor="middle" fill="#1f2328">b7</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="562.0,161.0 565.0,151.0 576.0,151.0 579.0,161.0 576.0,171.0 565.0,171.0"/>
+<text x="570.5" y="165.0" text-anchor="middle" fill="#1f2328">b6</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="579.0,161.0 582.0,151.0 593.0,151.0 596.0,161.0 593.0,171.0 582.0,171.0"/>
+<text x="587.5" y="165.0" text-anchor="middle" fill="#1f2328">b5</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="596.0,161.0 599.0,151.0 610.0,151.0 613.0,161.0 610.0,171.0 599.0,171.0"/>
+<text x="604.5" y="165.0" text-anchor="middle" fill="#1f2328">b4</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="613.0,161.0 616.0,151.0 627.0,151.0 630.0,161.0 627.0,171.0 616.0,171.0"/>
+<text x="621.5" y="165.0" text-anchor="middle" fill="#1f2328">b3</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="630.0,161.0 633.0,151.0 644.0,151.0 647.0,161.0 644.0,171.0 633.0,171.0"/>
+<text x="638.5" y="165.0" text-anchor="middle" fill="#1f2328">b2</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="647.0,161.0 650.0,151.0 661.0,151.0 664.0,161.0 661.0,171.0 650.0,171.0"/>
+<text x="655.5" y="165.0" text-anchor="middle" fill="#1f2328">b1</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="664.0,161.0 667.0,151.0 678.0,151.0 681.0,161.0 678.0,171.0 667.0,171.0"/>
+<text x="672.5" y="165.0" text-anchor="middle" fill="#1f2328">b0</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="681.0,161.0 684.0,151.0 695.0,151.0 698.0,161.0 695.0,171.0 684.0,171.0"/>
+<text x="689.5" y="165.0" text-anchor="middle" fill="#1f2328">b7</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="698.0,161.0 701.0,151.0 712.0,151.0 715.0,161.0 712.0,171.0 701.0,171.0"/>
+<text x="706.5" y="165.0" text-anchor="middle" fill="#1f2328">b6</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="715.0,161.0 718.0,151.0 729.0,151.0 732.0,161.0 729.0,171.0 718.0,171.0"/>
+<text x="723.5" y="165.0" text-anchor="middle" fill="#1f2328">b5</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="732.0,161.0 735.0,151.0 746.0,151.0 749.0,161.0 746.0,171.0 735.0,171.0"/>
+<text x="740.5" y="165.0" text-anchor="middle" fill="#1f2328">b4</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="749.0,161.0 752.0,151.0 763.0,151.0 766.0,161.0 763.0,171.0 752.0,171.0"/>
+<text x="757.5" y="165.0" text-anchor="middle" fill="#1f2328">b3</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="766.0,161.0 769.0,151.0 780.0,151.0 783.0,161.0 780.0,171.0 769.0,171.0"/>
+<text x="774.5" y="165.0" text-anchor="middle" fill="#1f2328">b2</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="783.0,161.0 786.0,151.0 797.0,151.0 800.0,161.0 797.0,171.0 786.0,171.0"/>
+<text x="791.5" y="165.0" text-anchor="middle" fill="#1f2328">b1</text>
+<polygon fill="#fff3e0" stroke="#1565c0" stroke-width="1" points="800.0,161.0 803.0,151.0 814.0,151.0 817.0,161.0 814.0,171.0 803.0,171.0"/>
+<text x="808.5" y="165.0" text-anchor="middle" fill="#1f2328">b0</text>
+<line x1="817.0" y1="161.0" x2="834.0" y2="161.0" stroke="#9aa4b2" stroke-width="1.4" stroke-dasharray="3 2"/>
+<path d="M137.0 186.0 v6 H273.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="205.0" y="205.0" text-anchor="middle" fill="#1f2328">instrukcja 0x0B</text>
+<path d="M273.0 186.0 v6 H409.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="341.0" y="205.0" text-anchor="middle" fill="#1f2328">adres 0x05</text>
+<path d="M409.0 186.0 v6 H545.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="477.0" y="205.0" text-anchor="middle" fill="#1f2328">8 cykli dummy</text>
+<path d="M545.0 186.0 v6 H681.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="613.0" y="205.0" text-anchor="middle" fill="#1f2328">dane [0x05]</text>
+<path d="M681.0 186.0 v6 H817.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="749.0" y="205.0" text-anchor="middle" fill="#1f2328">dane [0x06]</text>
+<text x="8" y="220" fill="#1f2328">Bity od najstarszego; host wystawia na zboczu opadającym, mostek próbkuje na narastającym.</text>
+<text x="8" y="236" fill="#1f2328">Adres zwiększa się po każdym bajcie.</text>
+</svg>

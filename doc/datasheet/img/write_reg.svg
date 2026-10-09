@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="556" height="244" font-family="Consolas, Menlo, monospace" font-size="11">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="8" y="18" font-size="13" font-weight="bold" fill="#1f2328">WRITE_REG (0x02), format 1-1-1: zapis IRQ_EN (0x07) = 0x11</text>
+<text x="8" y="63.0" fill="#1f2328">CS_N</text>
+<line x1="120.0" y1="49.0" x2="136.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="136.0" y1="49.0" x2="136.0" y2="69.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="136.0" y1="69.0" x2="520.0" y2="69.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="520.0" y1="69.0" x2="520.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="520.0" y1="49.0" x2="536.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<text x="8" y="97.0" fill="#1f2328">SCLK</text>
+<line x1="120.0" y1="103.0" x2="136.0" y2="103.0" stroke="#1565c0" stroke-width="1.4"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="136.0,103.0 144.0,103.0 144.0,83.0 152.0,83.0 152.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="152.0,103.0 160.0,103.0 160.0,83.0 168.0,83.0 168.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="168.0,103.0 176.0,103.0 176.0,83.0 184.0,83.0 184.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="184.0,103.0 192.0,103.0 192.0,83.0 200.0,83.0 200.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="200.0,103.0 208.0,103.0 208.0,83.0 216.0,83.0 216.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="216.0,103.0 224.0,103.0 224.0,83.0 232.0,83.0 232.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="232.0,103.0 240.0,103.0 240.0,83.0 248.0,83.0 248.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="248.0,103.0 256.0,103.0 256.0,83.0 264.0,83.0 264.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="264.0,103.0 272.0,103.0 272.0,83.0 280.0,83.0 280.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="280.0,103.0 288.0,103.0 288.0,83.0 296.0,83.0 296.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="296.0,103.0 304.0,103.0 304.0,83.0 312.0,83.0 312.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="312.0,103.0 320.0,103.0 320.0,83.0 328.0,83.0 328.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="328.0,103.0 336.0,103.0 336.0,83.0 344.0,83.0 344.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="344.0,103.0 352.0,103.0 352.0,83.0 360.0,83.0 360.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="360.0,103.0 368.0,103.0 368.0,83.0 376.0,83.0 376.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="376.0,103.0 384.0,103.0 384.0,83.0 392.0,83.0 392.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="392.0,103.0 400.0,103.0 400.0,83.0 408.0,83.0 408.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="408.0,103.0 416.0,103.0 416.0,83.0 424.0,83.0 424.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="424.0,103.0 432.0,103.0 432.0,83.0 440.0,83.0 440.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="440.0,103.0 448.0,103.0 448.0,83.0 456.0,83.0 456.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="456.0,103.0 464.0,103.0 464.0,83.0 472.0,83.0 472.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="472.0,103.0 480.0,103.0 480.0,83.0 488.0,83.0 488.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="488.0,103.0 496.0,103.0 496.0,83.0 504.0,83.0 504.0,103.0"/>
+<polyline fill="none" stroke="#1565c0" stroke-width="1.4" points="504.0,103.0 512.0,103.0 512.0,83.0 520.0,83.0 520.0,103.0"/>
+<line x1="520.0" y1="103.0" x2="536.0" y2="103.0" stroke="#1565c0" stroke-width="1.4"/>
+<text x="8" y="131.0" fill="#1f2328">IO0 (host)</text>
+<line x1="120.0" y1="127.0" x2="136.0" y2="127.0" stroke="#9aa4b2" stroke-width="1.4" stroke-dasharray="3 2"/>
+<line x1="136.0" y1="137.0" x2="232.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="232.0" y1="137.0" x2="232.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="232.0" y1="117.0" x2="248.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="248.0" y1="117.0" x2="248.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="248.0" y1="137.0" x2="344.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="344.0" y1="137.0" x2="344.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="344.0" y1="117.0" x2="392.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="392.0" y1="117.0" x2="392.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="392.0" y1="137.0" x2="440.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="440.0" y1="137.0" x2="440.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="440.0" y1="117.0" x2="456.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="456.0" y1="117.0" x2="456.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="456.0" y1="137.0" x2="504.0" y2="137.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="504.0" y1="137.0" x2="504.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="504.0" y1="117.0" x2="520.0" y2="117.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="520.0" y1="127.0" x2="536.0" y2="127.0" stroke="#9aa4b2" stroke-width="1.4" stroke-dasharray="3 2"/>
+<text x="8" y="165.0" fill="#1f2328">IO1</text>
+<line x1="120.0" y1="161.0" x2="536.0" y2="161.0" stroke="#9aa4b2" stroke-width="1.4" stroke-dasharray="3 2"/>
+<path d="M136.0 186.0 v6 H264.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="200.0" y="205.0" text-anchor="middle" fill="#1f2328">instrukcja 0x02</text>
+<path d="M264.0 186.0 v6 H392.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="328.0" y="205.0" text-anchor="middle" fill="#1f2328">adres 0x07</text>
+<path d="M392.0 186.0 v6 H520.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="456.0" y="205.0" text-anchor="middle" fill="#1f2328">dane 0x11</text>
+<line x1="528.0" y1="40" x2="528.0" y2="180" stroke="#c62828" stroke-dasharray="4 3"/>
+<text x="531.0" y="38" fill="#c62828">zapis stosowany po podniesieniu CS_N</text>
+<text x="8" y="220" fill="#1f2328">Do 8 bajtów danych w jednej transakcji (adresy kolejne);</text>
+<text x="8" y="236" fill="#1f2328">nadmiarowe bajty są pomijane.</text>
+</svg>

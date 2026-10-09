@@ -47,6 +47,7 @@ markdown_extensions:
 nav:
   - Start: index.md
   - Plan konstrukcji: sfp-xspi-bridge-plan.md
+  - "Interfejs hosta (datasheet)": datasheet/index.md
   - VHDL:
       - vhdl/index.md
       - Konwencje kodu: vhdl/konwencje.md
@@ -74,6 +75,8 @@ nav:
       - QSPI ↔ QSPI: e2e/qspi.md
       - OSPI ↔ OSPI: e2e/ospi.md
       - UART ↔ UART: e2e/uart.md
+  - Przeglądy:
+      - Płytka rev. A: przeglady/pcb-rev-a.md
   - Decyzje (ADR):
       - adr/README.md
       - "0001 FPGA GW1N-9": adr/0001-fpga-gw1n-9.md

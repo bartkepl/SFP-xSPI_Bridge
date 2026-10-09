@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="616" height="142" font-family="Consolas, Menlo, monospace" font-size="11">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="8" y="18" font-size="13" font-weight="bold" fill="#1f2328">UART 8N1: znak 0x48 („H”), najmłodszy bit pierwszy</text>
+<text x="8" y="63.0" fill="#1f2328">UART_RX</text>
+<line x1="120.0" y1="49.0" x2="188.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="188.0" y1="49.0" x2="188.0" y2="69.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="188.0" y1="69.0" x2="324.0" y2="69.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="324.0" y1="69.0" x2="324.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="324.0" y1="49.0" x2="358.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="358.0" y1="49.0" x2="358.0" y2="69.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="358.0" y1="69.0" x2="426.0" y2="69.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="426.0" y1="69.0" x2="426.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="426.0" y1="49.0" x2="460.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="460.0" y1="49.0" x2="460.0" y2="69.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="460.0" y1="69.0" x2="494.0" y2="69.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="494.0" y1="69.0" x2="494.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<line x1="494.0" y1="49.0" x2="596.0" y2="49.0" stroke="#1565c0" stroke-width="1.4"/>
+<path d="M188.0 84.0 v6 H222.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="205.0" y="103.0" text-anchor="middle" fill="#1f2328">start</text>
+<path d="M222.0 84.0 v6 H256.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="239.0" y="103.0" text-anchor="middle" fill="#1f2328">D0</text>
+<path d="M256.0 84.0 v6 H290.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="273.0" y="103.0" text-anchor="middle" fill="#1f2328">D1</text>
+<path d="M290.0 84.0 v6 H324.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="307.0" y="103.0" text-anchor="middle" fill="#1f2328">D2</text>
+<path d="M324.0 84.0 v6 H358.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="341.0" y="103.0" text-anchor="middle" fill="#1f2328">D3</text>
+<path d="M358.0 84.0 v6 H392.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="375.0" y="103.0" text-anchor="middle" fill="#1f2328">D4</text>
+<path d="M392.0 84.0 v6 H426.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="409.0" y="103.0" text-anchor="middle" fill="#1f2328">D5</text>
+<path d="M426.0 84.0 v6 H460.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="443.0" y="103.0" text-anchor="middle" fill="#1f2328">D6</text>
+<path d="M460.0 84.0 v6 H494.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="477.0" y="103.0" text-anchor="middle" fill="#1f2328">D7</text>
+<path d="M494.0 84.0 v6 H528.0 v-6" fill="none" stroke="#1f2328"/>
+<text x="511.0" y="103.0" text-anchor="middle" fill="#1f2328">stop</text>
+<text x="8" y="118" fill="#1f2328">Czas bitu = UART_DIV / 50 MHz (434 → 8,68 µs, 115 200 bit/s).</text>
+<text x="8" y="134" fill="#1f2328">Próbkowanie w środku bitu.</text>
+</svg>

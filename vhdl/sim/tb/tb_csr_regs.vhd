@@ -19,7 +19,8 @@
 --   7. CTRL.SOFT_RST -> soft reset: CTRL back to 0x03, MODE_CTRL kept.
 --   8. MODE_CTRL: RTSCTS_EN alone without reset; UART_MODE change -> soft
 --      reset, mode kept; rst_hard clears MODE_CTRL.
---   9. UART_DIV (2 bytes, little-endian), UART_STATUS W1C.
+--   9. UART_DIV (2 bytes, little-endian, kept over a soft reset),
+--      UART_STATUS W1C.
 --  10. sfp_mgmt registers (no module on the bus: pull-ups only): I2C_DEV /
 --      OFFSET / LEN and DDM_PERIOD read back; I2C_BUF written with WRITE_REG
 --      (8 bytes) and read back with READ_REG; command with the module
@@ -350,6 +351,9 @@ begin
     xfer(OP_WRITE_REG, true, 16#51#, 0, false, 2, wd, rd);
     sys_cycles(3);
     check_equal(to_integer(uart_div), 16#0136#, "9: UART_DIV");
+    wreg(16#04#, x"83");                      -- SOFT_RST
+    sys_cycles(10);
+    check_equal(to_integer(uart_div), 16#0136#, "9: UART_DIV kept over the soft reset");
     wait until rising_edge(clk_sys); ev(5) <= '1';
     wait until rising_edge(clk_sys); ev(5) <= '0';
     sys_cycles(2);

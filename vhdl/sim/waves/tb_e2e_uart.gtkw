@@ -1,0 +1,39 @@
+[*] GTKWave view for tb_e2e_uart (open with: view.ps1 tb_e2e_uart)
+[timestart] 0
+[size] 1500 800
+[signals_width] 260
+[sst_width] 220
+@200
+-Bridge A: J3 (input)
+@28
+top.tb_e2e_uart.bench.a_sclk
+top.tb_e2e_uart.bench.a_cs_n
+@22
+top.tb_e2e_uart.bench.a_io[7:0]
+@28
+top.tb_e2e_uart.bench.a_irq_n
+@200
+-Line A -> B
+@28
+top.tb_e2e_uart.bench.a_td_p
+top.tb_e2e_uart.bench.b_rd_p
+@22
+top.tb_e2e_uart.bench.ua.cd[7:0]
+@28
+top.tb_e2e_uart.bench.ua.ck
+top.tb_e2e_uart.bench.ua.char_en
+@22
+top.tb_e2e_uart.bench.ub.dd[7:0]
+@28
+top.tb_e2e_uart.bench.ub.dk
+top.tb_e2e_uart.bench.ub.dv
+top.tb_e2e_uart.bench.ub.link_st[1:0]
+@200
+-Bridge B: J3 (output)
+@28
+top.tb_e2e_uart.bench.b_sclk
+top.tb_e2e_uart.bench.b_cs_n
+@22
+top.tb_e2e_uart.bench.b_io[7:0]
+@28
+top.tb_e2e_uart.bench.b_irq_n

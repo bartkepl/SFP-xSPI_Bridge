@@ -26,4 +26,7 @@ sfp_bridge/src/host/csr_regs.vhd
 sfp_bridge/src/host/frame_echo.vhd
 sfp_bridge/src/mgmt/i2c_master.vhd
 sfp_bridge/src/mgmt/sfp_mgmt.vhd
+sfp_bridge/src/mgmt/leds.vhd
+sfp_bridge/src/top/sfp_bridge_top.vhd
 sim/tb/tb_pkg.vhd
+sim/tb/e2e_bench.vhd

@@ -13,7 +13,10 @@
 --   * WRITE_REG: xspi_slave collects the bytes (wr_addr, wr_data, wr_cnt)
 --     and toggles wr_txn; after CS rises (synchronized) the bytes of a new
 --     transaction (wr_txn changed) are applied together. The buffer is
---     static while CS is high; the host keeps CS high >= 100 ns.
+--     static while CS is high; the host keeps CS high >= 100 ns. The bytes
+--     are decoded every cycle into registers (pd_*); the apply cycle comes
+--     at least 2 cycles after CS rises, when the decoded values are stable,
+--     so the decoding is not in the path from the CS synchronizer.
 --   The paths from snap to xspi_slave and from the write buffer to this
 --   module are static during use (timing exception between the domains).
 --
@@ -28,8 +31,9 @@
 --   reg_addr, not latched; static while I2C_STATUS.BUSY = 0).
 --
 -- Resets: rst (rst_sys, includes the soft reset) for all registers except
--- MODE_CTRL, which uses rst_hard (PLL lock, HOST_RST_N): a soft reset keeps
--- the mode. Writing MODE_CTRL with a changed UART_MODE or FRAME_ECHO, or
+-- MODE_CTRL and UART_DIV, which use rst_hard (PLL lock, HOST_RST_N): a soft
+-- reset keeps the mode, and the UART speed set before switching to the UART
+-- mode by MODE_CTRL (which resets the bridge) stays in effect. Writing MODE_CTRL with a changed UART_MODE or FRAME_ECHO, or
 -- CTRL.SOFT_RST = 1, sets soft_rst; the resulting rst clears it.
 --------------------------------------------------------------------------------
 
@@ -130,6 +134,12 @@ architecture rtl of csr_regs is
   signal sfp_d         : std_logic_vector(2 downto 0) := (others => '0');
   signal irq_q         : std_logic := '0';
 
+  -- decoded WRITE_REG bytes
+  signal pd_ctrl_v, pd_irqen_v, pd_mode_v, pd_divl_v, pd_divh_v : boolean := false;
+  signal pd_ctrl, pd_irqen, pd_w1c, pd_divl, pd_divh : std_logic_vector(7 downto 0) := (others => '0');
+  signal pd_mode       : std_logic_vector(2 downto 0) := (others => '0');
+  signal pd_uw1c       : std_logic_vector(1 downto 0) := (others => '0');
+
   signal live, snap    : t_space := (others => (others => '0'));
 
   signal tx_space      : unsigned(15 downto 0);
@@ -221,7 +231,6 @@ begin
         ctrl       <= x"03";
         irq_en     <= (others => '0');
         irq_stat   <= (others => '0');
-        div_q      <= to_unsigned(UART_DIV_DEFAULT, 16);
         uart_st    <= (others => '0');
         soft_q     <= '0';
         txn_done   <= txn_s;
@@ -250,25 +259,15 @@ begin
         new_mode := mode;
         if apply = '1' then
           txn_done <= txn_s;
-          for i in 0 to WR_MAX - 1 loop
-            if i < wr_cnt then
-              a := to_integer(wr_addr + i);
-              d := wr_data(i);
-              case a is
-                when 16#04# =>
-                  ctrl(5 downto 0) <= d(5 downto 0);
-                  if d(6) = '1' then clr_q <= '1'; end if;
-                  if d(7) = '1' then soft_q <= '1'; end if;
-                when 16#07# => irq_en <= d;
-                when 16#08# => w1c := d;
-                when 16#50# => new_mode := d(2 downto 0);
-                when 16#51# => div_q(7 downto 0) <= unsigned(d);
-                when 16#52# => div_q(15 downto 8) <= unsigned(d);
-                when 16#53# => u_w1c := d(1 downto 0);
-                when others => null;
-              end case;
-            end if;
-          end loop;
+          if pd_ctrl_v then
+            ctrl(5 downto 0) <= pd_ctrl(5 downto 0);
+            if pd_ctrl(6) = '1' then clr_q <= '1'; end if;
+            if pd_ctrl(7) = '1' then soft_q <= '1'; end if;
+          end if;
+          if pd_irqen_v then irq_en <= pd_irqen; end if;
+          w1c := pd_w1c;
+          if pd_mode_v then new_mode := pd_mode; end if;
+          u_w1c := pd_uw1c;
           -- a change of UART_MODE or FRAME_ECHO resets the bridge
           if new_mode(1 downto 0) /= mode(1 downto 0) then
             soft_q <= '1';
@@ -280,12 +279,49 @@ begin
         irq_q    <= '1' when ((irq_stat and irq_en) /= x"00") else '0';
       end if;
 
-      -- MODE_CTRL: kept over a soft reset
+      -- MODE_CTRL, UART_DIV: kept over a soft reset
       if rst_hard = '1' then
-        mode <= (others => '0');
+        mode  <= (others => '0');
+        div_q <= to_unsigned(UART_DIV_DEFAULT, 16);
       elsif apply = '1' then
         mode <= new_mode;
+        if pd_divl_v then div_q(7 downto 0) <= unsigned(pd_divl); end if;
+        if pd_divh_v then div_q(15 downto 8) <= unsigned(pd_divh); end if;
       end if;
+    end if;
+  end process;
+
+  ------------------------------------------------------------------------------
+  -- Decoding of the WRITE_REG bytes (inputs static while CS is high)
+  ------------------------------------------------------------------------------
+  process (clk)
+    variable a : natural range 0 to 255;
+    variable d : std_logic_vector(7 downto 0);
+  begin
+    if rising_edge(clk) then
+      pd_ctrl_v  <= false;
+      pd_irqen_v <= false;
+      pd_mode_v  <= false;
+      pd_divl_v  <= false;
+      pd_divh_v  <= false;
+      pd_w1c     <= (others => '0');
+      pd_uw1c    <= (others => '0');
+      for i in 0 to WR_MAX - 1 loop
+        if i < wr_cnt then
+          a := to_integer(wr_addr + i);
+          d := wr_data(i);
+          case a is
+            when 16#04# => pd_ctrl_v  <= true; pd_ctrl  <= d;
+            when 16#07# => pd_irqen_v <= true; pd_irqen <= d;
+            when 16#08# => pd_w1c     <= d;
+            when 16#50# => pd_mode_v  <= true; pd_mode  <= d(2 downto 0);
+            when 16#51# => pd_divl_v  <= true; pd_divl  <= d;
+            when 16#52# => pd_divh_v  <= true; pd_divh  <= d;
+            when 16#53# => pd_uw1c    <= d(1 downto 0);
+            when others => null;
+          end case;
+        end if;
+      end loop;
     end if;
   end process;
 

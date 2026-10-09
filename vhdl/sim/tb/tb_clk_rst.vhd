@@ -18,7 +18,9 @@
 --      and STAGES clk_sys cycles;
 --   5. soft reset: a clk_sys flip-flop (model of CTRL.SOFT_RST, cleared by
 --      rst_sys) set for one write: rst_sys pulse of STAGES .. STAGES + 2
---      cycles, the bit cleared, arst_n high again.
+--      cycles, the bit cleared, arst_n high again;
+--   6. rst_por: 1 until the PLL locks, released like rst_sys, then never
+--      asserted again (neither by HOST_RST_N in 3./4. nor by the soft reset).
 --------------------------------------------------------------------------------
 
 library ieee;
@@ -43,7 +45,9 @@ architecture sim of tb_clk_rst is
   signal soft_set   : std_logic := '0';     -- TB "CSR write" of SOFT_RST
   signal soft_q     : std_logic := '0';     -- CTRL.SOFT_RST flip-flop model
   signal n_hard_soft : natural := 0;        -- rst_hard cycles while soft_q was set
-  signal clk_fast, clk_sys, rst_sys, rst_hard, arst_n, pll_lock : std_logic;
+  signal n_por_late : natural := 0;        -- rst_por cycles after its first release
+  signal por_rel    : boolean := false;
+  signal clk_fast, clk_sys, rst_sys, rst_hard, rst_por, arst_n, pll_lock : std_logic;
 
 begin
 
@@ -53,12 +57,17 @@ begin
     generic map (HOST_FILT => 32, STAGES => STAGES)
     port map (clk_25m => clk_25m, host_rst_n => host_rst_n, soft_rst => soft_q,
               clk_fast => clk_fast, clk_sys => clk_sys, rst_sys => rst_sys, rst_hard => rst_hard,
-              arst_n => arst_n, pll_lock => pll_lock);
+              rst_por => rst_por, arst_n => arst_n, pll_lock => pll_lock);
 
   -- CTRL.SOFT_RST model: set by a write, cleared by the domain reset
   process (clk_sys)
   begin
     if rising_edge(clk_sys) then
+      if rst_por = '0' then
+        por_rel <= true;
+      elsif por_rel then
+        n_por_late <= n_por_late + 1;
+      end if;
       if rst_hard = '1' and soft_q = '1' then
         n_hard_soft <= n_hard_soft + 1;
       end if;
@@ -89,6 +98,7 @@ begin
     check_equal(pll_lock, '0', "1: PLL not locked yet");
     check_equal(rst_sys, '1', "1: rst_sys before lock");
     check_equal(arst_n, '0', "1: arst_n before lock");
+    check_equal(rst_por, '1', "1: rst_por before lock");
     wait until pll_lock = '1';
     t_lock := now;
     report "PLL locked at " & time'image(now);
@@ -99,6 +109,7 @@ begin
     check(now - t_lock <= (STAGES + 3) * 20 ns, "1: rst_sys release delay " &
           time'image(now - t_lock));
     check_equal(arst_n, '1', "1: arst_n after lock");
+    check_equal(rst_por, '0', "1: rst_por released after lock");
 
     -- 2. periods and alignment
     wait until rising_edge(clk_fast);
@@ -186,6 +197,11 @@ begin
       wait until rising_edge(clk_sys);
     end loop;
     check_equal(rst_sys, '0', "5: no further reset");
+
+    -- 6. rst_por not asserted by HOST_RST_N nor by the soft reset
+    check(por_rel, "6: rst_por released");
+    check_equal(n_por_late, 0, "6: rst_por cycles after release");
+    check_equal(rst_por, '0', "6: rst_por low at the end");
 
     stop <= true;
     tb_finish("tb_clk_rst");

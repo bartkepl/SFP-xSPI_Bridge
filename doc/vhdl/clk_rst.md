@@ -30,6 +30,7 @@ SOFT_RST (CTRL) ──┘                    └─> do mostków resetu innych d
 | `clk_sys` | out | 50 MHz, zegar logiki |
 | `rst_sys` | out | reset domeny `clk_sys`, aktywny wysokim |
 | `rst_hard` | out | reset domeny `clk_sys` bez resetu programowego (blokada PLL, `HOST_RST_N`) — dla `MODE_CTRL` ([ADR 0009](../adr/0009-interfejs-hosta.md)) |
+| `rst_por` | out | reset domeny `clk_sys` od włączenia zasilania (tylko blokada PLL; bez `HOST_RST_N` i resetu programowego) — dla `UART_STATUS` |
 | `arst_n` | out | asynchroniczne żądanie resetu dla mostków innych domen |
 | `pll_lock` | out | blokada PLL (bez synchronizacji, do rejestru stanu przez `sync_bit`) |
 
@@ -85,8 +86,9 @@ Modele symulacyjne Gowin `rPLL` i `CLKDIV` (biblioteka `gw1n`); `CLK_25M` = 25 M
 | 3 | `HOST_RST_N` = 0 przez 400 ns (krócej niż filtr): brak resetu |
 | 4 | `HOST_RST_N` = 0 przez 2 µs: `arst_n` = 0 w ciągu 20 taktów `CLK_25M`, `rst_sys` aktywny przez cały czas; po zwolnieniu `arst_n` = 1 w ciągu 20 taktów, `rst_sys` zwolniony po `STAGES` taktach `clk_sys` |
 | 5 | reset programowy: model przerzutnika `CTRL.SOFT_RST` ustawiony zapisem — impuls `rst_sys` o długości `STAGES` … `STAGES` + 2 taktów, bit skasowany, brak kolejnego resetu; `rst_hard` nieaktywny |
+| 6 | `rst_por` = 1 do blokady PLL, zwalniany jak `rst_sys`, potem ani razu aktywny (ani przez `HOST_RST_N` w testach 3 i 4, ani przez reset programowy) |
 
-**Test mutacyjny:** wykrywane — brak filtra `HOST_RST_N`, pominięcie `SOFT_RST`, pominięcie blokady PLL, natychmiastowe zwolnienie filtra.
+**Test mutacyjny:** wykrywane — brak filtra `HOST_RST_N`, pominięcie `SOFT_RST`, pominięcie blokady PLL, natychmiastowe zwolnienie filtra, `rst_por` zależny od `HOST_RST_N`.
 
 ## Przebieg
 

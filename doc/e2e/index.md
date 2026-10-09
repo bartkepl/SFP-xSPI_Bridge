@@ -1,6 +1,6 @@
 # Testy end-to-end
 
-Testy sprawdzają dwa kompletne mostki tak, jak para konwerterów na stole: obserwowane są wyłącznie wyprowadzenia — wejście jednego mostka (J3 mostka A), łącze między nimi (pary SFP) i wyjście drugiego mostka (J3 mostka B). Każdy tryb interfejsu jest sprawdzany osobno, z tym samym trybem po obu stronach.
+Testy sprawdzają dwa kompletne mostki tak, jak para konwerterów na stole: obserwowane są wyłącznie wyprowadzenia — wejście jednego mostka (J3 mostka A), łącze między nimi (pary SFP) i wyjście drugiego mostka (J3 mostka B). Każdy tryb interfejsu jest sprawdzany osobno, z tym samym trybem po obu stronach. Test `tb_e2e_uart_reg` dodatkowo sprawdza przejście z trybu xSPI w tryb UART zapisem rejestru i odczyt `UART_STATUS` po powrocie do trybu xSPI.
 
 ```
 host A ──J3──> [ mostek A ] ──SFP TD → RD──> [ mostek B ] ──J3──> host B
@@ -13,7 +13,7 @@ host A ──J3──> [ mostek A ] ──SFP TD → RD──> [ mostek B ] ─�
 - Oscylatory: mostek A 25 MHz, mostek B 25 MHz + 100 ppm (niezależne zegary, jak w rzeczywistej parze).
 - Linia: `SFP_TD±` jednego mostka → `SFP_RD±` drugiego, opóźnienie 5 ns, w obu kierunkach. Połączenie odpowiada płytce rev. A — zamiana polaryzacji pary RD na pinach FPGA jest kompensowana w mostku ([integracja](../vhdl/top.md)).
 - Moduł SFP: obecny, bez LOS i TX_FAULT; linie I2C tylko z rezystorami podciągającymi.
-- Host xSPI: behawioralny master trybu 0, SCLK 40 MHz, CS w stanie wysokim 120 ns między transakcjami. Urządzenia UART: behawioralny nadajnik i odbiornik 115 200 8N1.
+- Host xSPI: behawioralny master trybu 0, SCLK 40 MHz, CS w stanie wysokim 120 ns między transakcjami. Urządzenia UART: behawioralny nadajnik i odbiornik 8N1 (115 200 bit/s, w teście z trybem wybranym rejestrem 1 Mbit/s).
 
 ## Wyniki
 
@@ -23,6 +23,7 @@ host A ──J3──> [ mostek A ] ──SFP TD → RD──> [ mostek B ] ─�
 | [QSPI ↔ QSPI](qspi.md) | TX_WRITE_4 / RX_READ_4 | F1: 1,04 µs na wejściu A, 2000 ns na linii | PASS (17 checks) |
 | [OSPI ↔ OSPI](ospi.md) | TX_WRITE_8 / RX_READ_8 | F1: 0,69 µs na wejściu A, 2000 ns na linii | PASS (17 checks) |
 | [UART ↔ UART](uart.md) | 115 200 8N1, zworka `MODE_SEL` | 174,21 µs od końca bajtu na wejściu A do ramki na linii | PASS (7 checks) |
+| [UART ↔ UART, tryb z rejestru](uart_reg.md) | 1 Mbit/s (`UART_DIV` = 50) przez `MODE_CTRL`; `UART_STATUS` po `HOST_RST_N` | 31,07 µs od końca ostatniego poprawnego bajtu na wejściu A do ramki na linii | PASS (15 checks) |
 
 ## Uruchomienie
 

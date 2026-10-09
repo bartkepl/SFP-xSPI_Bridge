@@ -123,9 +123,9 @@ Przy QSPI i OSPI przepustowość ogranicza łącze; bufor TX (4 KiB) pozwala zap
 | Źródło | Działanie | Zachowane rejestry |
 |---|---|---|
 | Włączenie zasilania | ładowanie konfiguracji FPGA z wewnętrznej pamięci Flash, zablokowanie PLL, reset | — |
-| `HOST_RST_N` = 0 przez ≥ 640 ns | reset całego mostka (krótsze impulsy są filtrowane) | — |
-| `CTRL.SOFT_RST` = 1 | reset mostka, samoczynnie kończony po kilku taktach | `MODE_CTRL`, `UART_DIV` |
-| zmiana `UART_MODE` / `FRAME_ECHO` | jak `SOFT_RST` | `MODE_CTRL`, `UART_DIV` |
+| `HOST_RST_N` = 0 przez ≥ 640 ns | reset całego mostka (krótsze impulsy są filtrowane) | `UART_STATUS` |
+| `CTRL.SOFT_RST` = 1 | reset mostka, samoczynnie kończony po kilku taktach | `MODE_CTRL`, `UART_DIV`, `UART_STATUS` |
+| zmiana `UART_MODE` / `FRAME_ECHO` | jak `SOFT_RST` | `MODE_CTRL`, `UART_DIV`, `UART_STATUS` |
 
 Po resecie host odpytuje `READ_ID`, aż otrzyma `0x5B 0x5F` — wtedy mostek jest gotowy (niewysterowane linie danych dają same jedynki). Stan łącza sprawdza się bitem `STATUS_FAST.LINK_UP`.
 
@@ -262,6 +262,8 @@ WRITE_REG 0x50: 0x01           ; MODE_CTRL.UART_MODE = 1 (0x05: z RTS/CTS) → r
 
 `UART_DIV` przetrwa reset wywołany zmianą trybu. W trybie wybranym zworką obowiązuje wartość po resecie sprzętowym (115 200 bit/s).
 
+Po powrocie do trybu xSPI (`HOST_RST_N`) host odczytuje w `UART_STATUS` zdarzenia z sesji UART (utracone bajty, błędy bitu stopu); rejestr kasuje się zapisem jedynek (W1C).
+
 **Zachowanie.** Bajty z `UART_RX` mostka A pojawiają się na `UART_TX` mostka B w tej samej kolejności, z opóźnieniem pakietowania (do 64 znaków lub 20 czasów bitu) i przesyłu ramki. Mostek odbiorczy wysyła bajt dopiero po odebraniu całej poprawnej ramki. Ramki innych typów niż 0x01 są w trybie UART pomijane. Przy różnych prędkościach po obu stronach i bez RTS/CTS bajty, które nie mieszczą się w buforach strony nadawczej, są tracone. Host xSPI po jednej stronie może wymieniać dane z urządzeniem UART po drugiej, wysyłając i odbierając ramki `TYPE` 0x01.
 
 ## 7 Mapa rejestrów
@@ -294,7 +296,7 @@ Adresy bajtowe; wartości wielobajtowe little-endian (młodszy bajt pod niższym
 | 0x4F | DDM_PERIOD | R/W | 0x0A | okres odczytu DDM |
 | 0x50 | MODE_CTRL | R/W | 0x00 | tryb pracy (zachowywany przy resecie programowym) |
 | 0x51–0x52 | UART_DIV | R/W | 0x01B2 | dzielnik prędkości UART (zachowywany przy resecie programowym) |
-| 0x53 | UART_STATUS | W1C | 0x00 | zdarzenia UART |
+| 0x53 | UART_STATUS | W1C | 0x00 | zdarzenia UART (kasowany tylko przy włączeniu zasilania i zapisem W1C) |
 | 0x80–0xFF | I2C_BUF | R/W | — | bufor danych I2C, 128 B (bez zatrzasku) |
 
 ### 7.2 CTRL (0x04)
@@ -407,7 +409,7 @@ Kasowany tylko przez reset sprzętowy (`HOST_RST_N`, zasilanie).
 
 `UART_DIV` — liczba taktów 50 MHz na bit UART, ≥ 8; reset 434. Oba bajty należy zapisać w jednej transakcji `WRITE_REG`. Kasowany tylko przez reset sprzętowy.
 
-`UART_STATUS`: b0 RX_OVF (bajt UART utracony — bufor lub FIFO TX pełne), b1 FRAME_ERR (błędny bit stopu); W1C. Rejestr jest aktualizowany tylko w trybie UART.
+`UART_STATUS`: b0 RX_OVF (bajt UART utracony — bufor lub FIFO TX pełne), b1 FRAME_ERR (błędny bit stopu; bajt jest odrzucany); W1C. Bity są ustawiane w trybie UART, w którym rejestry nie są dostępne. Rejestr kasuje wyłącznie włączenie zasilania i zapis W1C — `HOST_RST_N` i reset programowy go nie zmieniają, więc po powrocie do trybu xSPI zawiera zdarzenia z sesji UART.
 
 ### 7.11 I2C_BUF (0x80–0xFF)
 

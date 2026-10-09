@@ -75,6 +75,7 @@ nav:
       - QSPI ↔ QSPI: e2e/qspi.md
       - OSPI ↔ OSPI: e2e/ospi.md
       - UART ↔ UART: e2e/uart.md
+      - UART ↔ UART (rejestr): e2e/uart_reg.md
   - Przeglądy:
       - Płytka rev. A: przeglady/pcb-rev-a.md
   - Decyzje (ADR):

@@ -32,6 +32,19 @@
 --   Checks: the 11 bytes received in order without framing errors;
 --   HOST_IRQ_N of A follows the link state (low after B's reset, high
 --   again when the link is back).
+-- LINES = 9 (UART selected by register): both bridges start in the xSPI
+-- mode (MODE_SEL high), 1 Mbit/s 8N1.
+--   1. Hosts release HOST_RST_N, wait for READ_ID and LINK_UP (as above).
+--   2. Each host writes UART_DIV = 50 (WRITE_REG 0x51, 2 bytes), then
+--      MODE_CTRL = 0x01 (UART_MODE): the bridge resets itself and enters
+--      the UART mode with the speed kept; wait for HOST_IRQ_N = 1 at A and B.
+--   3. The UART device at A sends "Hello, SFP!" and one byte with the stop
+--      bit = 0 (framing error, the byte is dropped by the bridge).
+--   4. HOST_RST_N of A low for 5 us: A returns to the xSPI mode; host A
+--      reads UART_STATUS (READ_REG 0x53) = 0x02 (FRAME_ERR), clears it by
+--      W1C and reads 0x00.
+--   Checks: the 11 bytes received by B at 1 Mbit/s without framing errors;
+--   UART_STATUS of A kept over HOST_RST_N, cleared by W1C.
 --
 -- Trace for the documentation (sim/out/<name>_trace.txt, sim/wave_svg.py):
 --   S <id> <name> <width>          signal declaration
@@ -66,7 +79,17 @@ architecture sim of e2e_bench is
   constant T_SCK    : time := 25 ns;                 -- 40 MHz
   constant T_CSH    : time := 120 ns;
   constant LINE_DLY : time := 5 ns;
-  constant T_BIT    : time := 8680 ns;               -- 115200 baud (UART_DIV 434)
+  constant UART_T   : boolean := LINES = 0 or LINES = 9;
+  constant UDIV_REG : natural := 50;                 -- LINES = 9: UART_DIV = 50 -> 1 Mbit/s
+
+  function f_tbit return time is
+  begin
+    if LINES = 9 then
+      return UDIV_REG * 20 ns;                       -- 1 Mbit/s
+    end if;
+    return 8680 ns;                                  -- 115200 baud (UART_DIV 434)
+  end function;
+  constant T_BIT    : time := f_tbit;
 
   type t_bytes is array (0 to 2047) of std_logic_vector(7 downto 0);
 
@@ -228,6 +251,7 @@ begin
     decl(4, "B.SCLK", 1);  decl(5, "B.CS_N", 1);  decl(6, "B.IO", 8);
     decl(7, "A.HOST_IRQ_N", 1); decl(8, "B.HOST_IRQ_N", 1);
     decl(9, "A.LED_LINK", 1); decl(10, "B.LED_LINK", 1);
+    decl(11, "A.HOST_RST_N", 1);
     loop
       if a_sclk'event or now = 0 ns then val(0, sl_str((0 => a_sclk))); end if;
       if a_cs_n'event or now = 0 ns then val(1, sl_str((0 => a_cs_n))); end if;
@@ -240,7 +264,9 @@ begin
       if b_irq_n'event or now = 0 ns then val(8, sl_str((0 => b_irq_n))); end if;
       if a_led_l'event or now = 0 ns then val(9, sl_str((0 => a_led_l))); end if;
       if b_led_l'event or now = 0 ns then val(10, sl_str((0 => b_led_l))); end if;
-      wait on a_sclk, a_cs_n, a_io, a_td_p, b_sclk, b_cs_n, b_io, a_irq_n, b_irq_n, a_led_l, b_led_l;
+      if rst_n_a'event or now = 0 ns then val(11, sl_str((0 => rst_n_a))); end if;
+      wait on a_sclk, a_cs_n, a_io, a_td_p, b_sclk, b_cs_n, b_io, a_irq_n, b_irq_n, a_led_l, b_led_l,
+              rst_n_a;
     end loop;
   end process;
 
@@ -291,7 +317,7 @@ begin
     variable b  : std_logic_vector(7 downto 0);
     variable t0 : time;
   begin
-    if LINES /= 0 then
+    if not UART_T then
       wait;
     end if;
     wait until to_x01(b_io(1)) = '0';
@@ -440,8 +466,15 @@ begin
       return to_integer(unsigned(std_logic_vector'(r(3) & r(2) & r(1) & r(0))));
     end function;
 
-    -- UART device at A: one byte on UART_RX (J3 IO0 of A)
-    procedure uart_send(b : std_logic_vector(7 downto 0)) is
+    procedure write_reg(s, adr, nb : natural; wdat : t_bytes) is
+      variable r : t_bytes;
+    begin
+      xfer(s, OP_WRITE_REG, "WRITE_REG", true, adr, 0, 1, false, nb, wdat, r);
+    end procedure;
+
+    -- UART device at A: one byte on UART_RX (J3 IO0 of A); stop_bit = '0'
+    -- produces a framing error
+    procedure uart_send(b : std_logic_vector(7 downto 0); stop_bit : std_logic := '1') is
       variable t0 : time;
     begin
       t0 := now;
@@ -451,9 +484,15 @@ begin
         a_drv(0) <= b(i);
         wait for T_BIT;
       end loop;
-      a_drv(0) <= '1';
+      a_drv(0) <= stop_bit;
       wait for T_BIT;
-      annot(t0, now, "A_IO", chr(b));
+      a_drv(0) <= '1';
+      if stop_bit /= '1' then
+        wait for 4 * T_BIT;                          -- idle, receiver resynchronizes
+        annot(t0, now, "A_IO", chr(b) & "/FE");
+      else
+        annot(t0, now, "A_IO", chr(b));
+      end if;
     end procedure;
 
     variable op_w, op_r : std_logic_vector(7 downto 0);
@@ -505,12 +544,44 @@ begin
     marker("link_up");
     wait for 2 us;
 
-    if LINES = 0 then
+    if LINES = 9 then
+      -- 2. UART mode selected by register, speed set before the switch
+      wd(0) := std_logic_vector(to_unsigned(UDIV_REG mod 256, 8));
+      wd(1) := std_logic_vector(to_unsigned(UDIV_REG / 256, 8));
+      for s in 0 to 1 loop
+        write_reg(s, 16#51#, 2, wd);
+      end loop;
+      read_reg(0, 16#51#, 2, rd);
+      check_equal(to_integer(unsigned(std_logic_vector'(rd(1) & rd(0)))), UDIV_REG, "2: UART_DIV at A");
+      marker("mode_uart");
+      wd(0) := x"01";
+      for s in 0 to 1 loop
+        write_reg(s, 16#50#, 1, wd);
+      end loop;
+      a_drv(0) <= '1';                               -- UART line idle
+      wait for 10 us;
+      if a_irq_n /= '1' then
+        wait until a_irq_n = '1' for 1 ms;
+      end if;
+      if b_irq_n /= '1' then
+        wait until b_irq_n = '1' for 1 ms;
+      end if;
+      check_equal(a_irq_n, '1', "2: link up at A in the UART mode");
+      check_equal(b_irq_n, '1', "2: link up at B in the UART mode");
+      marker("uart_link_up");
+      wait for 2 us;
+    end if;
+
+    if UART_T then
       ----------------------------------------------------------- UART
       marker("a_in_start");
       for i in 1 to HELLO'length loop
         uart_send(std_logic_vector(to_unsigned(character'pos(HELLO(i)), 8)));
       end loop;
+      if LINES = 9 then
+        marker("a_bad_stop");
+        uart_send(x"55", '0');
+      end if;
       marker("a_in_end");
       if uart_rx_n < HELLO'length then
         wait until uart_rx_n = HELLO'length for 5 ms;
@@ -524,17 +595,43 @@ begin
       end loop;
       check_equal(bad, 0, "3: bytes on UART_TX of B equal to UART_RX of A");
       check_equal(uart_ferr, 0, "3: no framing errors");
-      -- 4. HOST_IRQ_N = link state: reset of B drops the link at A
-      marker("b_reset");
-      rst_n_b <= '0';
-      wait until a_irq_n = '0' for 20 us;
-      check_equal(a_irq_n, '0', "4: HOST_IRQ_N of A low after the link is lost");
-      wait for 5 us;
-      rst_n_b <= '1';
-      marker("b_reset_end");
-      wait until a_irq_n = '1' for 200 us;
-      check_equal(a_irq_n, '1', "4: HOST_IRQ_N of A high after the link is back");
-      wait for 10 us;
+      if LINES = 9 then
+        -- 4. back to the xSPI mode by HOST_RST_N, UART_STATUS readable
+        marker("a_reset");
+        rst_n_a <= '0';
+        wait for 5 us;
+        rst_n_a <= '1';
+        a_drv(0) <= 'Z';
+        marker("a_reset_end");
+        for i in 1 to 200 loop
+          xfer(0, OP_READ_ID, "READ_ID", false, 0, 0, 1, true, 2, wd, rd, false);
+          exit when rd(0) = x"5B" and rd(1) = x"5F";
+          wait for 1 us;
+        end loop;
+        check(rd(0) = x"5B" and rd(1) = x"5F", "4: READ_ID of A after HOST_RST_N (xSPI mode)");
+        read_reg(0, 16#50#, 4, rd);
+        check_equal(rd(0), x"00", "4: MODE_CTRL of A cleared by HOST_RST_N");
+        check_equal(to_integer(unsigned(std_logic_vector'(rd(2) & rd(1)))), UART_DIV_DEFAULT,
+                    "4: UART_DIV of A back to the default");
+        check_equal(rd(3), x"02", "4: UART_STATUS of A = FRAME_ERR after HOST_RST_N");
+        wd(0) := x"02";
+        write_reg(0, 16#53#, 1, wd);
+        read_reg(0, 16#53#, 1, rd);
+        check_equal(rd(0), x"00", "4: UART_STATUS of A cleared by W1C");
+        wait for 2 us;
+      else
+        -- 4. HOST_IRQ_N = link state: reset of B drops the link at A
+        marker("b_reset");
+        rst_n_b <= '0';
+        wait until a_irq_n = '0' for 20 us;
+        check_equal(a_irq_n, '0', "4: HOST_IRQ_N of A low after the link is lost");
+        wait for 5 us;
+        rst_n_b <= '1';
+        marker("b_reset_end");
+        wait until a_irq_n = '1' for 200 us;
+        check_equal(a_irq_n, '1', "4: HOST_IRQ_N of A high after the link is back");
+        wait for 10 us;
+      end if;
     else
       ----------------------------------------------------------- xSPI
       -- 2. host A: two frames

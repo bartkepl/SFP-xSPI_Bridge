@@ -24,6 +24,8 @@
 --     which releases the request (self-terminating soft reset).
 --   rst_hard is the same reset without soft_rst (for registers kept over a
 --   soft reset: MODE_CTRL, ADR 0009).
+--   rst_por is the power-on reset: PLL lock only, not affected by HOST_RST_N
+--   or soft_rst (UART_STATUS, readable after the return from the UART mode).
 --   rst_sys (clk_sys domain, active high) is asserted immediately and
 --   released synchronously after STAGES clk_sys edges (reset_sync). Other
 --   clock domains (clk_spi) use arst_n with their own reset_sync.
@@ -54,6 +56,7 @@ entity clk_rst is
     clk_sys    : out std_logic;
     rst_sys    : out std_logic;  -- clk_sys domain reset, active high
     rst_hard   : out std_logic;  -- clk_sys reset without SOFT_RST (MODE_CTRL, ADR 0009)
+    rst_por    : out std_logic;  -- clk_sys power-on reset (PLL lock only)
     arst_n     : out std_logic;  -- asynchronous reset request for other domains
     pll_lock   : out std_logic   -- PLL lock (not synchronized)
   );
@@ -128,6 +131,11 @@ begin
   u_rst_hard : entity work.reset_sync
     generic map (STAGES => STAGES)
     port map (clk => clk_sys_i, arst_n => arst_h_n, rst => rst_hard);
+
+  -- power-on reset: PLL lock only (UART_STATUS survives HOST_RST_N)
+  u_rst_por : entity work.reset_sync
+    generic map (STAGES => STAGES)
+    port map (clk => clk_sys_i, arst_n => lock, rst => rst_por);
 
   clk_fast <= clk_fast_i;
   clk_sys  <= clk_sys_i;

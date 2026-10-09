@@ -33,7 +33,11 @@
 -- Resets: rst (rst_sys, includes the soft reset) for all registers except
 -- MODE_CTRL and UART_DIV, which use rst_hard (PLL lock, HOST_RST_N): a soft
 -- reset keeps the mode, and the UART speed set before switching to the UART
--- mode by MODE_CTRL (which resets the bridge) stays in effect. Writing MODE_CTRL with a changed UART_MODE or FRAME_ECHO, or
+-- mode by MODE_CTRL (which resets the bridge) stays in effect.
+-- UART_STATUS uses rst_por (PLL lock only): the flags are set in the UART
+-- mode, where the registers are not accessible, and the return to the xSPI
+-- mode needs HOST_RST_N; they stay readable until cleared by W1C.
+-- Writing MODE_CTRL with a changed UART_MODE or FRAME_ECHO, or
 -- CTRL.SOFT_RST = 1, sets soft_rst; the resulting rst clears it.
 --------------------------------------------------------------------------------
 
@@ -54,6 +58,7 @@ entity csr_regs is
     clk          : in  std_logic;                -- clk_sys
     rst          : in  std_logic;                -- rst_sys
     rst_hard     : in  std_logic;                -- reset without SOFT_RST
+    rst_por      : in  std_logic;                -- power-on reset (PLL lock only)
     -- xspi_slave interface
     cs_n         : in  std_logic;                -- pin (asynchronous)
     reg_addr     : in  unsigned(7 downto 0);
@@ -227,11 +232,11 @@ begin
         snap <= live;
       end if;
 
+      u_w1c := (others => '0');
       if rst = '1' then
         ctrl       <= x"03";
         irq_en     <= (others => '0');
         irq_stat   <= (others => '0');
-        uart_st    <= (others => '0');
         soft_q     <= '0';
         txn_done   <= txn_s;
         ovf_d      <= ovf_s;
@@ -255,7 +260,6 @@ begin
 
         -- register writes after CS rises (new WRITE_REG transaction)
         w1c   := (others => '0');
-        u_w1c := (others => '0');
         new_mode := mode;
         if apply = '1' then
           txn_done <= txn_s;
@@ -275,8 +279,14 @@ begin
         end if;
 
         irq_stat <= (irq_stat and not w1c) or set;
-        uart_st  <= (uart_st and not u_w1c) or (ev_uart_ferr & ev_uart_ovf);
         irq_q    <= '1' when ((irq_stat and irq_en) /= x"00") else '0';
+      end if;
+
+      -- UART_STATUS: cleared only at power-on and by W1C
+      if rst_por = '1' then
+        uart_st <= (others => '0');
+      else
+        uart_st <= (uart_st and not u_w1c) or (ev_uart_ferr & ev_uart_ovf);
       end if;
 
       -- MODE_CTRL, UART_DIV: kept over a soft reset

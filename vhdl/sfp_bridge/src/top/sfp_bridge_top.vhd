@@ -95,7 +95,7 @@ architecture rtl of sfp_bridge_top is
 
   -- clocks, resets, mode
   signal clk_fast, clk_sys, clk_host, clk_host_n : std_logic;
-  signal rst_sys, rst_hard, rst_host : std_logic;
+  signal rst_sys, rst_hard, rst_por, rst_host : std_logic;
   signal soft_rst  : std_logic;
   signal mode_sel_s, mode_sel_l : std_logic := '1';
   signal m_uart_reg, m_echo_reg, m_rtscts : std_logic;
@@ -184,7 +184,7 @@ begin
   u_clk : entity work.clk_rst
     port map (clk_25m => clk_25m, host_rst_n => host_rst_n, soft_rst => soft_rst,
               clk_fast => clk_fast, clk_sys => clk_sys, rst_sys => rst_sys,
-              rst_hard => rst_hard, arst_n => open, pll_lock => open);
+              rst_hard => rst_hard, rst_por => rst_por, arst_n => open, pll_lock => open);
 
   -- MODE_SEL: synchronized, sampled while the bridge is in reset
   u_msel : entity work.sync_bit generic map (STAGES => 2, INIT_VAL => '1')
@@ -360,7 +360,7 @@ begin
 
   u_csr : entity work.csr_regs
     generic map (TX_DEPTH => 2 ** TX_AW, MAX_LEN => 1024)
-    port map (clk => clk_sys, rst => rst_sys, rst_hard => rst_hard,
+    port map (clk => clk_sys, rst => rst_sys, rst_hard => rst_hard, rst_por => rst_por,
               cs_n => cs_x, reg_addr => reg_addr, reg_rdata => reg_rdata, status_fast => status_fast,
               wr_addr => wr_addr, wr_data => wr_data, wr_cnt => wr_cnt, wr_txn => wr_txn,
               ev_tx_ovf_t => ev_tx_ovf_t,

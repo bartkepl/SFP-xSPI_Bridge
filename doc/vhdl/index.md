@@ -52,7 +52,7 @@ vhdl/
 | `csr_regs` | `src/host/csr_regs.vhd` | `tb_csr_regs` | PASS | tak (z xspi_slave: 82 / 45 MHz) | [Rejestry](csr_regs.md) |
 | `host_clk`, `frame_echo` | `src/clk/host_clk.vhd`, `src/host/frame_echo.vhd` | `tb_host_clk` | PASS | przy integracji (etap 10) | [Zegar hosta, echo](host_clk.md) |
 | `leds` | `src/mgmt/leds.vhd` | `tb_leds` | PASS | tak (w topie) | [Integracja](top.md) |
-| `sfp_bridge_top` | `src/top/sfp_bridge_top.vhd` | `tb_e2e_spi`, `tb_e2e_qspi`, `tb_e2e_ospi`, `tb_e2e_uart` | PASS | tak (cały układ: 4443 LUT/ALU, 7 BSRAM, `clk_sys` 52 MHz, `clk_host` 46 MHz) | [Integracja](top.md), [testy end-to-end](../e2e/index.md) |
+| `sfp_bridge_top` | `src/top/sfp_bridge_top.vhd` | `tb_e2e_spi`, `tb_e2e_qspi`, `tb_e2e_ospi`, `tb_e2e_uart`, `tb_e2e_uart_reg` | PASS | tak (cały układ: 4483 LUT/ALU, 7 BSRAM, `clk_sys` 56 MHz, `clk_host` 44 MHz) | [Integracja](top.md), [testy end-to-end](../e2e/index.md) |
 
 **Zegary** ([ADR 0007](../adr/0007-zegar-systemowy-50mhz.md)): `clk_sys` = 50 MHz (PCLK serializerów IDES8/OSER8), `clk_fast` = 200 MHz tylko w blokach I/O. Kryterium dla modułów domeny `clk_sys`: Fmax ≥ 50 MHz z zapasem (cel ≥ 60 MHz). Symbol 8b/10b = 5 taktów `clk_sys`.
 

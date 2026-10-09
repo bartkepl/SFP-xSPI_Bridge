@@ -561,7 +561,8 @@ vhdl/
                               --   tb_csr_regs (z xspi_slave), tb_host_clk (DCS, echo ramek)
                               --   tb_i2c_sfp (model modułu SFP, kontrola czasów I2C)
                               --   tb_leds; testy end-to-end dwóch mostków (e2e_bench):
-                              --   tb_e2e_spi, tb_e2e_qspi, tb_e2e_ospi, tb_e2e_uart
+                              --   tb_e2e_spi, tb_e2e_qspi, tb_e2e_ospi, tb_e2e_uart,
+                              --   tb_e2e_uart_reg
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
     run_tests.ps1 / .sh       -- uruchamianie testów (GHDL w WSL)
@@ -572,7 +573,7 @@ vhdl/
 
 **`clk_rst`** — gotowy, [opis](vhdl/clk_rst.md)
 - `rPLL` (25 → 200 MHz), `CLKDIV` (/4 → 50 MHz); parametry PLL wyliczane z `LINE_BAUD` w `bridge_pkg`.
-- Reset globalny trzymany do `LOCK` PLL; `HOST_RST_N` z filtrem zakłóceń 640 ns; `CTRL.SOFT_RST` kończący się samoczynnie. Reset domeny `clk_sys` przez `reset_sync`; żądanie `arst_n` dla mostka resetu domeny `clk_spi` (reset asynchroniczny, zwalnianie synchroniczne).
+- Reset globalny trzymany do `LOCK` PLL; `HOST_RST_N` z filtrem zakłóceń 640 ns; `CTRL.SOFT_RST` kończący się samoczynnie. Reset domeny `clk_sys` przez `reset_sync`; `rst_hard` bez resetu programowego (`MODE_CTRL`, `UART_DIV`), `rst_por` tylko od blokady PLL (`UART_STATUS`); żądanie `arst_n` dla mostka resetu domeny `clk_spi` (reset asynchroniczny, zwalnianie synchroniczne).
 
 **`xspi_slave`** — gotowy, [opis](vhdl/xspi_slave.md) (domena `clk_host` = SCLK w trybie xSPI, piny zatrzaskiwane na zboczu narastającym, logika na opadającym, CS_N jako asynchroniczny reset maszyny stanów; [ADR 0009](adr/0009-interfejs-hosta.md))
 - Fazy: instrukcja (zawsze 1 linia) → opcjonalny adres → dummy → dane, szerokość fazy danych wynika z opkodu (tabela 7.3).
@@ -690,7 +691,7 @@ Adresy bajtowe, wartości wielobajtowe little-endian ([ADR 0009](adr/0009-interf
 | 0x4F | DDM_PERIOD | R/W | okres odczytu DDM × 100 ms; 0 = wyłączony; po resecie 10 |
 | 0x50 | MODE_CTRL | R/W | b0 `UART_MODE`, b1 `FRAME_ECHO`, b2 `RTSCTS_EN`; zachowywany przy resecie programowym; zmiana b0 / b1 resetuje mostek |
 | 0x51–0x52 | UART_DIV | R/W | takty `clk_sys` na bit UART (434 = 115 200); zachowywany przy resecie programowym (jak `MODE_CTRL`), więc prędkość ustawiona przed przejściem w tryb UART przez `MODE_CTRL` obowiązuje po resecie, który to przejście wywołuje |
-| 0x53 | UART_STATUS | R/W1C | b0 `RX_OVF`, b1 `FRAME_ERR` |
+| 0x53 | UART_STATUS | R/W1C | b0 `RX_OVF`, b1 `FRAME_ERR`; kasowany tylko przy włączeniu zasilania i przez W1C (przetrwa `HOST_RST_N`, którym host wraca z trybu UART do xSPI) |
 | 0x80–0xFF | I2C_BUF | R/W | bufor I2C 128 B: wynik READ, dane do WRITE (od 0x80); czytany bez zatrzasku, stały przy `BUSY` = 0 |
 
 Nieopisane adresy: odczyt 0, zapis ignorowany. `HOST_IRQ_N` = 0, gdy (`IRQ_STAT` ∧ `IRQ_EN`) ≠ 0.

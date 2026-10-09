@@ -19,8 +19,9 @@
 --   7. CTRL.SOFT_RST -> soft reset: CTRL back to 0x03, MODE_CTRL kept.
 --   8. MODE_CTRL: RTSCTS_EN alone without reset; UART_MODE change -> soft
 --      reset, mode kept; rst_hard clears MODE_CTRL.
---   9. UART_DIV (2 bytes, little-endian, kept over a soft reset),
---      UART_STATUS W1C.
+--   9. UART_DIV (2 bytes, little-endian, kept over a soft reset);
+--      UART_STATUS: FRAME_ERR and RX_OVF kept over a soft reset and over
+--      rst_hard (HOST_RST_N), cleared by rst_por and by W1C (one bit only).
 --  10. sfp_mgmt registers (no module on the bus: pull-ups only): I2C_DEV /
 --      OFFSET / LEN and DDM_PERIOD read back; I2C_BUF written with WRITE_REG
 --      (8 bytes) and read back with READ_REG; command with the module
@@ -53,6 +54,7 @@ architecture sim of tb_csr_regs is
   signal clk_sys   : std_logic := '0';
   signal stop      : boolean := false;
   signal rst, rst_hard : std_logic := '1';
+  signal rst_por   : std_logic := '1';
   signal rst_tb    : std_logic := '1';       -- testbench part of rst
   signal soft_cnt  : natural := 0;
   signal sclk      : std_logic := '0';
@@ -116,7 +118,7 @@ begin
               ev_tx_ovf_t => ovf_t);
 
   dut : entity work.csr_regs
-    port map (clk => clk_sys, rst => rst, rst_hard => rst_hard,
+    port map (clk => clk_sys, rst => rst, rst_hard => rst_hard, rst_por => rst_por,
               cs_n => cs_n, reg_addr => reg_addr, reg_rdata => reg_rdata, status_fast => status_fast,
               wr_addr => wr_addr, wr_data => wr_data, wr_cnt => wr_cnt, wr_txn => wr_txn,
               ev_tx_ovf_t => ovf_t,
@@ -250,7 +252,7 @@ begin
     -- reset: the slave gets clock edges (host_clk = clk_sys in reset)
     rst_hard <= '1'; rst_tb <= '1';
     for i in 1 to 8 loop sclk <= '1'; wait for 10 ns; sclk <= '0'; wait for 10 ns; end loop;
-    rst_hard <= '0'; rst_tb <= '0';
+    rst_hard <= '0'; rst_tb <= '0'; rst_por <= '0';
     for i in 1 to 4 loop sclk <= '1'; wait for 10 ns; sclk <= '0'; wait for 10 ns; end loop;
     wait for 200 ns;
 
@@ -359,9 +361,32 @@ begin
     sys_cycles(2);
     rreg(16#53#, 1);
     check_equal(rd(0), x"02", "9: UART_STATUS FRAME_ERR");
+    wait until rising_edge(clk_sys); ev(4) <= '1';
+    wait until rising_edge(clk_sys); ev(4) <= '0';
+    wreg(16#04#, x"83");                      -- SOFT_RST
+    sys_cycles(10);
+    rst_hard <= '1';                          -- HOST_RST_N
+    sys_cycles(5);
+    rst_hard <= '0';
+    for i in 1 to 4 loop sclk <= '1'; wait for 10 ns; sclk <= '0'; wait for 10 ns; end loop;
+    sys_cycles(5);
+    rreg(16#53#, 1);
+    check_equal(rd(0), x"03", "9: UART_STATUS kept over the soft reset and rst_hard");
     wreg(16#53#, x"02");
     rreg(16#53#, 1);
-    check_equal(rd(0), x"00", "9: UART_STATUS cleared");
+    check_equal(rd(0), x"01", "9: UART_STATUS W1C of FRAME_ERR only");
+    rst_por <= '1';
+    sys_cycles(3);
+    rst_por <= '0';
+    sys_cycles(2);
+    rreg(16#53#, 1);
+    check_equal(rd(0), x"00", "9: UART_STATUS cleared by rst_por");
+    wait until rising_edge(clk_sys); ev(5) <= '1';
+    wait until rising_edge(clk_sys); ev(5) <= '0';
+    sys_cycles(2);
+    wreg(16#53#, x"02");
+    rreg(16#53#, 1);
+    check_equal(rd(0), x"00", "9: UART_STATUS cleared by W1C");
 
     ---------------------------------------------------------------- 10
     wd(0) := x"50"; wd(1) := x"10"; wd(2) := x"04";

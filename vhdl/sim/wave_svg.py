@@ -8,6 +8,8 @@ doc/e2e/img/<test>_<figure>.svg:
   input     - pins of bridge A while host A sends the first frame
   link      - the first frame on the line A -> B (bits and 8b/10b characters)
   output    - pins of bridge B while host B receives the first frame
+  status    - tb_e2e_uart_reg only: host A back in the xSPI mode reads and
+              clears UART_STATUS
 
 Trace format (times in fs):
   S <id> <name> <width>   V <t> <id> <value>   A <t0> <t1> <row> <text>   M <t> <marker>
@@ -204,9 +206,10 @@ def make(tb):
     test = tb.replace('tb_e2e_', '')
     tr = Trace(os.path.join(VHDL, 'sim', 'out', tb + '_trace.txt'))
     os.makedirs(OUT_DIR, exist_ok=True)
-    uart = test == 'uart'
+    uart = test in ('uart', 'uart_reg')
+    reg = test == 'uart_reg'
     lines = {'spi': 1, 'qspi': 4, 'ospi': 8}.get(test, 0)
-    up = test.upper()
+    up = 'UART' if uart else test.upper()
 
     def io_rows(side):
         if uart:
@@ -216,13 +219,20 @@ def make(tb):
             return [('dig', side + '.IO0 (MOSI)', side + '.IO', 0), ('dig', side + '.IO1 (MISO)', side + '.IO', 1)]
         return [('dig', '%s.IO%d' % (side, b), side + '.IO', b) for b in range(lines - 1, -1, -1)]
 
+    def io_rows_spi(side):
+        return [('dig', side + '.IO0 (MOSI)', side + '.IO', 0), ('dig', side + '.IO1 (MISO)', side + '.IO', 1)]
+
     # frames on the line: A_TX characters; the frame of the first data
     fr = frames(tr, 'A_TX')
     t_end = tr.mark('end')
-    marks = [(t, m) for t, m in tr.marks if m in ('link_up', 'end')]
+    marks = [(t, m) for t, m in tr.marks if m in ('link_up', 'end', 'mode_uart', 'a_reset')]
 
     # overview
-    if uart:
+    if reg:
+        rows = [('dig', 'A.HOST_IRQ_N', 'A.HOST_IRQ_N', None), ('dig', 'A.CS_N', 'A.CS_N', None)] +             io_rows('A') + [('band', 'A: transakcje, znaki', 'A_IO'), ('band', 'linia: ramki', 'FRAMES'),
+                            ('dig', 'B.CS_N', 'B.CS_N', None)] + io_rows('B') + [
+            ('band', 'B: transakcje, znaki', 'B_IO')]
+    elif uart:
         rows = [('dig', 'A.HOST_IRQ_N', 'A.HOST_IRQ_N', None)] + io_rows('A') + [
             ('ann', 'A: znaki RX', 'A_IO'), ('band', 'linia: ramki', 'FRAMES')] + io_rows('B') + [
             ('ann', 'B: znaki TX', 'B_IO')]
@@ -233,7 +243,8 @@ def make(tb):
     tr.ann['FRAMES'] = [(a, b, 'ramka') for a, b in fr]
     t0 = tr.mark('link_up') - 2 * US
     render(tr, os.path.join(OUT_DIR, test + '_overview.svg'),
-           'E2E %s ↔ %s: przebieg całego testu' % (up, up), t0, t_end, rows, marks=marks)
+           'E2E %s ↔ %s%s: przebieg całego testu' % (up, up, ' (tryb z rejestru)' if reg else ''),
+           t0, t_end, rows, marks=marks)
 
     # input of A
     if uart:
@@ -260,7 +271,7 @@ def make(tb):
 
     # output of B
     if uart:
-        ann = tr.ann['B_IO']
+        ann = [a for a in tr.ann['B_IO'] if a[0] > tr.mark('a_in_start')]
         ta, tb_ = ann[0][0], ann[-1][1]
     else:
         ta = [t for t, m in tr.marks if m == 'b_out_start'][0]
@@ -270,9 +281,25 @@ def make(tb):
         io_rows('B') + [('ann', 'B: dane', 'B_IO', ('TX_', 'RX_', 'READ', 'dummy', 'adr'))]
     render(tr, os.path.join(OUT_DIR, test + '_output.svg'),
            'Wyjście mostka B (%s): host B odbiera ramkę' % up, ta - pad, tb_ + pad, rows)
+
+    # status: host A back in the xSPI mode reads and clears UART_STATUS
+    if reg:
+        ta = [t for t, m in tr.marks if m == 'a_reset'][0]
+        tb_ = t_end
+        ann = [a for a in tr.ann['A_IO'] if a[0] > ta]
+        t1 = ann[-1][1] if ann else tb_
+        ta2 = ann[0][0] if ann else ta
+        pad = (t1 - ta2) // 40
+        rows = [('dig', 'A.SCLK', 'A.SCLK', None),
+                ('dig', 'A.CS_N', 'A.CS_N', None)] + io_rows_spi('A') + [
+            ('ann', 'A: dane', 'A_IO', ('READ', 'WRITE', 'dummy', 'adr'))]
+        render(tr, os.path.join(OUT_DIR, test + '_status.svg'),
+               'Mostek A po HOST_RST_N (xSPI): odczyt MODE_CTRL, UART_DIV, UART_STATUS i kasowanie W1C',
+               ta2 - pad, t1 + pad, rows)
     print('ok', test)
 
 
 if __name__ == '__main__':
-    for tb in sys.argv[1:] or ['tb_e2e_spi', 'tb_e2e_qspi', 'tb_e2e_ospi', 'tb_e2e_uart']:
+    for tb in sys.argv[1:] or ['tb_e2e_spi', 'tb_e2e_qspi', 'tb_e2e_ospi', 'tb_e2e_uart',
+                                 'tb_e2e_uart_reg']:
         make(tb)

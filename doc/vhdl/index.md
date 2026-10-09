@@ -7,7 +7,7 @@ Kod FPGA jest pisany w VHDL-2008 dla układu GW1N-UV9QN48C6/I5 (GW1N-9C) i synte
 ```
 vhdl/
   constraints/            sfp_bridge.cst (piny), sfp_bridge.sdc (zegary) — wspólne
-  sfp_bridge/             projekt docelowy Gowin EDA
+  sfp_bridge/             projekt Gowin EDA (sfp_bridge.gprj, build.tcl)
     src/pkg/              pakiety: bridge_pkg (stałe), code8b10b_pkg (kod 8b/10b)
     src/common/           elementy ogólne: sync_bit, reset_sync
     src/clk/              clk_rst (rPLL, CLKDIV, reset domeny clk_sys)
@@ -17,10 +17,10 @@ vhdl/
     src/host/             interfejs hosta: xspi_slave, csr_regs, frame_echo
     src/mgmt/             zarządzanie modułem SFP i diody: i2c_master, sfp_mgmt, leds
     src/top/              sfp_bridge_top
-  sfp_bridge_testled/     projekt testowy: miganie LED
   sim/
     tb/                   testbenche (tb_<moduł>.vhd), tb_pkg, e2e_bench (testy end-to-end)
     wave_svg.py           rysunki przebiegów testów end-to-end (doc/e2e/img)
+    datasheet_svg.py      diagramy datasheetu (doc/datasheet/img)
     waves/                widoki GTKWave (.gtkw)
     sources.txt           kolejność kompilacji do symulacji
     run_tests.ps1 / .sh   uruchamianie testów
@@ -50,7 +50,7 @@ vhdl/
 | `i2c_master`, `sfp_mgmt` | `src/mgmt/i2c_master.vhd`, `sfp_mgmt.vhd` | `tb_i2c_sfp`, `tb_csr_regs` | PASS | tak (z xspi_slave i csr_regs: 84 / 43 MHz) | [Zarządzanie SFP](sfp_mgmt.md) |
 | `xspi_slave` | `src/host/xspi_slave.vhd` | `tb_xspi_slave` | PASS | tak (SCLK 40 MHz) | [Interfejs hosta](xspi_slave.md) |
 | `csr_regs` | `src/host/csr_regs.vhd` | `tb_csr_regs` | PASS | tak (z xspi_slave: 82 / 45 MHz) | [Rejestry](csr_regs.md) |
-| `host_clk`, `frame_echo` | `src/clk/host_clk.vhd`, `src/host/frame_echo.vhd` | `tb_host_clk` | PASS | przy integracji (etap 10) | [Zegar hosta, echo](host_clk.md) |
+| `host_clk`, `frame_echo` | `src/clk/host_clk.vhd`, `src/host/frame_echo.vhd` | `tb_host_clk` | PASS | tak (w topie) | [Zegar hosta, echo](host_clk.md) |
 | `leds` | `src/mgmt/leds.vhd` | `tb_leds` | PASS | tak (w topie) | [Integracja](top.md) |
 | `sfp_bridge_top` | `src/top/sfp_bridge_top.vhd` | `tb_e2e_spi`, `tb_e2e_qspi`, `tb_e2e_ospi`, `tb_e2e_uart`, `tb_e2e_uart_reg` | PASS | tak (cały układ: 4483 LUT/ALU, 7 BSRAM, `clk_sys` 56 MHz, `clk_host` 44 MHz) | [Integracja](top.md), [testy end-to-end](../e2e/index.md) |
 

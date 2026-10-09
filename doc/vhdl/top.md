@@ -37,7 +37,7 @@ FIFO TX: `PUB_STABLE` (publikacja wskaźnika bez uzgadniania, SCLK zatrzymuje si
 
 ## Łącze i SFP
 
-- Para RD jest na płytce rev. A odwrócona (plan, 3.2, reguła 9): `rx_phy` z `INVERT => true`, `rd_p => sfp_rd_n`, `rd_n => sfp_rd_p`. Para TD bez zmian.
+- Para RD jest na płytce rev. A odwrócona ([koncepcja konstrukcji](../sfp-xspi-bridge-plan.md), 3.2, reguła 9): `rx_phy` z `INVERT => true`, `rd_p => sfp_rd_n`, `rd_n => sfp_rd_p`. Para TD bez zmian.
 - `CTRL.LB_NEAR` → `link_ctrl` w pętli near-end; `CTRL.TX_EN`, `RX_EN`, `LOS_IGNORE` bez pośrednictwa.
 - `link_ctrl` dostaje przefiltrowane `LOS` i `MOD_ABS` z [`sfp_mgmt`](sfp_mgmt.md). Linie I2C SFP są open-drain (`'0'` lub stan wysokiej impedancji).
 - Zdarzenia dla `IRQ_STAT`: `RX_FRAME` = poprawna ramka odebrana przez `rx_deframer`, `LINK_CHG` z `link_ctrl`, `ERR` = dowolny błąd deframera (lub bajt utracony na pełnym FIFO TX), `I2C_DONE` z `sfp_mgmt`.
@@ -98,14 +98,14 @@ Pełny układ (GW1N-UV9QN48C6/I5, Gowin EDA 1.9.11.03), kompilacja z `sfp_bridge
 
 Wszystkie ścieżki spełniają wymagania (brak ujemnego zapasu dla ustawień i podtrzymania). Fmax `clk_sys` w pełnym układzie ma mniejszy zapas niż w próbnych syntezach modułów (cel ≥ 60 MHz z ADR 0007 nie jest osiągnięty; najdłuższe ścieżki: automat stanów `i2c_master` w `sfp_mgmt`; w innych kompilacjach licznik `fetch_left` w `tx_framer`). PnR optymalizuje do zadanego ograniczenia, więc wartości Fmax pokazują zapas przy 50 MHz, a nie granicę układu.
 
-Kolejne poprawki przy integracji (ścieżki, które nie mieściły się w czasie w pełnym układzie):
+Rozwiązania wynikające z analizy czasowej pełnego układu:
 - `csr_regs` i `sfp_mgmt`: wstępne dekodowanie bajtów `WRITE_REG` (rejestry pomocnicze) zamiast dekodowania w takcie zastosowania zapisu;
 - `uart_bridge` na zanegowanym `clk_host` (zamiast ścieżek półokresowych do portów FIFO na zboczu opadającym).
 
 ## Testy
 
 - `tb_leds` — zachowanie diod: zgaszone w resecie i przy DOWN, stałe przy UP, miganie przy SYNC (czasy w taktach), błysk ACT z przerwą także przy ciągłej aktywności.
-- Testy end-to-end — dwa kompletne mostki (`sfp_bridge_top` z modelami prymitywów Gowin) połączone linią: SPI ↔ SPI, QSPI ↔ QSPI, OSPI ↔ OSPI, UART ↔ UART. Opis, wyniki i przebiegi: [Testy end-to-end](../e2e/index.md).
+- Testy end-to-end — dwa kompletne mostki (`sfp_bridge_top` z modelami prymitywów Gowin) połączone linią: SPI ↔ SPI, QSPI ↔ QSPI, OSPI ↔ OSPI, UART ↔ UART (tryb wybrany zworką i rejestrem). Opis, wyniki i przebiegi: [Testy end-to-end](../e2e/index.md).
 
 **Test mutacyjny** (15 wariantów; `tb_leds`, testy end-to-end, `tb_csr_regs`): wykrywane — `LED_LINK` stale włączona przy SYNC lub włączona przy DOWN, `LED_ACT` bez przerwy po błysku, brak odwrócenia polaryzacji RD (`INVERT` lub zamiana pinów), odwrócona polaryzacja TD, pominięcie `MODE_SEL`, `rx_valid` niebramkowany dla `xspi_slave`, `HOST_IRQ_N` w trybie UART z rejestrów zamiast stanu łącza, `UART_TX` na złej linii J3, `UART_DIV` kasowany resetem programowym, `UART_STATUS` kasowany przez `HOST_RST_N` lub bez połączenia `FRAME_ERR` (`tb_e2e_uart_reg`).
 

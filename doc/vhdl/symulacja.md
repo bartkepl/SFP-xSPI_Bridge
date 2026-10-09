@@ -4,8 +4,8 @@
 
 | Narzędzie | Rola | Lokalizacja |
 |---|---|---|
-| GHDL 5.0.1 | symulator VHDL-2008 | WSL (`apt install ghdl`) |
-| GTKWave 3.4 | podgląd przebiegów | `gtkwave` w `PATH` |
+| GHDL 5 | symulator VHDL-2008 | Linux lub WSL (`apt install ghdl`); dystrybucja WSL w zmiennej `GHDL_WSL_DISTRO` (domyślnie dystrybucja domyślna) |
+| GTKWave 3.4 | podgląd przebiegów | ścieżka w zmiennej `GTKWAVE` albo `gtkwave` w `PATH` |
 
 Uzasadnienie wyboru: [ADR 0003](../adr/0003-weryfikacja-ghdl.md).
 
@@ -31,7 +31,7 @@ Przy błędzie wypisywane są pierwsze nieudane sprawdzenia (`CHECK FAILED: ...`
 
 Skrypt kompiluje pliki z `sources.txt` (w tej kolejności) oraz wszystkie `tb_*.vhd`. Nowy moduł dopisuje się do `sources.txt` za modułami, od których zależy.
 
-Moduły z prymitywami Gowin (`tx_phy`, `rx_phy`) korzystają z biblioteki `gw1n`: skrypt kompiluje do niej model symulacyjny producenta `prim_sim.vhd` (encje prymitywów) i `prim_syn.vhd` (pakiet `components` z deklaracjami komponentów) z instalacji Gowin EDA — katalog `IDE/simlib/gw1n`, ścieżka w zmiennej `GOWIN_SIMLIB`. Biblioteka jest kompilowana ponownie tylko wtedy, gdy jej brak lub model jest nowszy. Ten sam kod (`library gw1n; use gw1n.components.all;`) służy do syntezy i symulacji.
+Moduły z prymitywami Gowin (`tx_phy`, `rx_phy`) korzystają z biblioteki `gw1n`: skrypt kompiluje do niej model symulacyjny producenta `prim_sim.vhd` (encje prymitywów) i `prim_syn.vhd` (pakiet `components` z deklaracjami komponentów) z instalacji Gowin EDA — katalog `IDE/simlib/gw1n`, ścieżka w zmiennej `GOWIN_SIMLIB` (wymagana; `run_tests.ps1` przekłada ścieżkę Windows na ścieżkę WSL). Biblioteka jest kompilowana ponownie tylko wtedy, gdy jej brak lub model jest nowszy. Ten sam kod (`library gw1n; use gw1n.components.all;`) służy do syntezy i symulacji.
 
 ## Wspólne elementy testbenchy (`tb_pkg`)
 

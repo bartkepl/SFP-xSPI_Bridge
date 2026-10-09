@@ -72,7 +72,7 @@ Wynik: faza CDR podąża za opóźnieniem (0,3 ns → 0, 2,9 ns → 1, 5,5 ns �
 
 ## Test pętli łącza `tb_link_loopback`
 
-Pełne łącze między dwoma końcami mostka na poziomie bitów, z modelami prymitywów Gowin i niezależnymi zegarami — test integracyjny etapów 1–5:
+Pełne łącze między dwoma końcami mostka na poziomie bitów, z modelami prymitywów Gowin i niezależnymi zegarami — test integracyjny toru łącza:
 
 host → FIFO TX → `tx_framer` → `enc_8b10b` → `tx_gearbox` → `tx_phy` → linia → `rx_phy` → [`link_ctrl`](link_ctrl.md) (multiplekser pętli) → `cdr_os4x8` → `comma_align` → `dec_8b10b` → `rx_deframer` → FIFO RX → host (w obu kierunkach); `link_ctrl` steruje każdym końcem (stan łącza, bezczynność /R/, bramkowanie nadawania, liczniki — [ADR 0008](../adr/0008-stan-lacza.md)).
 

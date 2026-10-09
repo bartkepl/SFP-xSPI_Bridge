@@ -1,11 +1,11 @@
 # 0009. Interfejs hosta: ramki w formacie surowym, rejestry zatrzaskiwane przy CS, zegar strony hosta przez DCS
 
 **Stan:** przyjęta · **Data:** 2026-10-08
-**Dotyczy:** vhdl, firmware, doc (zmienia mapę rejestrów z planu, uzupełnia [ADR 0006](0006-tryb-uart-przezroczysty.md) i [ADR 0008](0008-stan-lacza.md))
+**Dotyczy:** vhdl, firmware, doc (zmienia wstępną mapę rejestrów, uzupełnia [ADR 0006](0006-tryb-uart-przezroczysty.md) i [ADR 0008](0008-stan-lacza.md))
 
 ## Kontekst
 
-Slave xSPI pracuje w domenie zegara hosta (SCLK), bo przy tej częstotliwości SCLK nie da się nadpróbkować zegarem `clk_sys` (plan, rozdz. 3). SCLK biegnie wyłącznie w czasie transakcji. Strona hosta FIFO (zapis FIFO TX, odczyt FIFO RX) pracuje na tym samym zegarze, aby przepustowość OCTOSPI (do 50 MB/s) nie wymagała dodatkowego bufora.
+Slave xSPI pracuje w domenie zegara hosta (SCLK), bo przy tej częstotliwości SCLK nie da się nadpróbkować zegarem `clk_sys` ([koncepcja konstrukcji](../sfp-xspi-bridge-plan.md), rozdz. 3). SCLK biegnie wyłącznie w czasie transakcji. Strona hosta FIFO (zapis FIFO TX, odczyt FIFO RX) pracuje na tym samym zegarze, aby przepustowość OCTOSPI (do 50 MB/s) nie wymagała dodatkowego bufora.
 
 Szkic mapy rejestrów zakładał rejestry ramek: `TX_TYPE`, `TX_LEN`, `TX_COMMIT`, `RX_TYPE`, `RX_LEN`, `RX_POP`. Wymagają one operacji na FIFO pomiędzy transakcjami, gdy zegar strony hosta stoi (np. `RX_LEN` wymaga wcześniejszego wyjęcia nagłówka z FIFO). Rejestry sterujące i stanu są natomiast potrzebne w domenie `clk_sys` (`link_ctrl`, UART, I2C), a odczyt rejestru przez xSPI ma tylko kilka taktów SCLK na przejście między domenami. Liczniki 32-bitowe wymagają spójnego odczytu wielobajtowego.
 
@@ -62,11 +62,11 @@ Reset strony hosta (synchroniczny) odbywa się zawsze na `clk_sys`, więc nie wy
 | 0x0A–0x0B | TX_SPACE | R | wolne bajty w FIFO TX |
 | 0x0C–0x0D | RX_LEVEL | R | bajty zatwierdzonych ramek w FIFO RX |
 | 0x10–0x2F | CNT_* | R | 8 liczników 32-bit ([ADR 0008](0008-stan-lacza.md)) |
-| 0x30–0x4F | I2C, DDM | — | etap 8 (I2C i zarządzanie SFP) |
+| 0x30–0x4F | I2C, DDM | R/W | skrzynka poleceń I2C i kopia diagnostyki DDM ([datasheet, 7.7–7.8](../datasheet/index.md#77-rejestry-i2c-0x300x34)) |
 | 0x50 | MODE_CTRL | R/W | b0 `UART_MODE`, b1 `FRAME_ECHO`, b2 `RTSCTS_EN` (zachowywany przy resecie programowym) |
 | 0x51–0x52 | UART_DIV | R/W | takty `clk_sys` na bit UART, po resecie 434 |
-| 0x53 | UART_STATUS | R/W1C | b0 `RX_OVF`, b1 `FRAME_ERR` |
-| 0x80–0xFF | I2C_BUF | — | etap 8 |
+| 0x53 | UART_STATUS | R/W1C | b0 `RX_OVF`, b1 `FRAME_ERR`; kasowany tylko przy włączeniu zasilania i przez W1C |
+| 0x80–0xFF | I2C_BUF | R/W | bufor I2C 128 B, odczyt bez zatrzasku |
 
 Nieopisane adresy: odczyt 0, zapis ignorowany. `HOST_IRQ_N` = 0, gdy (`IRQ_STAT` ∧ `IRQ_EN`) ≠ 0.
 

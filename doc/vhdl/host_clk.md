@@ -19,7 +19,7 @@ Prymityw `DCS` wybiera zegar strony hosta FIFO (`clk_host`):
 - Rejestr wyboru zmienia się na zboczu opadającym `clk_sys` — wtedy `clk_sys` i spoczynkowy SCLK mają stan niski, więc wyjście nie daje impulsu. Wejście w reset przełącza z powrotem na `clk_sys`; ewentualny niepełny impuls wypada w resecie strony hosta.
 - Wyjście `on_sclk` informuje, że `clk_hosta` = SCLK.
 
-Synteza DCS z SCLK (pin GCLKT_4) i `clk_sys` (z `CLKDIV`) zostanie sprawdzona przy integracji top-level (etap 10).
+Synteza DCS z SCLK (pin GCLKT_4) i `clk_sys` (z `CLKDIV`) jest sprawdzona w pełnym układzie: `clk_host` jest ograniczony jako zegar generowany na wyjściu DCS ([integracja](top.md#ograniczenia-czasowe)).
 
 ## `frame_echo`
 

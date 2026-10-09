@@ -24,4 +24,4 @@ Para RD pozostaje w banku 0 (piny 43/42), aby zachować terminację wewnętrzną
 
 - Płytka zawiera 2 × 49,9 Ω (montowane) i 2 × 10 kΩ (DNP) przy pinach 42/43 oraz dzielnik Vbias z kondensatorem.
 - Jednoczesne użycie obu terminacji daje ok. 50 Ω i jest niedopuszczalne.
-- Tor RX może zostać przeniesiony poza bank 0 (alternatywy w planie, tabela 3.3); wtedy atrybut `DIFF_RESISTOR` musi zostać usunięty z `.cst`, a opcja awaryjna przestaje istnieć.
+- Tor RX może zostać przeniesiony poza bank 0 (alternatywy w [koncepcji konstrukcji](../sfp-xspi-bridge-plan.md), tabela 3.3); wtedy atrybut `DIFF_RESISTOR` musi zostać usunięty z `.cst`, a opcja awaryjna przestaje istnieć.

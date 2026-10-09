@@ -67,7 +67,7 @@ Wybór trybu: zworka lutowana JP3 (`MODE_SEL`, pin 10 FPGA) — **otwarta: xSPI*
 |---|---|---|---|---|---|
 | Napięcie zasilania 3V3 | 3,135 | 3,3 | 3,465 | V | dolna granica wynika z modułu SFP (INF-8074i) |
 | Napięcie zasilania, wartość graniczna | | | 3,75 | V | GW1N-UV (DS100, tab. 3-1) |
-| Pobór prądu (z modułem SFP), szacunek | | 0,45 | 0,6 | A | moduł SFP do 0,3 A, FPGA 50–100 mA (plan 5.4) |
+| Pobór prądu (z modułem SFP), szacunek | | 0,45 | 0,6 | A | moduł SFP do 0,3 A, FPGA 50–100 mA (koncepcja konstrukcji, 5.4) |
 | V_IL wejść J3 | −0,3 | | 0,8 | V | LVCMOS33 (DS100, tab. 3-12) |
 | V_IH wejść J3 | 2,0 | | 3,6 | V | |
 | V_OL wyjść (I_OL = 8 mA) | | | 0,4 | V | |

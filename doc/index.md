@@ -1,6 +1,6 @@
 # SFP-xSPI Bridge
 
-Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP** łączący dwa mikrokontrolery STM32 łączem światłowodowym punkt–punkt, bez stosu IP. Transmisja odbywa się własnym protokołem ramkowym z kodowaniem 8b/10b i programowym odzyskiem zegara (soft-CDR) w FPGA Gowin GW1N-UV9QN48C6/I5.
+Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP** łączący dwa mikrokontrolery STM32 łączem światłowodowym punkt–punkt, bez stosu IP. Transmisja odbywa się własnym protokołem ramkowym z kodowaniem 8b/10b i programowym odzyskiem zegara (soft-CDR) w FPGA Gowin GW1N-UV9QN48C6/I5. Tryb przezroczysty UART przenosi strumień bajtów między dwoma portami szeregowymi bez sterownika.
 
 ```
 STM32 <== xSPI ==> GW1N-9 <== LVDS ==> SFP ~~~ światłowód ~~~ SFP <==> GW1N-9 <==> STM32
@@ -10,10 +10,11 @@ STM32 <== xSPI ==> GW1N-9 <== LVDS ==> SFP ~~~ światłowód ~~~ SFP <==> GW1N-9
 
 | Część | Zawartość |
 |---|---|
-| [Plan konstrukcji](sfp-xspi-bridge-plan.md) | architektura, przydział pinów, zegary, PCB, moduły VHDL, komendy xSPI, rejestry, biblioteka C, plan uruchomienia |
-| [Interfejs hosta (datasheet)](datasheet/index.md) | komendy xSPI, mapa rejestrów, tryb UART, parametry czasowe |
+| [Koncepcja konstrukcji](sfp-xspi-bridge-plan.md) | architektura, przydział pinów, zegary, warstwa fizyczna i PCB, moduły FPGA, komendy xSPI, rejestry, plan uruchomienia |
+| [Interfejs hosta (datasheet)](datasheet/index.md) | wyprowadzenia, parametry czasowe, komendy xSPI, mapa rejestrów, tryb UART |
 | [Biblioteka C (STM32)](firmware.md) | konfiguracja, porty HAL, API, weryfikacja |
-| [VHDL](vhdl/index.md) | struktura projektu FPGA, konwencje kodu, symulacja, opisy modułów |
+| [Projekt FPGA](vhdl/index.md) | struktura projektu, konwencje kodu, symulacja, opisy modułów, wyniki syntezy |
+| [Testy end-to-end](e2e/index.md) | dwa kompletne mostki połączone łączem, z przebiegami |
 | [Decyzje (ADR)](adr/README.md) | rejestr decyzji projektowych z uzasadnieniem |
 
 ## Budowa dokumentacji

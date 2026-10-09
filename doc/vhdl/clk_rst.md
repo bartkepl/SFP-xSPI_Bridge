@@ -59,17 +59,15 @@ Zakres VCO GW1N-9 (C6/I5): 400–1200 MHz (DS100). `clk_sys` pochodzi z `CLKDIV`
 
 ## Ograniczenia czasowe (`.sdc`)
 
-Zegary wyjściowe PLL i `CLKDIV` należy zadeklarować jawnie (bez tego Gowin zgłasza ostrzeżenie TA1132 i nadaje im nazwy domyślne). Składnia sprawdzona w próbnej syntezie, dla instancji `u_clk` w top-level:
+Zegary wyjściowe PLL i `CLKDIV` są zadeklarowane jawnie jako zegary generowane (bez tego Gowin zgłasza ostrzeżenie TA1132 i nadaje im nazwy domyślne). Wpisy w `vhdl/constraints/sfp_bridge.sdc` odwołują się do instancji `u_clk` w top-level:
 
 ```
 create_clock -name clk_25m -period 40.000 [get_ports {clk_25m}]
-create_generated_clock -name clk_fast -source [get_ports {clk_25m}] -master_clock clk_25m -multiply_by 8 [get_pins {u_clk/u_pll/CLKOUT}]
-create_generated_clock -name clk_sys -source [get_pins {u_clk/u_pll/CLKOUT}] -master_clock clk_fast -divide_by 4 [get_pins {u_clk/u_div/CLKOUT}]
-create_clock -name clk_spi -period 20.000 [get_ports {xspi_sclk}]
-set_clock_groups -asynchronous -group [get_clocks {clk_spi}] -group [get_clocks {clk_25m clk_fast clk_sys}]
+create_generated_clock -name clk_fast -source [get_ports {clk_25m}] -multiply_by 8 [get_pins {u_clk/u_pll/CLKOUT}]
+create_generated_clock -name clk_sys -source [get_pins {u_clk/u_pll/CLKOUT}] -divide_by 4 [get_pins {u_clk/u_div/CLKOUT}]
 ```
 
-Wpisy trafią do `sfp_bridge.sdc` przy integracji top-level (odwołują się do hierarchii instancji).
+Pełny zestaw ograniczeń (zegar hosta, grupy asynchroniczne, opóźnienia pinów xSPI): [integracja](top.md#ograniczenia-czasowe).
 
 ## Synteza
 

@@ -11,7 +11,7 @@ Wymagania wobec weryfikacji:
 
 - automatyczna ocena wyniku (PASS/FAIL) dla każdego modułu, możliwa do uruchomienia jednym poleceniem,
 - przebiegi czasowe do ręcznej oceny przez osobę bez specjalistycznego przygotowania w weryfikacji,
-- obsługa VHDL-2008 i modeli prymitywów Gowin (IDES4, OSER4, rPLL) w testach toru fizycznego,
+- obsługa VHDL-2008 i modeli prymitywów Gowin (serializery IDES/OSER, rPLL, CLKDIV, DCS) w testach toru fizycznego,
 - praca na stacji Windows (symulator w WSL) i na Linuksie.
 
 ## Rozważane warianty
@@ -23,7 +23,7 @@ Wymagania wobec weryfikacji:
 
 ## Decyzja
 
-- Symulator: **GHDL 5.0.1** w WSL (`apt install ghdl`).
+- Symulator: **GHDL 5** (`apt install ghdl`; na Windows w WSL).
 - Testbenche: **czysty VHDL-2008**, samosprawdzające, wspólny pakiet `vhdl/sim/tb/tb_pkg.vhd` (licznik błędów, procedury `check*`, jedna linia wyniku `TB <nazwa> PASS|FAIL`).
 - Uruchamianie: `vhdl/sim/run_tests.ps1` (Windows) → `run_tests.sh` (WSL); kolejność kompilacji w `vhdl/sim/sources.txt`.
 - Przebiegi: każdy testbench zapisuje `vhdl/sim/out/<tb>.ghw`; podgląd **GTKWave 3.4** z gotowym widokiem `vhdl/sim/waves/<tb>.gtkw` (`view.ps1 <tb>`).

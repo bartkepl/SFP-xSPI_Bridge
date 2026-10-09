@@ -66,5 +66,5 @@ Ramki są rozpoczynane wyłącznie w stanie UP, przy XON i przy `TX_EN` = 1. Ram
 - Ramki nie są tracone na starcie łącza ani po utracie synchronizacji przez jedną stronę; host nie musi znać stanu strony przeciwnej przed zapisem ramki.
 - Stan łącza UP potwierdza dwukierunkową synchronizację; `LINK_UP` w rejestrze `STATUS` i dioda LINK odpowiadają rzeczywistej zdolności przesyłania ramek.
 - Zmiana kodowania sekwencji bezczynności: nowy znak D5.6 w `tx_framer` (wejście `rx_ready`) i `rx_deframer` (wyjście `remote_ready`). Starsze implementacje nie występują — protokół nie był wdrożony.
-- Echo ramek wymaga modułu kopiującego między stroną hosta FIFO RX i FIFO TX (top-level, etap integracji); pętla near-end — multipleksera próbek w `link_ctrl`.
+- Echo ramek wymaga modułu kopiującego między stroną hosta FIFO RX i FIFO TX (`frame_echo` w top-level); pętla near-end — multipleksera próbek w `link_ctrl`.
 - Mapa rejestrów: `CTRL` otrzymuje bity `LOS_IGNORE` i `CNT_CLR`, `STATUS` — `REMOTE_READY` i stan łącza; licznik `SYNC_LOSS` uzupełnia obszar `CNT_*` do ośmiu pozycji.

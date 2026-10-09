@@ -28,7 +28,7 @@ Wariant 2:
 |---|---|---|---|
 | `clk_fast` | rPLL z `CLK_25M` | 200 MHz | FCLK `IDES8` / `OSER8` (sieć HCLK) |
 | `clk_sys` | `CLKDIV` (`DIV_MODE = "4"`) z `clk_fast` | 50 MHz | całe łącze (CDR, wyrównanie, 8b/10b, framer, CRC, FIFO strona łącza), I2C, UART, CSR |
-| `clk_spi` | pin SCLK hosta | ≤ 50 MHz | slave xSPI, strona hosta FIFO |
+| `clk_spi` | pin SCLK hosta | ≤ 40 MHz ([ADR 0009](0009-interfejs-hosta.md)) | slave xSPI, strona hosta FIFO |
 
 - Odbiór: `TLVDS_IBUF` → `IDES8` → 8 próbek na takt `clk_sys`; CDR wydaje nominalnie 2 bity na takt, przy różnicy częstotliwości 1 lub 3 bity.
 - Nadawanie: `OSER8` z każdym bitem powielonym 4× (2 bity na takt `clk_sys`) → `TLVDS_OBUF`.

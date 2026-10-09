@@ -15,11 +15,12 @@ vhdl/
     src/link/             tor łącza: crc32, 8b/10b, ramkowanie, CDR, wyrównanie, PHY, link_ctrl
     src/uart/             tryb przezroczysty UART: uart_rx, uart_tx, uart_bridge
     src/host/             interfejs hosta: xspi_slave, csr_regs, frame_echo
-    src/mgmt/             zarządzanie modułem SFP: i2c_master, sfp_mgmt
+    src/mgmt/             zarządzanie modułem SFP i diody: i2c_master, sfp_mgmt, leds
     src/top/              sfp_bridge_top
   sfp_bridge_testled/     projekt testowy: miganie LED
   sim/
-    tb/                   testbenche (tb_<moduł>.vhd) i tb_pkg
+    tb/                   testbenche (tb_<moduł>.vhd), tb_pkg, e2e_bench (testy end-to-end)
+    wave_svg.py           rysunki przebiegów testów end-to-end (doc/e2e/img)
     waves/                widoki GTKWave (.gtkw)
     sources.txt           kolejność kompilacji do symulacji
     run_tests.ps1 / .sh   uruchamianie testów
@@ -50,7 +51,8 @@ vhdl/
 | `xspi_slave` | `src/host/xspi_slave.vhd` | `tb_xspi_slave` | PASS | tak (SCLK 40 MHz) | [Interfejs hosta](xspi_slave.md) |
 | `csr_regs` | `src/host/csr_regs.vhd` | `tb_csr_regs` | PASS | tak (z xspi_slave: 82 / 45 MHz) | [Rejestry](csr_regs.md) |
 | `host_clk`, `frame_echo` | `src/clk/host_clk.vhd`, `src/host/frame_echo.vhd` | `tb_host_clk` | PASS | przy integracji (etap 10) | [Zegar hosta, echo](host_clk.md) |
-| `leds` | — | — | — | — | planowany |
+| `leds` | `src/mgmt/leds.vhd` | `tb_leds` | PASS | tak (w topie) | [Integracja](top.md) |
+| `sfp_bridge_top` | `src/top/sfp_bridge_top.vhd` | `tb_e2e_spi`, `tb_e2e_qspi`, `tb_e2e_ospi`, `tb_e2e_uart` | PASS | tak (cały układ: 4443 LUT/ALU, 7 BSRAM, `clk_sys` 52 MHz, `clk_host` 46 MHz) | [Integracja](top.md), [testy end-to-end](../e2e/index.md) |
 
 **Zegary** ([ADR 0007](../adr/0007-zegar-systemowy-50mhz.md)): `clk_sys` = 50 MHz (PCLK serializerów IDES8/OSER8), `clk_fast` = 200 MHz tylko w blokach I/O. Kryterium dla modułów domeny `clk_sys`: Fmax ≥ 50 MHz z zapasem (cel ≥ 60 MHz). Symbol 8b/10b = 5 taktów `clk_sys`.
 

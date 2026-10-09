@@ -31,7 +31,8 @@ Rejestry mostka w domenie `clk_sys` ([ADR 0009](../adr/0009-interfejs-hosta.md);
 - `TX_SPACE` = `TX_DEPTH` − liczba zatwierdzonych słów w FIFO TX (strona odczytu), `RX_LEVEL` = liczba zatwierdzonych słów w FIFO RX (strona zapisu, `wr_cmt_level`).
 - `IRQ_STAT`: zdarzenia `RX_FRAME`, `TX_EMPTY` (FIFO TX opróżnione), `LINK_CHG`, `SFP_CHG` (zmiana LOS / TX_FAULT / MOD_ABS), `I2C_DONE`, `ERR` (zdarzenie błędu łącza lub bajt utracony na pełnym FIFO TX). Kasowanie zapisem 1 (W1C); zdarzenie w takcie kasowania wygrywa. `irq_n` = 0, gdy (`IRQ_STAT` ∧ `IRQ_EN`) ≠ 0 (rejestrowane).
 - `MODE_CTRL` (`UART_MODE`, `FRAME_ECHO`, `RTSCTS_EN`) jest kasowany tylko przez `rst_hard`. Zapis zmieniający `UART_MODE` lub `FRAME_ECHO` ustawia `soft_rst` — reset mostka z zachowanym nowym trybem.
-- `UART_DIV` po resecie 434 (115 200 baud); `UART_STATUS`: `RX_OVF`, `FRAME_ERR`, W1C.
+- `UART_DIV` po resecie 434 (115 200 baud), kasowany tylko przez `rst_hard` (jak `MODE_CTRL`): prędkość ustawiona przed przejściem w tryb UART przez `MODE_CTRL` pozostaje po resecie, który to przejście wywołuje. `UART_STATUS`: `RX_OVF`, `FRAME_ERR`, W1C.
+- Bajty `WRITE_REG` są dekodowane w każdym takcie do rejestrów pomocniczych; takt zastosowania zapisu wypada co najmniej 2 takty po podniesieniu CS, gdy zdekodowane wartości są stabilne. Dekodowanie nie leży więc na ścieżce od synchronizatora CS (wymaganie czasowe pełnego układu).
 
 Pętla resetu programowego: `soft_rst` → `clk_rst` (`arst_n`) → `rst_sys` → kasowanie `soft_rst` → zwolnienie po `STAGES` taktach.
 
@@ -53,7 +54,7 @@ Próbna synteza `csr_regs` + `xspi_slave` (GW1N-9C, `clk_sys` 50 MHz, SCLK 40 MH
 | 6 | `CNT_CLR`: jeden impuls `cnt_clr`, bit czytany jako 0 |
 | 7 | `SOFT_RST`: reset mostka, `CTRL` = 0x03, `MODE_CTRL` zachowany |
 | 8 | `RTSCTS_EN` bez resetu; zmiana `UART_MODE` → reset, tryb zachowany; `rst_hard` kasuje `MODE_CTRL` |
-| 9 | `UART_DIV` (2 bajty, little-endian), `UART_STATUS` W1C |
+| 9 | `UART_DIV` (2 bajty, little-endian, zachowany po resecie programowym), `UART_STATUS` W1C |
 | 10 | z `sfp_mgmt` (magistrala I2C bez urządzeń): rejestry skrzynki i `DDM_PERIOD` — odczyt zwrotny; `I2C_BUF` 8 B zapis / odczyt; polecenie bez modułu → `BAD_CMD`, `I2C_DONE`; z modułem → `BUSY` w transakcji bezpośrednio po poleceniu, potem `NACK` — zob. [Zarządzanie SFP](sfp_mgmt.md) |
 
 **Test mutacyjny:** wykrywane — brak zatrzasku (odczyt wartości bieżących), stosowanie zapisu przed podniesieniem CS, kasowanie `MODE_CTRL` resetem programowym, W1C ustawiające zamiast kasować, brak resetu przy zmianie trybu.

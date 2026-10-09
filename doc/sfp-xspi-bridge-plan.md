@@ -13,7 +13,7 @@ Moduł mostka **OCTOSPI / QUADSPI / SPI ↔ SFP (światłowód)** do łączenia 
 | Strona optyczna | moduł SFP (INF-8074i) bez wewnętrznego CDR: 100BASE-FX / OC-3 lub 1000BASE-X (MM/SM, duplex lub BiDi); SFP+ nieobsługiwane |
 | Zasilanie | jedno **3,3 V** (wersja UV FPGA, moduł SFP) |
 
-> Status dokumentu: plan konstrukcji, aktualizowany wraz z projektem. Schemat rev. A gotowy, PCB w toku, VHDL — etapy 1–9 z 10 ([stan modułów](vhdl/index.md)). Pozycje oznaczone **[DO WERYFIKACJI]** pozostają do sprawdzenia; decyzje i ich uzasadnienia są w [rejestrze ADR](adr/README.md). Kopie dokumentacji producentów: [`datasheets/`](datasheets/).
+> Status dokumentu: plan konstrukcji, aktualizowany wraz z projektem. Schemat rev. A gotowy, PCB w toku, VHDL — etapy 1–10 gotowe, z testami end-to-end dwóch mostków ([stan modułów](vhdl/index.md), [testy end-to-end](e2e/index.md)). Pozycje oznaczone **[DO WERYFIKACJI]** pozostają do sprawdzenia; decyzje i ich uzasadnienia są w [rejestrze ADR](adr/README.md). Kopie dokumentacji producentów: [`datasheets/`](datasheets/).
 
 ---
 
@@ -560,7 +560,8 @@ vhdl/
                               --   tb_xspi_slave, tb_async_fifo_stable
                               --   tb_csr_regs (z xspi_slave), tb_host_clk (DCS, echo ramek)
                               --   tb_i2c_sfp (model modułu SFP, kontrola czasów I2C)
-                              --   planowane: tb_top
+                              --   tb_leds; testy end-to-end dwóch mostków (e2e_bench):
+                              --   tb_e2e_spi, tb_e2e_qspi, tb_e2e_ospi, tb_e2e_uart
     waves/                    -- widoki GTKWave (.gtkw)
     sources.txt               -- kolejność kompilacji
     run_tests.ps1 / .sh       -- uruchamianie testów (GHDL w WSL)
@@ -635,7 +636,9 @@ vhdl/
 - Odczyt DDM co `DDM_PERIOD` × 100 ms (domyślnie 1 s), od 300–400 ms po włożeniu modułu: bajty 96–110 z A2h w jednym poleceniu; kopia temperatury, Vcc, prądu lasera, mocy TX i RX (little-endian) oraz bajtu 110, aktualizowana w całości po udanym odczycie.
 - Filtry `MOD_ABS` (10 ms), `LOS` i `TX_FAULT` (50 µs); zmiana stanu generuje przerwanie `SFP_CHG`. `SFP_TX_DIS` = 1 w czasie resetu.
 
-**`leds`** — LINK (stan `UP`), ACT (rozciągnięty impuls przy ramce TX/RX); diody aktywne stanem niskim.
+**`leds`** — gotowy, [opis](vhdl/top.md) — LINK: świeci przy `UP`, miga 2 Hz przy `SYNC`, zgaszona przy `DOWN`; ACT: błysk 30 ms z przerwą 30 ms przy ramce TX/RX; diody aktywne stanem niskim.
+
+**`sfp_bridge_top`** — gotowy, [opis](vhdl/top.md) — integracja wszystkich modułów, wybór trybu (UART / echo / xSPI) i multipleksowanie pinów J3, odwrócona para RD (`rx_phy` z `INVERT`), ograniczenia czasowe z zegarami generowanymi PLL / CLKDIV / DCS; testy end-to-end dwóch mostków: [wyniki](e2e/index.md).
 
 **`uart_rx`, `uart_tx`, `uart_bridge`** — tryb przezroczysty, zob. 7.7.
 
@@ -686,7 +689,7 @@ Adresy bajtowe, wartości wielobajtowe little-endian ([ADR 0009](adr/0009-interf
 | 0x4C | DDM_SEQ | R | licznik udanych odczytów DDM (zawijanie) |
 | 0x4F | DDM_PERIOD | R/W | okres odczytu DDM × 100 ms; 0 = wyłączony; po resecie 10 |
 | 0x50 | MODE_CTRL | R/W | b0 `UART_MODE`, b1 `FRAME_ECHO`, b2 `RTSCTS_EN`; zachowywany przy resecie programowym; zmiana b0 / b1 resetuje mostek |
-| 0x51–0x52 | UART_DIV | R/W | takty `clk_sys` na bit UART (434 = 115 200) |
+| 0x51–0x52 | UART_DIV | R/W | takty `clk_sys` na bit UART (434 = 115 200); zachowywany przy resecie programowym (jak `MODE_CTRL`), więc prędkość ustawiona przed przejściem w tryb UART przez `MODE_CTRL` obowiązuje po resecie, który to przejście wywołuje |
 | 0x53 | UART_STATUS | R/W1C | b0 `RX_OVF`, b1 `FRAME_ERR` |
 | 0x80–0xFF | I2C_BUF | R/W | bufor I2C 128 B: wynik READ, dane do WRITE (od 0x80); czytany bez zatrzasku, stały przy `BUSY` = 0 |
 
@@ -717,7 +720,7 @@ Decyzja i uzasadnienie: [ADR 0006](adr/0006-tryb-uart-przezroczysty.md).
 - Piny J3 w trybie UART: `XSPI_IO0` = `UART_RX` (wejście), `XSPI_IO1` = `UART_TX` (wyjście), opcjonalnie `XSPI_IO2` = `UART_RTS_N` (wyjście), `XSPI_IO3` = `UART_CTS_N` (wejście); pozostałe linie xSPI w stanie wysokiej impedancji, `HOST_IRQ_N` = stan łącza.
 - 8N1, domyślnie 115200 baud; inna prędkość (do ok. 3 Mbaud) przez `UART_DIV` w trybie xSPI.
 - Pakietyzacja: ramka `TYPE = 0x01` po 64 bajtach lub po przerwie > 2 czasy znaku; odbiór: treść ramek `TYPE = 0x01` na `UART_TX`.
-- Moduły: `uart_rx`, `uart_tx`, `uart_bridge` — gotowe, [opis](vhdl/uart.md); `UART_DIV` = liczba taktów `clk_sys` na bit (434 = 115 200, minimum 8); RTS wstrzymuje nadawcę przy zapełnieniu FIFO TX; multipleksowanie pinów i zegara strony hosta FIFO w `sfp_bridge_top` (etap integracji).
+- Moduły: `uart_rx`, `uart_tx`, `uart_bridge` — gotowe, [opis](vhdl/uart.md); `UART_DIV` = liczba taktów `clk_sys` na bit (434 = 115 200, minimum 8); RTS wstrzymuje nadawcę przy zapełnieniu FIFO TX; multipleksowanie pinów J3 i zegara strony hosta FIFO w `sfp_bridge_top` ([integracja](vhdl/top.md)); RTS (IO2) jest sterowany tylko przy `RTSCTS_EN`, w przeciwnym razie IO2 pozostaje w stanie wysokiej impedancji.
 
 ---
 

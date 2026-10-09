@@ -67,6 +67,13 @@ nav:
           - Rejestry (csr_regs): vhdl/csr_regs.md
           - Zarządzanie SFP (i2c_master, sfp_mgmt): vhdl/sfp_mgmt.md
           - Zegar hosta i echo ramek (host_clk, frame_echo): vhdl/host_clk.md
+          - Integracja (sfp_bridge_top, leds): vhdl/top.md
+  - Testy end-to-end:
+      - Przegląd: e2e/index.md
+      - SPI ↔ SPI: e2e/spi.md
+      - QSPI ↔ QSPI: e2e/qspi.md
+      - OSPI ↔ OSPI: e2e/ospi.md
+      - UART ↔ UART: e2e/uart.md
   - Decyzje (ADR):
       - adr/README.md
       - "0001 FPGA GW1N-9": adr/0001-fpga-gw1n-9.md

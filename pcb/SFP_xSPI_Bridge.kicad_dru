@@ -23,7 +23,9 @@
   (constraint track_width (min 0.20mm) (opt 0.22mm) (max 0.24mm))
   (constraint diff_pair_gap (min 0.18mm) (opt 0.20mm) (max 0.22mm))
   (constraint diff_pair_uncoupled (max 2mm))
-  (constraint skew (max 0.5mm))
+  # within_diff_pairs: P/N length difference inside each pair; without it the
+  # skew is measured across all LVDS nets (TD against RD).
+  (constraint skew (max 0.5mm) (within_diff_pairs))
   (constraint via_count (max 0)))
 
 # Covers tracks, vias and zone fills (GND pour next to the pair lowers its

@@ -1,3 +1,8 @@
+# Vendor documentation (copyrighted, kept locally)
+doc/datasheets/
+# Local bring-up projects and working reviews
+vhdl/sfp_bridge_testled/
+doc/przeglady/
 
 # KiCad
 *.bak
@@ -40,6 +45,12 @@ transcript
 *.fst
 vsim.wlf
 modelsim.ini
+
+# KiCad outputs: loose Gerbers are zipped into prod/*.zip, BOM CSV generated
+prod/gerbers/
+prod/bom/
+pcb/ibom.config.ini
+.history
 
 # Firmware build output
 build/

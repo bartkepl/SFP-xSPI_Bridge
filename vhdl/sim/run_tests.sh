@@ -8,7 +8,7 @@
 # Exit code: 0 when all testbenches pass, 1 otherwise.
 # Each testbench is limited to TB_TIMEOUT seconds (default 300).
 # Gowin primitive models (IDES8, OSER8, TLVDS_*) are compiled from the Gowin EDA
-# installation (GOWIN_SIMLIB, default below) into library gw1n.
+# installation into library gw1n: GOWIN_SIMLIB = <Gowin EDA>/IDE/simlib/gw1n.
 
 set -u
 SIM_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -16,7 +16,11 @@ VHDL_DIR="$(dirname "$SIM_DIR")"
 OUT="$SIM_DIR/out"
 WORK="$OUT/work"
 GOWIN_LIB="$OUT/gowin"
-GOWIN_SIMLIB="${GOWIN_SIMLIB:-/opt/gowin/IDE/simlib/gw1n}"
+GOWIN_SIMLIB="${GOWIN_SIMLIB:-}"
+if [ -z "$GOWIN_SIMLIB" ] || [ ! -f "$GOWIN_SIMLIB/prim_sim.vhd" ]; then
+  echo "Set GOWIN_SIMLIB to <Gowin EDA>/IDE/simlib/gw1n (prim_sim.vhd not found: '$GOWIN_SIMLIB')"
+  exit 1
+fi
 GHDL_FLAGS=(--std=08 --workdir="$WORK" -frelaxed -fsynopsys -P"$GOWIN_LIB")
 
 mkdir -p "$WORK" "$GOWIN_LIB"

@@ -1,0 +1,173 @@
+{
+  "jobs": [
+    {
+      "description": "",
+      "id": "87a569e9-047b-4a14-8101-0c2f1bed4077",
+      "settings": {
+        "black_and_white": false,
+        "color_theme": "KiCad Default",
+        "description": "",
+        "drawing_sheet": "",
+        "format": "pdf",
+        "min_pen_width": 847,
+        "output_filename": "sch/${PROJECTNAME}.pdf",
+        "page_size": "auto",
+        "pdf_hierarchical_links": true,
+        "pdf_metadata": true,
+        "pdf_property_popups": true,
+        "plot_all": true,
+        "plot_drawing_sheet": true,
+        "show_hop_over": false,
+        "use_background_color": true,
+        "variant_name": "",
+        "variant_names": []
+      },
+      "type": "sch_export_plot_pdf"
+    },
+    {
+      "description": "",
+      "id": "a230573a-ad64-4d9d-86a8-d383461294f1",
+      "settings": {
+        "bom_format_preset_name": "Main",
+        "bom_preset_name": "",
+        "description": "",
+        "exclude_dnp": false,
+        "field_delimiter": ";",
+        "fields_group_by": [
+          "Value"
+        ],
+        "fields_labels": [
+          "Oznaczenie",
+          "Wartość",
+          "Footprint",
+          "Dokumentacja",
+          "Opis",
+          "Liczba",
+          "#",
+          "Height",
+          "Manufacturer_Name",
+          "Manufacturer_Part_Number",
+          "Sim.Device",
+          "Sim.Pins",
+          "TME Electronic Components Part Number",
+          "TME Electronic Components Price/Stock"
+        ],
+        "fields_ordered": [
+          "Reference",
+          "Value",
+          "Footprint",
+          "__Datasheet",
+          "Description",
+          "${QUANTITY}",
+          "__${ITEM_NUMBER}",
+          "__Height",
+          "__Manufacturer_Name",
+          "__Manufacturer_Part_Number",
+          "__Sim.Device",
+          "__Sim.Pins",
+          "__TME Electronic Components Part Number",
+          "__TME Electronic Components Price/Stock"
+        ],
+        "filter_string": "",
+        "group_symbols": true,
+        "keep_line_breaks": false,
+        "keep_tabs": false,
+        "output_filename": "bom\\${PROJECTNAME}.csv",
+        "ref_delimiter": ",",
+        "ref_range_delimiter": "",
+        "sort_asc": true,
+        "sort_field": "Reference",
+        "string_delimiter": "",
+        "variant_names": []
+      },
+      "type": "sch_export_bom"
+    },
+    {
+      "description": "",
+      "id": "1df102d0-2b07-4443-b66d-011484bf6bd6",
+      "settings": {
+        "back_fp_property_popups": true,
+        "background_color": "rgba(0, 0, 0, 0.000)",
+        "black_and_white": true,
+        "check_zones": false,
+        "color_theme": "",
+        "crossout_dnp_footprints_on_fab_layers": true,
+        "description": "",
+        "drawing_sheet": "",
+        "drill_shape": "full",
+        "front_fp_property_popups": true,
+        "hide_dnp_footprints_on_fab_layers": false,
+        "layers": [
+          "B.Cu",
+          "B.SilkS",
+          "In30.Cu",
+          "In29.Cu",
+          "In28.Cu",
+          "In27.Cu",
+          "In26.Cu",
+          "In25.Cu",
+          "In24.Cu",
+          "In23.Cu",
+          "In22.Cu",
+          "In21.Cu",
+          "In20.Cu",
+          "In19.Cu",
+          "In18.Cu",
+          "In17.Cu",
+          "In16.Cu",
+          "In15.Cu",
+          "In14.Cu",
+          "In13.Cu",
+          "In12.Cu",
+          "In11.Cu",
+          "In10.Cu",
+          "In9.Cu",
+          "In8.Cu",
+          "In7.Cu",
+          "In6.Cu",
+          "In5.Cu",
+          "In4.Cu",
+          "In3.Cu",
+          "In2.Cu",
+          "In1.Cu",
+          "F.Cu",
+          "F.SilkS"
+        ],
+        "layers_to_include_on_all_layers": [
+          "Edge.Cuts"
+        ],
+        "mirror": false,
+        "negative": false,
+        "output_filename": "pcb/${PROJECTNAME}.pdf",
+        "pdf_gen_mode": "one-page-per-layer-one-file",
+        "pdf_metadata": true,
+        "plot_drawing_sheet": true,
+        "plot_footprint_values": true,
+        "plot_pad_numbers": false,
+        "plot_ref_des": true,
+        "scale": 1.0,
+        "single_document": true,
+        "sketch_dnp_footprints_on_fab_layers": true,
+        "sketch_pads_on_fab_layers": false,
+        "subtract_solder_mask_from_silk": true,
+        "use_drill_origin": false,
+        "variant": ""
+      },
+      "type": "pcb_export_pdf"
+    }
+  ],
+  "meta": {
+    "version": 1
+  },
+  "outputs": [
+    {
+      "description": "Prod",
+      "id": "98701b62-f76e-4c35-8448-e1f7a2031964",
+      "only": [],
+      "settings": {
+        "output_path": "..\\prod\\"
+      },
+      "type": "folder"
+    }
+  ]
+}

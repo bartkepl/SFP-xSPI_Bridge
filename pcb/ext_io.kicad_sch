@@ -4,6 +4,12 @@
 	(generator_version "10.0")
 	(uuid "acc8a75c-7e9e-4694-8815-2a51ae1ca674")
 	(paper "A4")
+	(title_block
+		(title "SFP_xSPI_Bridge")
+		(date "2026-10-09")
+		(rev "A")
+		(company "bartkepl")
+	)
 	(lib_symbols
 		(symbol "Connector:TC2050"
 			(exclude_from_sim no)

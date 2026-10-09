@@ -4,6 +4,12 @@
 	(generator_version "10.0")
 	(uuid "203214f4-e505-4cf1-a0b5-f6e2627fab00")
 	(paper "A4")
+	(title_block
+		(title "SFP_xSPI_Bridge")
+		(date "2026-10-09")
+		(rev "A")
+		(company "bartkepl")
+	)
 	(lib_symbols
 		(symbol "Device:C"
 			(pin_numbers
@@ -4174,6 +4180,16 @@
 	)
 	(wire
 		(pts
+			(xy 193.04 118.11) (xy 193.04 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0fa46cd0-bf1c-4fd5-8310-75dca0e80455")
+	)
+	(wire
+		(pts
 			(xy 180.34 44.45) (xy 180.34 45.72)
 		)
 		(stroke
@@ -4181,6 +4197,16 @@
 			(type default)
 		)
 		(uuid "107e6dae-d3de-4ba9-8096-c66f63c3a3ac")
+	)
+	(wire
+		(pts
+			(xy 193.04 132.08) (xy 215.9 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "125fcf1b-04d9-4d4e-bed7-e6d884816c0c")
 	)
 	(wire
 		(pts
@@ -4234,6 +4260,16 @@
 	)
 	(wire
 		(pts
+			(xy 193.04 128.27) (xy 193.04 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "20e96c20-d457-44e4-b5f0-8f3de7ceac45")
+	)
+	(wire
+		(pts
 			(xy 199.39 44.45) (xy 199.39 45.72)
 		)
 		(stroke
@@ -4281,16 +4317,6 @@
 			(type default)
 		)
 		(uuid "2fe52970-ff34-43b4-9b1f-0a0d3057f562")
-	)
-	(wire
-		(pts
-			(xy 201.93 132.08) (xy 215.9 132.08)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "3013ad3d-36c9-40b5-b681-f9e68b0ae4bf")
 	)
 	(wire
 		(pts
@@ -6644,6 +6670,132 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R")
+		(at 193.04 124.46 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "60aa0c56-a316-4e68-ac97-009fc622d446")
+		(property "Reference" "R17"
+			(at 195.58 123.1899 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "4.7k"
+			(at 195.58 125.7299 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 191.262 124.46 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 193.04 124.46 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 193.04 124.46 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MF" ""
+			(at 193.04 124.46 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" ""
+			(at 193.04 124.46 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "PARTNO" ""
+			(at 193.04 124.46 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" ""
+			(at 193.04 124.46 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "c92475a1-2963-4ed6-bb07-58667398ebb6")
+		)
+		(pin "2"
+			(uuid "2d7ac74c-c790-46a0-bc9a-381676992cd3")
+		)
+		(instances
+			(project "SFP_xSPI_Bridge"
+				(path "/ca6491fd-e294-4986-aca7-b24059be2f57/99b2d538-1c3c-4904-a097-9a86c52ff40c"
+					(reference "R17")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:PWR_FLAG")
 		(at 95.25 54.61 0)
 		(unit 1)
@@ -8947,6 +9099,84 @@
 			(project "SFP_xSPI_Bridge"
 				(path "/ca6491fd-e294-4986-aca7-b24059be2f57/99b2d538-1c3c-4904-a097-9a86c52ff40c"
 					(reference "#PWR09")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 193.04 118.11 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "f58106d1-1da1-4696-bf80-74a5b80e396e")
+		(property "Reference" "#PWR023"
+			(at 193.04 121.92 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 193.04 113.03 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 193.04 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 193.04 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3V3\""
+			(at 193.04 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "c797856a-f38b-4d7f-860b-d6326b11b9be")
+		)
+		(instances
+			(project "SFP_xSPI_Bridge"
+				(path "/ca6491fd-e294-4986-aca7-b24059be2f57/99b2d538-1c3c-4904-a097-9a86c52ff40c"
+					(reference "#PWR023")
 					(unit 1)
 				)
 			)

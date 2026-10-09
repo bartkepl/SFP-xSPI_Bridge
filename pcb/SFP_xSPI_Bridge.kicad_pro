@@ -83,43 +83,51 @@
       ],
       "drc_exclusions": [
         [
-          "lib_footprint_mismatch|93400000|30200000|2ba48a67-23b2-4c78-b79b-5508931b8e31|00000000-0000-0000-0000-000000000000",
+          "footprint_symbol_field_mismatch|163876232|90501501|2fd496d0-11ff-44ca-9ac7-2c9f048568df|00000000-0000-0000-0000-000000000000",
           ""
         ],
         [
-          "silk_edge_clearance|42475000|22800000|262caa02-763e-43ff-b2be-317d3e0dc11b|09086fc8-74e6-45d6-9c79-35680a5c4df6",
+          "footprint_symbol_field_mismatch|165356232|90501501|5750b9de-180f-4344-afda-09e25174f39f|00000000-0000-0000-0000-000000000000",
           ""
         ],
         [
-          "silk_edge_clearance|42475000|30800000|262caa02-763e-43ff-b2be-317d3e0dc11b|c6a215d4-d229-4e8c-86aa-476505da38a3",
+          "lib_footprint_mismatch|166926232|96551501|2ba48a67-23b2-4c78-b79b-5508931b8e31|00000000-0000-0000-0000-000000000000",
           ""
         ],
         [
-          "silk_edge_clearance|42475000|38800000|262caa02-763e-43ff-b2be-317d3e0dc11b|68bec94a-0856-4427-8a86-ac53eb6bf8a8",
+          "silk_edge_clearance|116001232|105151501|262caa02-763e-43ff-b2be-317d3e0dc11b|68bec94a-0856-4427-8a86-ac53eb6bf8a8",
           ""
         ],
         [
-          "silk_overlap|107337500|40157742|031b7737-16a0-4a52-921b-42f89472d1d6|a7859541-b54a-4244-adbd-9484ac694178",
+          "silk_edge_clearance|116001232|89151501|262caa02-763e-43ff-b2be-317d3e0dc11b|09086fc8-74e6-45d6-9c79-35680a5c4df6",
           ""
         ],
         [
-          "silk_overlap|107337500|40590000|031b7737-16a0-4a52-921b-42f89472d1d6|d9feb982-75dc-4a74-994f-535301d275de",
+          "silk_edge_clearance|116001232|97151501|262caa02-763e-43ff-b2be-317d3e0dc11b|c6a215d4-d229-4e8c-86aa-476505da38a3",
           ""
         ],
         [
-          "silk_overlap|91085000|25635000|1d2778b7-87eb-4507-8bbc-92ce2389e0aa|8fbaaaa0-5519-4276-aea3-8079900f85a4",
+          "silk_overlap|164611232|91986501|1d2778b7-87eb-4507-8bbc-92ce2389e0aa|8fbaaaa0-5519-4276-aea3-8079900f85a4",
           ""
         ],
         [
-          "silk_overlap|91085000|25635000|1d2778b7-87eb-4507-8bbc-92ce2389e0aa|f3a00574-12c4-4c84-9c9f-ee35cbc4e7dd",
+          "silk_overlap|164611232|91986501|1d2778b7-87eb-4507-8bbc-92ce2389e0aa|f3a00574-12c4-4c84-9c9f-ee35cbc4e7dd",
           ""
         ],
         [
-          "silk_overlap|91085000|25635000|d21a00f4-6d68-44fd-b5e4-1ba690d43ff2|f3a00574-12c4-4c84-9c9f-ee35cbc4e7dd",
+          "silk_overlap|164611232|91986501|d21a00f4-6d68-44fd-b5e4-1ba690d43ff2|f3a00574-12c4-4c84-9c9f-ee35cbc4e7dd",
           ""
         ],
         [
-          "silk_overlap|91095000|23350000|8fbaaaa0-5519-4276-aea3-8079900f85a4|d21a00f4-6d68-44fd-b5e4-1ba690d43ff2",
+          "silk_overlap|164621232|89701501|8fbaaaa0-5519-4276-aea3-8079900f85a4|d21a00f4-6d68-44fd-b5e4-1ba690d43ff2",
+          ""
+        ],
+        [
+          "silk_overlap|180863732|106509243|031b7737-16a0-4a52-921b-42f89472d1d6|a7859541-b54a-4244-adbd-9484ac694178",
+          ""
+        ],
+        [
+          "silk_overlap|180863732|106941501|031b7737-16a0-4a52-921b-42f89472d1d6|d9feb982-75dc-4a74-994f-535301d275de",
           ""
         ]
       ],
@@ -224,6 +232,7 @@
         {
           "td_allow_use_two_tracks": true,
           "td_curve_segcount": 0,
+          "td_enabled": false,
           "td_height_ratio": 1.0,
           "td_length_ratio": 0.5,
           "td_maxheight": 2.0,
@@ -235,6 +244,7 @@
         {
           "td_allow_use_two_tracks": true,
           "td_curve_segcount": 0,
+          "td_enabled": false,
           "td_height_ratio": 1.0,
           "td_length_ratio": 0.5,
           "td_maxheight": 2.0,
@@ -246,6 +256,7 @@
         {
           "td_allow_use_two_tracks": true,
           "td_curve_segcount": 0,
+          "td_enabled": false,
           "td_height_ratio": 1.0,
           "td_length_ratio": 0.5,
           "td_maxheight": 2.0,
@@ -327,7 +338,7 @@
       "internal_id": "",
       "mfg": "",
       "mpn": "",
-      "sch_revision": ""
+      "sch_revision": "A"
     },
     "layer_pairs": [],
     "layer_presets": [],
@@ -556,6 +567,7 @@
       "pin_to_pin": "warning",
       "power_pin_not_driven": "error",
       "same_local_global_label": "warning",
+      "same_local_global_power": "warning",
       "similar_label_and_power": "warning",
       "similar_labels": "warning",
       "similar_power": "warning",
@@ -627,8 +639,8 @@
     "meta": {
       "version": 5
     },
-    "net_colors": null,
-    "netclass_assignments": null,
+    "net_colors": {},
+    "netclass_assignments": {},
     "netclass_patterns": [
       {
         "netclass": "LVDS",
@@ -658,6 +670,7 @@
       "netlist": "",
       "plot": "",
       "specctra_dsn": "",
+      "step": "",
       "vrml": ""
     },
     "page_layout_descr_file": ""
@@ -668,16 +681,26 @@
       "method": 0,
       "sort_order": 0
     },
-    "bom_export_filename": "bom\\emulator_glowicy.csv",
-    "bom_fmt_presets": [],
+    "bom_export_filename": "..\\BOM\\${PROJECTNAME}.csv",
+    "bom_fmt_presets": [
+      {
+        "field_delimiter": ";",
+        "keep_line_breaks": false,
+        "keep_tabs": false,
+        "name": "Main",
+        "ref_delimiter": ",",
+        "ref_range_delimiter": "",
+        "string_delimiter": ""
+      }
+    ],
     "bom_fmt_settings": {
-      "field_delimiter": ",",
+      "field_delimiter": ";",
       "keep_line_breaks": false,
       "keep_tabs": false,
-      "name": "CSV",
+      "name": "Main",
       "ref_delimiter": ",",
       "ref_range_delimiter": "",
-      "string_delimiter": "\""
+      "string_delimiter": ""
     },
     "bom_presets": [],
     "bom_settings": {
@@ -828,7 +851,7 @@
         "uuid": "ca6491fd-e294-4986-aca7-b24059be2f57"
       }
     ],
-    "used_designators": "#FLG1-4,R1-16,J1-3,U1,L1-2,#PWR1-22,#PWR42,C1-19,C96,JP1-3,Y1-2,D1-3,H1-4",
+    "used_designators": "#FLG1-4,#PWR1-23,#PWR42,C1-19,C96,D1-3,H1-4,J1-3,JP1-3,L1-2,R1-17,U1,Y1-2",
     "variants": []
   },
   "sheets": [

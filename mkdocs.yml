@@ -49,6 +49,7 @@ nav:
   - Koncepcja konstrukcji: sfp-xspi-bridge-plan.md
   - "Interfejs hosta (datasheet)": datasheet/index.md
   - Biblioteka C (STM32): firmware.md
+  - Weryfikacja płytki rev. A: pcb-rev-a.md
   - Projekt FPGA:
       - vhdl/index.md
       - Konwencje kodu: vhdl/konwencje.md

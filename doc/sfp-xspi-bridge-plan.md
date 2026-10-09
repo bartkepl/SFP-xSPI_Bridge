@@ -232,7 +232,7 @@ Przyporządkowanie pinów złącza (INF-8074i, Table 1; numeracja zgodna z symbo
 |---|---|---|---|
 | 1, 17, 20 | VeeT | GND | masa nadajnika |
 | 2 | TX Fault | `SFP_TX_FAULT` → pin 39 | wyjście OC/OD modułu; w rev. A wewnętrzny pull-up FPGA (`PULL_MODE=UP`), INF-8074i zaleca 4,7–10 kΩ |
-| 3 | TX Disable | `SFP_TX_DIS` ← pin 38 | wejście modułu z wewnętrznym pull-upem 4,7–10 kΩ (stan wysoki lub rozwarty = laser wyłączony); pull-up 4,7 kΩ na płytce utrzymuje laser wyłączony także w czasie konfiguracji FPGA |
+| 3 | TX Disable | `SFP_TX_DIS` ← pin 38 | wejście modułu z wewnętrznym pull-upem 4,7–10 kΩ (stan wysoki lub rozwarty = laser wyłączony); pull-up 4,7 kΩ na płytce (R17) utrzymuje laser wyłączony także w czasie konfiguracji FPGA |
 | 4 | MOD-DEF2 | `SFP_SDA` ↔ pin 47 | SDA interfejsu 2-wire (EEPROM A0h, DDM A2h); pull-up 4,7–10 kΩ |
 | 5 | MOD-DEF1 | `SFP_SCL` ← pin 46 | SCL, maks. 100 kHz; pull-up 4,7–10 kΩ |
 | 6 | MOD-DEF0 | `SFP_MOD_ABS` → pin 41 | zwarte do masy w module = moduł obecny; pull-up jak TX Fault |
@@ -479,6 +479,7 @@ Footprint `Tag-Connect_TC2050-IDC-NL_2x05_P1.27mm_Vertical` (J2). Układ zgodny 
 | JP1, JP2 | zworki lutowane 2- i 3-pozycyjna | — | nRESET → `RECONFIG_N`; AUX → `JTAGSEL_N` / `DONE` (5.6) |
 | JP3 | zworka lutowana 2-pozycyjna | — | `MODE_SEL` (pin 10) ↔ GND: zwarta = tryb UART ([ADR 0006](adr/0006-tryb-uart-przezroczysty.md)) |
 | R16 | 10 kΩ, 0603 | — | pull-up `MODE_SEL` do 3,3 V |
+| R17 | 4,7 kΩ, 0603 | — | pull-up `SFP_TX_DIS` do 3,3 V (laser wyłączony w czasie konfiguracji FPGA) |
 
 ---
 
@@ -755,6 +756,8 @@ firmware/
 ---
 
 ## 10. Punkty do potwierdzenia
+
+Weryfikację schematu i PCB rev. A (reguły projektowe, zgodność z przydziałem pinów i INF-8074i, pary LVDS, pliki produkcyjne) opisuje [raport weryfikacji płytki](pcb-rev-a.md).
 
 Rozstrzygnięcia z dokumentacji producenta są podane w treści wraz ze źródłem (przydział pinów i bilans zasilania QN48 — UG114; terminacja wewnętrzna tylko w banku 0 — UG289, rozdz. 3.3.2; HCLK w GW1N-9C — UG286, rozdz. 2.2; tryb konfiguracji QN48 — UG290, tab. 5-1). Do potwierdzenia pozostają:
 

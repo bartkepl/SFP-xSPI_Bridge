@@ -3,7 +3,7 @@
 
 Moduł łączący dwa mikrokontrolery STM32 łączem światłowodowym punkt–punkt, bez stosu IP. Host zapisuje i odczytuje ramki przez OCTOSPI, QUADSPI lub zwykłe SPI; FPGA koduje je w 8b/10b i wysyła przez moduł SFP z prędkością 100 Mbaud, a po drugiej stronie odzyskuje zegar programowo (soft-CDR z nadpróbkowaniem). Tryb przezroczysty UART pozwala użyć pary mostków jako „przedłużacza” portu szeregowego, bez żadnego sterownika.
 
-![status](https://img.shields.io/badge/status-PCB%20rev.%20A%20%E2%80%94%20przed%20prototypem-yellow)
+![status](https://img.shields.io/badge/status-pliki%20produkcyjne%20rev.%20A%20gotowe-yellow)
 ![hw](https://img.shields.io/badge/hardware-rev.%20A-blue)
 ![fpga](https://img.shields.io/badge/FPGA-GW1N--UV9QN48-brightgreen)
 ![link](https://img.shields.io/badge/łącze-100%20Mbaud%208b%2F10b-informational)
@@ -11,7 +11,7 @@ Moduł łączący dwa mikrokontrolery STM32 łączem światłowodowym punkt–pu
 ![pcb](https://img.shields.io/badge/PCB-4%20warstwy%2C%2068×29%2C3%20mm-lightgrey)
 ![license](https://img.shields.io/badge/licencja-MIT-green)
 
-> **Status:** projekt FPGA ukończony i zweryfikowany w symulacji (testy modułów i testy end-to-end dwóch kompletnych mostków), biblioteka C dla STM32 gotowa i przetestowana na modelu mostka, schemat i PCB rev. A przed zamówieniem prototypu. Uruchomienie sprzętowe według [planu](doc/sfp-xspi-bridge-plan.md#9-plan-uruchomienia-bring-up).
+> **Status:** projekt FPGA ukończony i zweryfikowany w symulacji (testy modułów i testy end-to-end dwóch kompletnych mostków), biblioteka C dla STM32 gotowa i przetestowana na modelu mostka, schemat i PCB rev. A zweryfikowane ([raport](doc/pcb-rev-a.md)), pliki produkcyjne wygenerowane — przed zamówieniem prototypu. Uruchomienie sprzętowe według [planu](doc/sfp-xspi-bridge-plan.md#9-plan-uruchomienia-bring-up).
 
 ```
 STM32 ══ xSPI ══ GW1N-9 ══ LVDS ══ SFP ~~~ światłowód ~~~ SFP ══ LVDS ══ GW1N-9 ══ xSPI ══ STM32
@@ -103,6 +103,7 @@ Decyzje projektowe z uzasadnieniem: [rejestr ADR](doc/adr/README.md). Pełna kon
 | [Interfejs hosta (datasheet)](doc/datasheet/index.md) | wyprowadzenia J3, parametry czasowe, komendy xSPI, mapa rejestrów, tryb UART, przykłady |
 | [Biblioteka C (STM32)](doc/firmware.md) | konfiguracja, porty HAL, API, weryfikacja |
 | [Koncepcja konstrukcji](doc/sfp-xspi-bridge-plan.md) | architektura, przydział pinów, zegary, PCB, moduły, uruchomienie |
+| [Weryfikacja płytki rev. A](doc/pcb-rev-a.md) | DRC / ERC, zgodność z przydziałem pinów i INF-8074i, pary LVDS, zasilanie, pliki produkcyjne |
 | [Projekt FPGA](doc/vhdl/index.md) | moduły VHDL, testbenche, symulacja, wyniki syntezy |
 | [Testy end-to-end](doc/e2e/index.md) | dwa mostki połączone łączem: SPI, QSPI, OSPI, UART — z przebiegami |
 | [Decyzje (ADR)](doc/adr/README.md) | kontekst, warianty i konsekwencje decyzji projektowych |
@@ -149,6 +150,7 @@ cd vhdl\sim
 | End-to-end | dwa kompletne mostki (modele prymitywów Gowin): SPI, QSPI, OSPI, UART zworką i rejestrem | PASS |
 | Synteza | pełny układ, ograniczenia czasowe spełnione (`clk_sys` 56 MHz, `clk_host` 44 MHz) | OK |
 | Biblioteka C | 207 sprawdzeń na modelu mostka, 17 mutacji wykrytych; kompilacja portów dla L4R5, H563, F446, L476, G0B1 | PASS |
+| PCB | DRC i ERC bez błędów, przydział pinów 100 % zgodny z `.cst`, pary LVDS w regułach | OK |
 | Sprzęt | uruchomienie prototypu rev. A | do wykonania |
 
 ---
@@ -159,7 +161,8 @@ cd vhdl\sim
 - [x] **Schemat i PCB rev. A** w KiCad 10
 - [x] **FPGA** — wszystkie moduły, integracja, ograniczenia czasowe, testy end-to-end
 - [x] **Biblioteka C dla STM32** z testami na modelu mostka
-- [ ] **Pliki produkcyjne** rev. A, zamówienie i montaż prototypu
+- [x] **Weryfikacja płytki i pliki produkcyjne** rev. A
+- [ ] **Zamówienie i montaż** prototypu
 - [ ] **Uruchomienie** — konfiguracja FPGA, tryb UART przez światłowód, xSPI, I2C / DDM
 - [ ] **Pomiary** — wykres oczkowy RD±, BER ≥ 10¹² bitów, różne moduły i tłumiki optyczne
 - [ ] **Rozszerzenia** — 125 Mbaud, kolejna rewizja PCB z uwagami z uruchomienia

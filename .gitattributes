@@ -1,2 +1,5 @@
 # Shell scripts must keep LF line endings (run in WSL)
 *.sh text eol=lf
+
+# make in WSL / Linux needs LF in recipes
+Makefile text eol=lf

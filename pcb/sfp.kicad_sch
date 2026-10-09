@@ -7992,10 +7992,6 @@
 		)
 		(instances
 			(project "SFP_xSPI_Bridge"
-				(path "/ca6491fd-e294-4986-aca7-b24059be2f57/7eb2e6d1-c37f-42de-89f7-3b01f01576cd"
-					(reference "U1")
-					(unit 2)
-				)
 				(path "/ca6491fd-e294-4986-aca7-b24059be2f57/99b2d538-1c3c-4904-a097-9a86c52ff40c"
 					(reference "U1")
 					(unit 2)
@@ -8871,10 +8867,6 @@
 		)
 		(instances
 			(project "SFP_xSPI_Bridge"
-				(path "/ca6491fd-e294-4986-aca7-b24059be2f57/7eb2e6d1-c37f-42de-89f7-3b01f01576cd"
-					(reference "U1")
-					(unit 1)
-				)
 				(path "/ca6491fd-e294-4986-aca7-b24059be2f57/99b2d538-1c3c-4904-a097-9a86c52ff40c"
 					(reference "U1")
 					(unit 1)
